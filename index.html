@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Nusa Lembongan Guide · 28.–30. Juni 2026</title>
+<title>Lembongan &amp; Sidemen · 28. Juni – 3. Juli 2026</title>
   <meta name="theme-color" content="#0c3a3d">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -227,10 +227,10 @@
 <header>
   <div class="head-in">
     <div class="brandrow">
-      <h1><span class="pin">◷</span> Nusa Lembongan</h1>
-      <span class="dates">28.–30. Juni 2026</span>
+      <h1><span class="pin">◷</span> Lembongan &amp; Sidemen</h1>
+      <span class="dates">28. Juni – 3. Juli 2026</span>
     </div>
-    <p class="sub">Basis: Mushroom Beach · Fokus: Hygiene &amp; Bali-Belly vermeiden</p>
+    <p class="sub">Von Lembongan über Sidemen nach Ubud · Natur &amp; Hygiene im Blick</p>
     <div class="prog-line">
       <div class="bar"><span id="globalBar"></span></div>
       <span class="prog-num" id="globalNum">0/0</span>
@@ -249,7 +249,7 @@
     <div class="seg" id="daySeg"></div>
     <div class="daytitle" id="dayTitle"></div>
     <div id="planList"></div>
-    <p class="endnote">Tipp: Roller-Erkundung ohne die großen Backpacks — die bleiben im Zimmer. Transfer beim An- &amp; Abreisen über die Unterkunft regeln (kein Grab/Gojek).</p>
+    <p class="endnote">Tipp: Auf den Inseln Roller ohne die großen Backpacks (die bleiben im Zimmer); ab Sanur dann mit privatem Fahrer ins Bergland — Grab/Gojek gibt es dort nicht. Transfers immer über die Unterkunft organisieren.</p>
   </section>
 
   <!-- ============ SEHEN ============ -->
@@ -319,6 +319,26 @@ const PLAN = [
     {time:"Vormittag", h:"Packen & Gepäck-Check", w:"Backpacks wasserdicht/regenfest packen — das Gepäck liegt auf dem Boot offen. Genug Bargeld für letzte Ausgaben + Transfer bereithalten.", m:"", c:[{t:"Wasserdicht packen",k:"warn"}]},
     {time:"Mittag", h:"Boot nach Sanur", w:"Vorab online gebuchtes Boot (Hochsaison!). 45–60 Min. vor Abfahrt am Pier sein, ~30–40 Min. Fahrt. Nicht auf das letzte Boot (17:00) verlassen.", m:"Sanur Beach Harbour", c:[{t:"Vorab buchen",k:"warn"},{t:"ab ≈115k IDR",k:"price"}]},
   ]},
+  { day:4, dom:1, date:"Di · 1. Juli", title:"Sanur → Sidemen", items:[
+    {time:"Vormittag", h:"Privatfahrer ab Sanur", w:"Ab Sanur geht's mit privatem Fahrer/Taxi ins Bergland von Ost-Bali (~1,5–2 Std.). In Sidemen gibt es praktisch kein Grab/Gojek — Fahrer vorab über die Unterkunft oder per WhatsApp buchen (Tagespreis ~600–900k IDR). Mit zwei großen Backpacks ist ein eigener Wagen ohnehin am bequemsten.", m:"Sanur Bali", c:[{t:"Privatfahrer",k:"warn"},{t:"~600–900k/Tag",k:"price"}]},
+    {time:"Unterwegs", h:"Optional: Kerta Gosa, Klungkung", w:"Etwa 30 Min. nach Sanur die historische Gerichtshalle mit bemalter Kamasan-Decke — kurz und ungewöhnlich, kein klassischer Tempel. Lohnt nur als kurzer Halt; wer lieber direkt ins Grüne will, lässt es weg.", m:"Kerta Gosa Klungkung", c:[{t:"~50k IDR",k:"price"},{t:"Optional",k:"gem"}]},
+    {time:"Hinweis", h:"Bali Safari Park – bewusst auslassen", w:"Stand als „zwischen”-Idee im Plan. Ehrliche Einschätzung: ein Zoo/Freizeitpark, teuer und tierethisch umstritten — passt nicht zu eurem Wunsch nach echter Natur. Die Zeit ist in Sidemens Reisfeldern und Wasserfällen besser investiert.", m:"", c:[{t:"Nicht empfohlen",k:"danger"}], kind:"warn"},
+    {time:"Mittag", h:"Ankommen & Reisfeld-Lunch", w:"In Sidemen mit Blick über die Terrassen essen — z. B. Joglo D'Uma oder Warung Tirta Unda (frisch, gute Hygienebilanz). Danach entspannt einchecken.", m:"Sidemen Karangasem", c:[{t:"Frisch",k:"ok"},{t:"Reisfeldblick",k:"gem"}]},
+    {time:"Nachmittag", h:"Erster Gang durch die Reisterrassen", w:"Direkt ab der Unterkunft durch die leuchtend grünen Terrassen schlendern — kostenlos, ruhig, mit Mount Agung im Hintergrund. Das „alte Bali”, das ihr von den Inseln nicht hattet.", m:"Sidemen Rice Terrace", c:[{t:"Kostenlos",k:"ok"},{t:"Landschaft",k:"gem"}]},
+    {time:"Sunset", h:"Sonnenuntergang über dem Tal", w:"Vom Pool oder einem Aussichtspunkt den Blick über Reisfelder und Vulkan genießen. In der Trockenzeit (Anfang Juli) stehen die Chancen auf klare Agung-Sicht gut.", m:"Bukit Cinta Sidemen", c:[{t:"Sonnenuntergang",k:"sun"}]},
+  ]},
+  { day:5, dom:2, date:"Mi · 2. Juli", title:"Wasserfälle & Aussichten", items:[
+    {time:"≈5:30", h:"Sonnenaufgang am Bukit Cinta", w:"Kostenloser Aussichtspunkt mit Mount Agung über den Reisfeldern — früh = fast menschenleer und beste Sicht, bevor Wolken aufziehen. Fahrer am Vorabend früh bestellen.", m:"Bukit Cinta Sidemen", c:[{t:"Sonnenaufgang",k:"sunrise"},{t:"Kostenlos",k:"ok"}]},
+    {time:"≈8:00", h:"Gembleng Waterfall", w:"Kurzer, steiler Aufstieg (~140 Stufen) zu natürlichen Infinity-Felsenpools mit Dschungel- und Talblick. Früh habt ihr die Pools fast für euch. Spende ~30–50k IDR.", m:"Gembleng Waterfall Sidemen", c:[{t:"Früh morgens",k:"sunrise"},{t:"~30–50k IDR",k:"price"},{t:"Dschungel",k:"gem"}]},
+    {time:"≈9–10", h:"Tukad Cepung Waterfall", w:"Einer der schönsten Wasserfälle Balis: ein Höhlen-/Schluchtfall, durch den vormittags Lichtstrahlen fallen (beste Zeit ~8–10 Uhr). Etwas Waten nötig. Wichtig: Fahrer warten lassen — hier holt euch kein Gojek/Grab ab.", m:"Tukad Cepung Waterfall", c:[{t:"Lichtstrahlen 8–10",k:"sunrise"},{t:"~30k IDR",k:"price"},{t:"Fahrer warten lassen",k:"warn"}]},
+    {time:"Nachmittag", h:"Reisterrassen-Trek oder Rafting", w:"Entweder eine geführte Wanderung durch Felder und Dörfer (lokaler Guide, Feldzugang ~25k p. P.) — oder als Adrenalin-Option Rafting auf dem Telaga Waja. Beides zeigt Sidemen abseits der Straße.", m:"Telaga Waja River Rafting", c:[{t:"Natur",k:"gem"},{t:"optional Rafting",k:"sea"}]},
+    {time:"Abend", h:"Entspannen & Sundowner", w:"Zurück zur Unterkunft: Pool, evtl. ein lokales Spa und der Sonnenuntergang über dem Tal. Bewusst ruhiger Ausklang vor den vier vollen Ubud-Tagen.", m:"Sidemen Karangasem", c:[{t:"Sonnenuntergang",k:"sun"}]},
+  ]},
+  { day:6, dom:3, date:"Do · 3. Juli", title:"Weiter nach Ubud", items:[
+    {time:"Früh", h:"Letzter Morgen in den Bergen", w:"Gemütliches Frühstück mit Reisfeldblick, vielleicht ein letzter kurzer Spaziergang durch die Terrassen, bevor es weitergeht.", m:"Sidemen Karangasem", c:[{t:"Frühstück",k:"sunrise"}]},
+    {time:"Vormittag", h:"Transfer nach Ubud", w:"Mit dem Fahrer nach Ubud (~1,5 Std.). Direkt fahren lohnt sich: Die klassischen Stopps dazwischen (z. B. Wasserfälle, Tegallalang) erreicht ihr genauso gut von Ubud aus — mehr dazu im Info-Tab „Sidemen vs. Ubud”.", m:"Ubud Bali", c:[{t:"~1,5 Std.",k:"price"}]},
+    {time:"Mittag", h:"Ankunft & Check-in Ubud", w:"Einchecken für vier Nächte. Ab hier übernimmt euer Ubud-Hotel — Affenwald, Tegallalang, Campuhan Ridge, Tempel und Kaffeeplantagen liegen in Reichweite und sind bewusst für diese Tage aufgehoben.", m:"Ubud Centre", c:[{t:"4 Nächte",k:"ok"}]},
+  ]},
 ];
 
 const SEHEN = [
@@ -349,6 +369,13 @@ const SEHEN = [
     {h:"Shiroi Lookout", w:"Ruhiger Sunset-Aussichtspunkt hinter der Blue Lagoon, oft fast menschenleer — einer der friedlichsten Spots der Nusa-Inseln.", m:"Shiroi Lookout Nusa Ceningan", c:[{t:"Sonnenuntergang",k:"sun"},{t:"Geheimtipp",k:"gem"}]},
     {h:"Song-Tepo-Schaukeln (Instagram)", w:"Ehrlich: reiner Fotospot, kein Erlebnis. Lohnt nur, wenn ihr ohnehin vorbeikommt UND die Tide passt (bei Flut im Wasser, bei Ebbe Sandstrand). Nicht extra anreisen.", m:"Nusa Ceningan Beach Swing", c:[{t:"Tide beachten",k:"tide"},{t:"Tourist-Falle",k:"warn"}], kind:"warn"},
   ]},
+  { grp:"Sidemen · Natur & Wasserfälle", gi:"🌿", note:"Euer Kontrastprogramm nach Strand & Inseln: grünes Bergland, Wasserfälle und Reisterrassen rund um Sidemen (Ost-Bali). Früh starten lohnt sich besonders — die Spots sind morgens am ruhigsten und am schönsten. Anreise per privatem Fahrer (kein Gojek/Grab).", items:[
+    {h:"Bukit Cinta (Aussichtspunkt)", w:"Kostenloser Hügel mit Panorama über Reisfelder und Mount Agung — der beste Sonnenauf- und -untergangsblick der Gegend. Morgens am klarsten.", m:"Bukit Cinta Sidemen", c:[{t:"Sonnenaufgang",k:"sunrise"},{t:"Kostenlos",k:"ok"},{t:"Geheimtipp",k:"gem"}]},
+    {h:"Gembleng Waterfall", w:"Natürliche Infinity-Felsenpools über dem Tal, erreichbar über ~140 Stufen. Mehr Aussicht-und-Baden als großer Wasserfall — früh fast menschenleer.", m:"Gembleng Waterfall Sidemen", c:[{t:"Früh morgens",k:"sunrise"},{t:"~30–50k IDR",k:"price"},{t:"Dschungel",k:"gem"}]},
+    {h:"Tukad Cepung Waterfall", w:"Spektakulärer Höhlen-Wasserfall mit Lichtstrahlen am Vormittag (~8–10 Uhr) — einer der fotogensten Balis. Leichtes Waten nötig. Fahrer warten lassen (kein Gojek/Grab).", m:"Tukad Cepung Waterfall", c:[{t:"Lichtstrahlen 8–10",k:"sunrise"},{t:"~30k IDR",k:"price"},{t:"Fahrer warten lassen",k:"warn"}]},
+    {h:"Sidemen-Reisterrassen", w:"Sattgrüne, kaum überlaufene Terrassen am Fuß des Mount Agung — landschaftlich auf Augenhöhe mit Jatiluwih, aber viel ruhiger. Kostenlos zu Fuß, am besten mit lokalem Guide.", m:"Sidemen Rice Terrace", c:[{t:"Landschaft",k:"gem"},{t:"Kostenlos",k:"ok"}]},
+    {h:"Telaga Waja Rafting", w:"Wildwasser-Rafting durch Dschungel und an Reisfeldern vorbei — die aktive Art, die Landschaft zu erleben. Anbieter mit guter Ausrüstung wählen.", m:"Telaga Waja River Rafting", c:[{t:"Aktiv",k:"sea"},{t:"optional",k:"gem"}]},
+  ]},
 ];
 
 const ESSEN = [
@@ -368,6 +395,12 @@ const ESSEN = [
     {h:"Strandclubs (Sandy Bay, Mahagiri, D'Byas)", w:"Schön für einen Sundowner, aber Mindestverzehr (z. B. ~200.000 IDR p. P. bei Mahagiri) und allgemein hohe Preise. Für Budget eher ein einmaliges Erlebnis als die tägliche Verpflegung.", m:"Sandy Bay Beach Club Nusa Lembongan", c:[{t:"Mindestverzehr",k:"warn"},{t:"Teuer",k:"warn"}]},
     {h:"Lemongrass", w:"Solides Essen, aber in mehreren Reviews als preislich hoch fürs Gebotene bemängelt — nicht schlecht, nur nicht das beste Preis-Leistungs-Verhältnis.", m:"Lemongrass Nusa Lembongan", c:[{t:"Preis-Leistung",k:"warn"}]},
   ]},
+  { grp:"Sidemen · Essen mit Reisfeldblick", gi:"🍚", note:"In Sidemen wird viel frisch und einfach gekocht. Gut besuchte Warungs und die Restaurants der Unterkünfte sind die sichere Wahl — auch hier gilt: heiß & frisch, gefiltertes Wasser/Eis erfragen.", items:[
+    {h:"Warung Tirta Unda", w:"Frisch zubereitete balinesische Gerichte, oft auf Bananenblatt serviert — beliebt, hoher Durchlauf, gute Hygienebilanz.", m:"Warung Tirta Unda Sidemen", c:[{t:"Frisch",k:"ok"},{t:"günstig",k:"price"}]},
+    {h:"Joglo D'Uma", w:"Schöner Reisfeldblick, indonesische und westliche Klassiker — guter Ort für Mittag oder Sonnenuntergang.", m:"Joglo DUma Sidemen", c:[{t:"Aussicht",k:"sun"},{t:"moderat",k:"price"}]},
+    {h:"Restaurant im Lihat Sawah", w:"Restaurant des gleichnamigen Guesthouse mit Panoramablick; indonesisch/thai/westlich, in Reviews ausdrücklich für saubere Zubereitung gelobt.", m:"Lihat Sawah Sidemen", c:[{t:"Hygiene gelobt",k:"ok"},{t:"Aussicht",k:"sun"}]},
+    {h:"Lokale Warungs im Tal", w:"Mehrere kleine, frisch kochende Warungs, oft vegetarisch-freundlich. Faustregel wie überall: voll & heiß = sicher.", m:"Warung Sidemen", c:[{t:"Vegan-freundlich",k:"veg"},{t:"günstig",k:"price"}]},
+  ]},
 ];
 
 const TIPPS = [
@@ -378,6 +411,10 @@ const TIPPS = [
   {h:"Seetang-Farmen", w:"Bei Ebbe sieht man rund um die Yellow Bridge die lokale Seetang-Ernte — ein authentischer Einblick ins Inselleben, kostenlos.", m:"Seaweed Farm Nusa Lembongan", c:[{t:"Bei Ebbe",k:"tide"},{t:"Kostenlos",k:"ok"}]},
   {h:"Dorf Jungutbatu am Abend", w:"Einfach die Küste entlangschlendern, mit Locals plaudern, Boote beobachten — das echte, ruhige Lembongan abseits der Strandclubs.", m:"Jungutbatu Village Nusa Lembongan", c:[{t:"Lokal",k:"gem"}]},
   {h:"Sonnenaufgang mit Blick auf Mount Agung", w:"Lembongan ist berühmt für den Sonnenaufgang über dem Vulkan auf Bali — am besten vom Jungutbatu-Hügel.", m:"Jungutbatu Beach Nusa Lembongan", c:[{t:"Sonnenaufgang",k:"sunrise"}]},
+  {h:"Bukit Cinta zum Sonnenaufgang", w:"Kostenloser Aussichtspunkt in Sidemen mit Mount Agung über den Reisfeldern — morgens klar und fast leer.", m:"Bukit Cinta Sidemen", c:[{t:"Sonnenaufgang",k:"sunrise"}]},
+  {h:"Privatfahrer statt Gojek (Sidemen)", w:"Im Bergland funktioniert Ride-Hailing kaum. Ein Fahrer für den ganzen Tag (~600–900k IDR) ist pro Stopp günstiger gerechnet und löst das Roller-Thema komplett. Über die Unterkunft buchen.", m:"Sidemen Karangasem", c:[{t:"Privatfahrer",k:"warn"}]},
+  {h:"Tukad Cepung: Timing ist alles", w:"Die berühmten Lichtstrahlen in der Schlucht zeigen sich nur vormittags bei Sonne (~8–10 Uhr) — danach ist der Effekt weg.", m:"Tukad Cepung Waterfall", c:[{t:"8–10 Uhr",k:"sunrise"}]},
+  {h:"Weberei & Silberschmiede in Sidemen", w:"Sidemen ist für Songket-Weberei und Silberschmiede-Werkstätten bekannt — kleine Familienbetriebe, in denen man oft zuschauen darf. Authentischer als jeder Souvenirshop.", m:"Sidemen Weaving Village", c:[{t:"Lokal",k:"gem"}]},
 ];
 
 const INFO = [
@@ -389,6 +426,9 @@ const INFO = [
   { ic:"🎫", t:"Bali-Abgabe & Inselgebühren", html:`<p><b>Bali Tourist Levy:</b> Seit 14.02.2024 zahlt jeder Bali-Besucher einmalig <b>150.000 IDR (~7,50 €) pro Einreise</b>. Bezahlung über die <b>offizielle</b> Seite <b>lovebali.baliprov.go.id</b> oder am Flughafen/Hafen — gilt für die Einreise nach Bali, nicht erneut für die Bootsfahrt zu den Nusa-Inseln. Falls bei der Bali-Ankunft noch nicht bezahlt, über die offizielle .go.id-Seite nachholen (Vorsicht vor Fake-Seiten, die das 2–3-Fache verlangen).</p><p><b>Lokale Nusa-Gebühr:</b> Auf <b>Nusa Penida</b> Hafengebühr von 25.000 IDR/Person. Für <b>Nusa Lembongan</b> derzeit keine zusätzliche lokale Gebühr (uneinheitlich) — trotzdem ein paar kleine Scheine bereithalten.</p>` },
   { ic:"⛴️", t:"Boot Sanur ↔ Lembongan (Abreise)", html:`<p><b>Hafen:</b> Abfahrten ab dem modernen Sanur Beach Harbour (Pelabuhan Sanur) — einfaches, trockenes Ein-/Aussteigen. <b>Fahrtzeit:</b> ~30–40 Min.</p><p><b>Preis:</b> Online ab 115.000 IDR einfache Fahrt; Walk-up ~150.000–250.000 IDR je nach Anbieter/Saison. <b>Frequenz:</b> bis zu 16 Abfahrten täglich; <span class="hl">letztes Boot ab Sanur um 17:00 Uhr</span> — für die Gegenrichtung früh genug planen.</p><p><b>Anbieter:</b> u. a. Scoot, Eka Jaya, Rocky Fast Cruise, Arthamas, Tanis, Marlin, D'Camel.</p><p><b>Gepäck:</b> meist 1–2 Stück bis 25–30 kg p. P. — eure großen Backpacks sind okay, aber <b>wasserdicht/regenfest packen</b> (Gepäck liegt offen).</p><p><b>Für den 30.:</b> Boot <b>online im Voraus</b> buchen (Hochsaison!), ~45–60 Min. vor Abfahrt am Pier. Transfer zum richtigen Hafen (Mushroom Bay oder Jungutbatu — je nach Anbieter) über die Unterkunft organisieren.</p>` },
   { ic:"🎒", t:"Zwei große Backpacks", html:`<p>Beim An-/Abreisen Transfer über die Unterkunft regeln (Pickup-Truck). Roller-Erkundung macht ihr <b>ohne</b> die großen Backpacks (im Zimmer/Gepäckaufbewahrung lassen). Viele Unterkünfte und der Hafen bieten am Abreisetag Gepäckaufbewahrung.</p>` },
+  { ic:"🚗", t:"Transport in Sidemen: Fahrer statt Gojek", html:`<p>Im Bergland von Sidemen gibt es <b>kaum funktionierendes Grab/Gojek</b> — besonders zu abgelegenen Villen und auf den Bergstraßen. Für euch (kein Roller) ist ein <b>privater Fahrer</b> der richtige Weg.</p><ul><li><b>Tagespreis:</b> ~600.000–900.000 IDR (~30–45 €) für rund 10 Std., plus Eintritte/Parken.</li><li><b>Transfer Sanur → Sidemen:</b> ab ~600k IDR, ~1,5–2 Std.</li><li><b>Buchen:</b> am einfachsten über die Unterkunft oder einen empfohlenen Fahrer per WhatsApp — am Vorabend für den Sonnenaufgang früh bestellen.</li></ul><p>Bei Wasserfällen wie <b>Tukad Cepung</b> den Fahrer <span class="hl">warten lassen</span> — dort bekommt man sonst keine Rückfahrt.</p>` },
+  { ic:"🏡", t:"Unterkünfte in Sidemen (3 Preisklassen)", html:`<p>Anfang Juli ist Hochsaison — <b>früh buchen</b>. Preise pro Nacht für 2 Personen, ca.-Werte (eher oberer Rand):</p><p><b>Budget (~25–50 €):</b><br>• <b>Lihat Sawah</b> – Infinity-Pool mit Agung-Blick, eigenes Restaurant, top bewertet.<br>• <b>Sawah Indah Villa</b> – Pool, eigenes Restaurant, sehr gute Bewertungen.</p><p><b>Mittelklasse (~50–100 €):</b><br>• <b>Cepik Villa Sidemen</b> – Pool + Jacuzzi, starke vegetarische Küche.<br>• <b>Darmada Eco Resort</b> – quellgespeister Naturpool, Flussrestaurant, Öko-Vibe (kein A/C).</p><p><b>Splurge (100 €+):</b><br>• <b>Wapa di Ume Sidemen</b> – preisgekröntes Boutique-Resort, mehrere Infinity-Pools, Spa.<br>• <b>Veluvana Bali</b> – ikonische Bambushäuser mit Privatpool und Agung-Blick (das „besondere” Stay; offen gebaut, kein A/C).</p><p>Tipp: 1 Nacht günstig + optional 1 Nacht im Bambushaus/einer Pool-Villa als Abschluss-Highlight. Bei sehr abgelegenen Villen prüfen, ob ein normaler Wagen bis zur Tür kommt.</p>` },
+  { ic:"🗺️", t:"Sidemen vs. Ubud – was wo machen", html:`<p>Damit sich nichts doppelt: Das hier lohnt sich <b>jetzt in/um Sidemen</b>, weil es von Ubud weit weg ist:</p><ul><li>Sidemen-Reisterrassen & Bukit-Cinta-Aussicht</li><li>Gembleng Waterfall &amp; Tukad Cepung</li><li>authentische Dörfer, Weberei/Silberschmiede, Telaga-Waja-Rafting</li></ul><p>Das hier hebt ihr euch für die <b>4 Ubud-Tage</b> auf (von dort leicht erreichbar):</p><ul><li>Tegallalang-Reisterrassen, Campuhan Ridge Walk</li><li>Affenwald, Tegenungan-Wasserfall, Kaffeeplantagen</li><li>Tirta Empul, Goa Gajah, Mount-Batur-Sonnenaufgang</li></ul><p>Getrost auslassen: <b>Bali Safari Park</b> (Zoo, tierethisch umstritten) und die oft überlaufenen „Gates of Heaven” am Lempuyang-Tempel — beides passt nicht zu eurem Natur-Fokus.</p>` },
 ];
 
 /* =================== STORAGE (localStorage · standalone) =================== */
@@ -565,3 +605,4 @@ try{ renderAll(); }catch(e){ try{ setTab("plan"); }catch(_){} }
 </script>
 </body>
 </html>
+
