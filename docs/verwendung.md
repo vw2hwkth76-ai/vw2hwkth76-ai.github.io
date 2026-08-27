@@ -74,6 +74,7 @@ bedienbar:
 
 ```
 ets2td-gateway ausgabe/td/b/projekt--wohnzimmer.td.json --selbsttest
+ets2td-gateway --suche
 ets2td-gateway ausgabe/td/b/projekt--wohnzimmer.td.json \
     --bus tunneling --gateway-ip 192.168.1.50
 ```

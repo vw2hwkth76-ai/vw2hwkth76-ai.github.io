@@ -99,3 +99,33 @@ class KnxBus:
         if not isinstance(telegram.destination_address, GroupAddress):
             return
         self._speicher.melde(str(telegram.destination_address), nutzlast.value)
+
+
+async def suche_schnittstellen(zeitgrenze: float = 4.0) -> list[str]:
+    """Sucht KNXnet/IP-Schnittstellen im lokalen Netz.
+
+    Nimmt dem Anwender die erste Huerde ab: ohne die IP des Interfaces
+    laesst sich das Gateway nicht starten, und in der ETS steht sie nicht
+    immer griffbereit.
+    """
+    from xknx.io import GatewayScanner
+
+    scanner = GatewayScanner(XKNX(), timeout_in_seconds=zeitgrenze)
+    zeilen = []
+    for gefunden in await scanner.scan():
+        wege = [
+            name
+            for name, kann in (
+                ("tunneling", gefunden.supports_tunnelling),
+                ("tunneling-tcp", gefunden.supports_tunnelling_tcp),
+                ("routing", gefunden.supports_routing),
+            )
+            if kann
+        ]
+        adresse = gefunden.individual_address or "ohne Adresse"
+        sicher = ", KNX Secure" if gefunden.supports_secure else ""
+        zeilen.append(
+            f"{gefunden.ip_addr}:{gefunden.port}  {gefunden.name}  "
+            f"({adresse}, {' '.join(wege) or 'keine bekannte Betriebsart'}{sicher})"
+        )
+    return zeilen

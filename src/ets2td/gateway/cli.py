@@ -121,6 +121,20 @@ async def _selbsttest(ursprung: str, abbildung: Abbildung, schreiben: bool) -> i
     return fehler
 
 
+async def _suchen(zeitgrenze: float) -> int:
+    from ets2td.gateway.knxbus import suche_schnittstellen
+
+    print(f"Suche KNXnet/IP-Schnittstellen ({zeitgrenze:.0f} Sekunden) ...")
+    gefunden = await suche_schnittstellen(zeitgrenze)
+    for zeile in gefunden:
+        print(f"  {zeile}")
+    if not gefunden:
+        print("  nichts gefunden. Liegt der Rechner im selben Netz wie die Schnittstelle?")
+        return 1
+    print("\nStart mit:  ets2td-gateway <td.json> --bus tunneling --gateway-ip <IP>")
+    return 0
+
+
 async def _laufen(args: argparse.Namespace, ipv6: bool) -> int:
     td: dict[str, Any] = json.loads(Path(args.td).read_text(encoding="utf-8"))
     bind = _lauschadresse(args.bind, ipv6)
@@ -163,7 +177,14 @@ async def _laufen(args: argparse.Namespace, ipv6: bool) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="ets2td-gateway", description=__doc__)
-    parser.add_argument("td", type=Path, help="erzeugte Thing Description")
+    parser.add_argument(
+        "td", type=Path, nargs="?", help="erzeugte Thing Description"
+    )
+    parser.add_argument(
+        "--suche",
+        action="store_true",
+        help="KNXnet/IP-Schnittstellen im Netz auflisten und enden",
+    )
     parser.add_argument(
         "--bus",
         default="simulator",
@@ -179,6 +200,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--selbsttest", action="store_true", help="einmal alles abfragen und enden")
     args = parser.parse_args(argv)
 
+    if args.suche:
+        return asyncio.run(_suchen(4.0))
+    if args.td is None:
+        parser.error("ohne --suche wird eine Thing Description gebraucht")
     if args.bus != "simulator" and not args.gateway_ip and args.bus != "automatik":
         parser.error(f"--bus {args.bus} braucht --gateway-ip (oder --bus automatik)")
     ipv6 = waehle_transporte()

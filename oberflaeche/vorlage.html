@@ -481,6 +481,43 @@ mark.aktiv { background: var(--akzent-weich); color: inherit; border-radius: 2px
   border-top: 1px solid var(--border);
 }
 
+.erklaerung {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+.erklaerung > summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-leise);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+}
+.erklaerung > summary::-webkit-details-marker { display: none; }
+.erklaerung > summary::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg) translate(-1px, 1px);
+  transition: transform 0.12s;
+}
+.erklaerung[open] > summary::before { transform: rotate(45deg) translate(-2px, -2px); }
+.erklaerung > summary:hover { color: var(--text); }
+.erklaerung > summary:focus-visible { outline: 2px solid var(--akzent); outline-offset: 3px; }
+.erklaerung-inhalt { display: flex; flex-direction: column; gap: 14px; padding: 14px 0 4px; }
+.erklaerung-inhalt > p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-leise);
+  max-width: 70ch;
+}
+
 .begriffe { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px 22px; }
 .begriff { font-size: 11.5px; line-height: 1.5; color: var(--text-leise); }
 .begriff b { color: var(--text); font-weight: 600; }
@@ -558,11 +595,6 @@ mark.aktiv { background: var(--akzent-weich); color: inherit; border-radius: 2px
   <div class="start-inhalt">
     <div class="start-kopf">
       <b>KNX Thing Description Konfigurator</b>
-      <p>
-        Liest ein ETS-Projekt, leitet Raum, Funktion, Rolle und Datenpunkttyp je
-        Gruppenadresse ab und erzeugt daraus Thing Descriptions nach W3C WoT. Jede
-        Adresse ist danach einzeln parametrierbar.
-      </p>
     </div>
 
     <div class="start-abschnitt">
@@ -570,30 +602,36 @@ mark.aktiv { background: var(--akzent-weich); color: inherit; border-radius: 2px
       <div class="karten" id="startkarten"></div>
     </div>
 
-    <div class="start-abschnitt">
-      <h2>Kurz erklärt</h2>
-      <div class="begriffe">
-        <div class="begriff">
-          <b>Thing Description</b> &ndash; ein Steckbrief eines Geräts in JSON. Er nennt
-          Werte zum Lesen, Befehle zum Auslösen und Meldungen zum Abonnieren, samt
-          Datentyp und Wertebereich.
+    <details class="erklaerung">
+      <summary>Wie das funktioniert</summary>
+      <div class="erklaerung-inhalt">
+        <p>
+          Das Werkzeug liest ein ETS-Projekt, leitet Raum, Funktion, Rolle und
+          Datenpunkttyp je Gruppenadresse ab und erzeugt daraus Thing Descriptions
+          nach W3C WoT. Jede Adresse ist danach einzeln parametrierbar.
+        </p>
+        <div class="begriffe">
+          <div class="begriff">
+            <b>Thing Description</b> &ndash; ein Steckbrief eines Geräts in JSON. Er nennt
+            Werte zum Lesen, Befehle zum Auslösen und Meldungen zum Abonnieren, samt
+            Datentyp und Wertebereich.
+          </div>
+          <div class="begriff">
+            <b>Property, Action, Event</b> &ndash; ein Zustand wie eine Rückmeldung, ein
+            Vorgang wie ein Schaltbefehl, eine spontane Meldung wie ein Alarm.
+          </div>
+          <div class="begriff">
+            <b>Smart Linking</b> &ndash; in der ETS gepflegte Funktionen, die Gruppenadressen
+            zu einem Gewerk bündeln. Wo sie fehlen, bleibt nur die Auswertung der Namen.
+          </div>
+          <div class="begriff">
+            <b>Rückfrage</b> &ndash; was sich nicht belegen lässt, wird nicht geraten,
+            sondern zur Entscheidung vorgelegt.
+          </div>
         </div>
-        <div class="begriff">
-          <b>Property, Action, Event</b> &ndash; ein Zustand wie eine Rückmeldung, ein
-          Vorgang wie ein Schaltbefehl, eine spontane Meldung wie ein Alarm.
-        </div>
-        <div class="begriff">
-          <b>Smart Linking</b> &ndash; in der ETS gepflegte Funktionen, die Gruppenadressen
-          zu einem Gewerk bündeln. Wo sie fehlen, bleibt nur die Auswertung der Namen.
-        </div>
-        <div class="begriff">
-          <b>Rückfrage</b> &ndash; was sich nicht belegen lässt, wird nicht geraten,
-          sondern zur Entscheidung vorgelegt.
-        </div>
+        <div class="start-fuss" id="startfuss"></div>
       </div>
-    </div>
-
-    <div class="start-fuss" id="startfuss"></div>
+    </details>
   </div>
 </div>
 

@@ -29,6 +29,13 @@ echte Anlage.
 
 ## Am KNXnet/IP-Interface
 
+Erst die Schnittstelle finden, denn ohne deren IP startet nichts:
+
+    ets2td-gateway --suche
+
+Ausgegeben werden IP, Port, Geraetename, physikalische Adresse und die
+unterstuetzten Betriebsarten. Dann:
+
     ets2td-gateway ausgabe/td/b/projekt--wohnzimmer.td.json \
         --bus tunneling --gateway-ip 192.168.1.50
 
@@ -41,6 +48,20 @@ Routing zurueck.
 Ohne `--bind` lauscht das Gateway auf allen Adressen. Wo IPv6 abgeschaltet
 ist, kann aiocoap das nicht, dann waehlt es die Adresse der aktiven
 Netzkarte und sagt das beim Start.
+
+## Von Hand abfragen
+
+Mit aiocoap kommt ein Kommandozeilenclient mit. Er liegt nach
+`pip install -e .[gateway]` im selben Umfeld:
+
+    aiocoap-client coap://<host>:5683/.well-known/wot
+    aiocoap-client coap://<host>:5683/properties/rolladen-6-position
+    aiocoap-client -m PUT --content-format application/json \
+        --payload '{"wert": 70}' \
+        coap://<host>:5683/properties/rolladen-6-position
+
+Die Pfade stehen in der ausgelieferten Thing Description unter
+`.well-known/wot`; jede Form nennt ihren vollstaendigen `href`.
 
 ## Was ueber CoAP herauskommt
 
