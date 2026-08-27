@@ -298,6 +298,14 @@ function woerterVon(text) {
   const n = normalisiere(text);
   return n ? n.split(" ") : [];
 }
+function wortpaareVon(text) {
+  // Verglichen wird normalisiert, ausgegeben wird die Schreibweise aus dem
+  // Projekt. Muss zu lexikon.wortpaare passen, der Paritaetstest prueft das.
+  // \w ist in JS auf ASCII beschraenkt, deshalb Unicode-Eigenschaften:
+  // sonst zerfaellt "Kueche" mit Umlaut in "K" und "che".
+  const roh = String(text || "").normalize("NFC").match(/[\p{L}\p{N}\p{M}]+/gu) || [];
+  return roh.map(w => [w, normalisiere(w)]).filter(paar => paar[1]);
+}
 function enthaeltPhrase(text, phrase) {
   return (" " + normalisiere(text) + " ").includes(" " + normalisiere(phrase) + " ");
 }
@@ -479,20 +487,20 @@ function leiteAb(projekt, stammdaten, regeln) {
 
     if (!punkt.herkunft.funktion) {
       const quelle = punkt.beschreibung || punkt.name;
-      let liste = woerterVon(quelle);
+      let liste = wortpaareVon(quelle);
       if (raumtreffer) {
         const rw = woerterVon(raumtreffer);
         let entfernt = false;
         for (let s = 0; s <= liste.length - rw.length; s++) {
-          if (rw.every((w, i) => liste[s + i] === w)) {
+          if (rw.every((w, i) => liste[s + i][1] === w)) {
             liste.splice(s, rw.length); entfernt = true; break;
           }
         }
-        if (!entfernt) liste = liste.filter(w => !rw.includes(w));
+        if (!entfernt) liste = liste.filter(paar => !rw.includes(paar[1]));
       }
       const stopp = new Set([...regeln.status, ...regeln.aktion, ...regeln.event,
         ...regeln.mehrdeutig, "zentral", "central"]);
-      const rest = liste.filter(w => !stopp.has(w)).join(" ");
+      const rest = liste.filter(paar => !stopp.has(paar[1])).map(paar => paar[0]).join(" ");
       if (rest) punkt.herkunft.funktion = { wert: rest, quelle: "namenslexikon", konfidenz: 0.5 };
     }
 

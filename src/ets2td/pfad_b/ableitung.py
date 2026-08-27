@@ -196,19 +196,25 @@ def _raum_aus_hierarchie(punkt: Datenpunkt, kandidaten: tuple[str, ...]) -> str 
 
 
 def _funktionsname(punkt: Datenpunkt, raumtreffer: str | None) -> str:
+    """Bildet den Funktionsnamen aus dem Rest des Gruppenadressnamens.
+
+    Verglichen wird normalisiert, ausgegeben wird die Schreibweise aus dem
+    Projekt: der Name landet als Ueberschrift vor dem Anwender und in der
+    Thing Description.
+    """
     quelle = punkt.beschreibung or punkt.name
-    woerter = list(lexikon.tokens(quelle))
+    woerter = list(lexikon.wortpaare(quelle))
     if raumtreffer:
         raumwoerter = lexikon.tokens(raumtreffer)
         laenge = len(raumwoerter)
         entfernt = False
         for start in range(len(woerter) - laenge + 1):
-            if tuple(woerter[start : start + laenge]) == raumwoerter:
+            if tuple(norm for _, norm in woerter[start : start + laenge]) == raumwoerter:
                 del woerter[start : start + laenge]
                 entfernt = True
                 break
         if not entfernt:
-            woerter = [wort for wort in woerter if wort not in raumwoerter]
+            woerter = [paar for paar in woerter if paar[1] not in raumwoerter]
     stoppwoerter = (
         lexikon.STATUS_WOERTER
         | lexikon.AKTIONS_WOERTER
@@ -216,8 +222,7 @@ def _funktionsname(punkt: Datenpunkt, raumtreffer: str | None) -> str:
         | lexikon.MEHRDEUTIGE_WOERTER
         | {"zentral", "central"}
     )
-    rest = [wort for wort in woerter if wort not in stoppwoerter]
-    return " ".join(rest)
+    return " ".join(roh for roh, norm in woerter if norm not in stoppwoerter)
 
 
 def _resolver_runde(

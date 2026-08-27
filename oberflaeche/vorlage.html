@@ -5,7 +5,7 @@
 <title>KNX Thing Description Konfigurator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
 <style>
 :root {
   --ground: #f6f7f5;
@@ -90,6 +90,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 button, input, select { font: inherit; color: inherit; }
+b, strong { font-weight: 600; }
 :focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
 
 .rahmen {
@@ -109,17 +110,13 @@ button, input, select { font: inherit; color: inherit; }
   flex-wrap: wrap;
 }
 .marke { display: flex; align-items: baseline; gap: 9px; }
-.marke b { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+.marke b { font-size: 14px; font-weight: 600; }
 .marke span {
-  font-family: var(--mono);
   font-size: 10px;
   color: var(--text-zart);
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
 }
 .projektwahl { padding-left: 20px; border-left: 1px solid var(--border); }
 .projektwahl select {
-  font-family: var(--mono);
   font-size: 12px;
   padding: 4px 7px;
   border: 1px solid var(--border-stark);
@@ -132,7 +129,6 @@ button, input, select { font: inherit; color: inherit; }
 .kennzahlen { display: flex; gap: 18px; margin-left: 8px; }
 .kennzahl { display: flex; flex-direction: column; }
 .kennzahl b {
-  font-family: var(--mono);
   font-size: 14px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -141,8 +137,6 @@ button, input, select { font: inherit; color: inherit; }
 .kennzahl span {
   font-size: 9.5px;
   color: var(--text-zart);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
 }
 
 .schalter { display: flex; border: 1px solid var(--border-stark); border-radius: var(--r); overflow: hidden; }
@@ -155,7 +149,7 @@ button, input, select { font: inherit; color: inherit; }
   border-right: 1px solid var(--border);
 }
 .schalter button:last-child { border-right: 0; }
-.schalter button[aria-pressed="true"] { background: var(--akzent); color: var(--akzent-text); font-weight: 500; }
+.schalter button[aria-pressed="true"] { background: var(--akzent); color: var(--akzent-text); font-weight: 600; }
 .schalter button:hover:not([aria-pressed="true"]) { background: var(--surface-2); }
 
 .knopf {
@@ -180,12 +174,11 @@ button, input, select { font: inherit; color: inherit; }
   color: var(--text-leise);
   flex-wrap: wrap;
 }
-.statusband strong { color: var(--text); font-weight: 500; }
+.statusband strong { color: var(--text); font-weight: 400; }
 .pruefzeichen {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-weight: 500;
   color: var(--belegt);
 }
 .pruefzeichen svg { width: 13px; height: 13px; }
@@ -210,8 +203,6 @@ button, input, select { font: inherit; color: inherit; }
   margin: 0;
   font-size: 10px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
   color: var(--text-zart);
 }
 .spalte-inhalt { overflow-y: auto; overflow-x: hidden; flex: 1; }
@@ -243,8 +234,7 @@ button, input, select { font: inherit; color: inherit; }
 .raum > .raum-kopf:hover { background: var(--surface-2); }
 .raum-zahl {
   margin-left: auto;
-  font-family: var(--mono);
-  font-size: 10px;
+  font-size: 10.5px;
   color: var(--text-zart);
   font-variant-numeric: tabular-nums;
 }
@@ -254,8 +244,6 @@ button, input, select { font: inherit; color: inherit; }
 .funktion-titel {
   padding: 3px 12px 3px 27px;
   font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   color: var(--text-zart);
 }
 .punkt {
@@ -276,8 +264,7 @@ button, input, select { font: inherit; color: inherit; }
   border-left-color: var(--akzent);
 }
 .punkt-ga {
-  font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-leise);
   font-variant-numeric: tabular-nums;
   flex: 0 0 auto;
@@ -307,14 +294,15 @@ button, input, select { font: inherit; color: inherit; }
   color: var(--text-leise);
   margin-bottom: -1px;
 }
-.reiter button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--akzent); font-weight: 500; }
+.reiter button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--akzent); font-weight: 600; }
 .reiter button:hover { color: var(--text); }
 
 /* Datenpunktkopf */
 .dp-kopf { padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
-.dp-kopf h1 { margin: 0 0 3px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+.dp-kopf h1 { margin: 0 0 3px; font-size: 15px; font-weight: 600; text-wrap: balance; }
 .dp-zeile { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11px; color: var(--text-leise); }
-.dp-zeile code { font-family: var(--mono); font-size: 11px; color: var(--text); }
+code { font-family: inherit; font-variant-numeric: tabular-nums; }
+.dp-zeile code { font-size: 11px; color: var(--text); }
 
 /* Parameter */
 .parameterliste { padding: 4px 0 28px; }
@@ -328,7 +316,7 @@ button, input, select { font: inherit; color: inherit; }
 }
 .parameter[hidden] { display: none; }
 .parameter-kopf { min-width: 0; }
-.parameter-titel { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 500; }
+.parameter-titel { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; }
 .parameter-hilfe { margin-top: 2px; font-size: 11px; color: var(--text-leise); max-width: 62ch; }
 .parameter-feld { display: flex; flex-direction: column; gap: 5px; }
 .parameter-feld select,
@@ -341,7 +329,7 @@ button, input, select { font: inherit; color: inherit; }
   background: var(--ground);
   font-size: 12px;
 }
-.parameter-feld input[type="number"] { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.parameter-feld input[type="number"] { font-variant-numeric: tabular-nums; }
 .schalterfeld { display: flex; gap: 5px; }
 .schalterfeld button {
   flex: 1;
@@ -352,9 +340,9 @@ button, input, select { font: inherit; color: inherit; }
   font-size: 11.5px;
   cursor: pointer;
 }
-.schalterfeld button[aria-pressed="true"] { background: var(--akzent); color: var(--akzent-text); border-color: var(--akzent); font-weight: 500; }
+.schalterfeld button[aria-pressed="true"] { background: var(--akzent); color: var(--akzent-text); border-color: var(--akzent); font-weight: 600; }
 .opliste { display: flex; flex-direction: column; gap: 3px; }
-.opliste label { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; cursor: pointer; }
+.opliste label { display: flex; align-items: center; gap: 6px; font-size: 11.5px; cursor: pointer; }
 
 .herkunft {
   display: inline-flex;
@@ -363,9 +351,7 @@ button, input, select { font: inherit; color: inherit; }
   padding: 1px 6px;
   border-radius: 9px;
   font-size: 9.5px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-weight: 600;
   white-space: nowrap;
 }
 .herkunft[data-stufe="belegt"] { background: var(--belegt-weich); color: var(--belegt); }
@@ -385,7 +371,7 @@ pre.td {
   tab-size: 2;
   white-space: pre;
 }
-.j-schluessel { color: var(--text); font-weight: 500; }
+.j-schluessel { color: var(--text); font-weight: 600; }
 .j-text { color: var(--akzent); }
 .j-zahl { color: var(--abgeleitet); }
 .j-bool { color: var(--kritisch); }
@@ -405,7 +391,7 @@ mark.aktiv { background: var(--akzent-weich); color: inherit; border-radius: 2px
   border-bottom: 1px solid var(--border);
   border-left: 2px solid var(--abgeleitet);
 }
-.rueckfrage b { display: block; font-family: var(--mono); font-size: 11px; color: var(--text-leise); }
+.rueckfrage b { display: block; font-size: 11.5px; color: var(--text-leise); font-variant-numeric: tabular-nums; }
 .rueckfrage p { margin: 3px 0 0; font-size: 12px; }
 .rueckfrage .vorschlaege { margin-top: 4px; font-size: 11px; color: var(--text-leise); }
 
@@ -434,82 +420,51 @@ mark.aktiv { background: var(--akzent-weich); color: inherit; border-radius: 2px
   flex-direction: column;
   gap: 30px;
 }
-.start-kopf { display: flex; flex-direction: column; gap: 10px; }
-.start-marke {
-  font-family: var(--mono);
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.11em;
-  color: var(--akzent);
-}
-.start-kopf h1 {
-  margin: 0;
-  font-size: clamp(22px, 5.6vw, 30px);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-  text-wrap: balance;
-  overflow-wrap: break-word;
-  hyphens: auto;
-}
+.start-kopf { display: flex; flex-direction: column; gap: 6px; }
+.start-kopf b { font-size: 16px; font-weight: 600; }
 .start-kopf p {
   margin: 0;
-  font-size: 14.5px;
+  font-size: 13px;
   line-height: 1.55;
   color: var(--text-leise);
-  max-width: 62ch;
+  max-width: 70ch;
 }
 
-.ablauf { display: flex; gap: 10px; flex-wrap: wrap; align-items: stretch; }
-.schritt {
-  flex: 1 1 200px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-}
-.schritt b { font-size: 12.5px; font-weight: 600; }
-.schritt span { font-size: 11.5px; color: var(--text-leise); line-height: 1.45; }
-.schritt-nr {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--akzent);
-  letter-spacing: 0.08em;
-}
-
-.start-abschnitt { display: flex; flex-direction: column; gap: 12px; }
+.start-abschnitt { display: flex; flex-direction: column; gap: 10px; }
 .start-abschnitt h2 {
   margin: 0;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: var(--text-zart);
+  color: var(--text-leise);
 }
-.karten { display: grid; grid-template-columns: repeat(auto-fit, minmax(258px, 1fr)); gap: 12px; }
+.karten {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(258px, 1fr));
+  grid-template-rows: auto auto auto auto;
+  gap: 12px;
+}
 .karte {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  /* subgrid richtet Titel, Text, Zahlen und Fusszeile ueber alle Karten
+     hinweg auf einer Linie aus, auch bei unterschiedlich langem Text. */
+  grid-row: span 4;
+  display: grid;
+  grid-template-rows: subgrid;
+  gap: 8px;
   padding: 16px;
   text-align: left;
   background: var(--surface);
   border: 1px solid var(--border-stark);
   border-radius: 5px;
   cursor: pointer;
-  transition: border-color 0.12s, transform 0.12s;
+  transition: border-color 0.12s;
 }
-.karte:hover { border-color: var(--akzent); transform: translateY(-1px); }
+.karte:hover { border-color: var(--akzent); }
 .karte[data-art="eigen"] { border-style: dashed; }
-.karte-titel { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+.karte-titel { font-size: 14px; font-weight: 600; }
 .karte-unter { font-size: 11.5px; color: var(--text-leise); line-height: 1.45; }
-.karte-zahlen { display: flex; gap: 16px; margin-top: auto; padding-top: 4px; }
+.karte-zahlen { display: flex; gap: 18px; align-self: end; }
 .karte-zahl { display: flex; flex-direction: column; }
 .karte-zahl b {
-  font-family: var(--mono);
   font-size: 15px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -517,14 +472,13 @@ mark.aktiv { background: var(--akzent-weich); color: inherit; border-radius: 2px
 }
 .karte-zahl span {
   font-size: 9.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
   color: var(--text-zart);
 }
 .karte-hinweis {
   font-size: 11px;
-  color: var(--akzent);
-  font-weight: 500;
+  color: var(--text-zart);
+  padding-top: 2px;
+  border-top: 1px solid var(--border);
 }
 
 .begriffe { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px 22px; }
@@ -603,31 +557,12 @@ mark.aktiv { background: var(--akzent-weich); color: inherit; border-radius: 2px
 <div class="start" id="start">
   <div class="start-inhalt">
     <div class="start-kopf">
-      <div class="start-marke">ets2td &middot; Prototyp</div>
-      <h1>Aus einem KNX-Projekt werden maschinenlesbare Gerätebeschreibungen</h1>
+      <b>KNX Thing Description Konfigurator</b>
       <p>
-        Das Werkzeug liest ein ETS-Projekt und erzeugt daraus Thing Descriptions nach
-        dem W3C-Standard für das Web of Things. Anschließend lässt sich jede
-        Gruppenadresse parametrieren wie ein Aktorkanal in der ETS.
+        Liest ein ETS-Projekt, leitet Raum, Funktion, Rolle und Datenpunkttyp je
+        Gruppenadresse ab und erzeugt daraus Thing Descriptions nach W3C WoT. Jede
+        Adresse ist danach einzeln parametrierbar.
       </p>
-    </div>
-
-    <div class="ablauf">
-      <div class="schritt">
-        <span class="schritt-nr">01</span>
-        <b>Projekt lesen</b>
-        <span>Gruppenadressen, Gebäudestruktur, Funktionen und Datenpunkttypen.</span>
-      </div>
-      <div class="schritt">
-        <span class="schritt-nr">02</span>
-        <b>Semantik ableiten</b>
-        <span>Raum, Funktion, Rolle und Datentyp je Adresse, jeweils mit Herkunft.</span>
-      </div>
-      <div class="schritt">
-        <span class="schritt-nr">03</span>
-        <b>Beschreibung erzeugen</b>
-        <span>Eine Thing Description je Raum, im Werkzeug nachjustierbar.</span>
-      </div>
     </div>
 
     <div class="start-abschnitt">
@@ -1592,6 +1527,9 @@ function zeichneStartkarten() {
   eigen.appendChild(el("div", "karte-unter",
     "Eine knxproj-Datei aus ETS5 oder ETS6 auswählen oder auf das Fenster ziehen. " +
     "Die Datei wird nur im Browser gelesen und nirgendwo hochgeladen."));
+  // Leere Zahlenzeile, damit die Fusszeile dieser Karte auf einer Linie mit
+  // den Projektkarten sitzt; das Raster erwartet vier Zeilen je Karte.
+  eigen.appendChild(el("div", "karte-zahlen"));
   eigen.appendChild(el("div", "karte-hinweis", "Datei auswählen"));
   eigen.addEventListener("click", () => document.getElementById("dateifeld").click());
   ziel.appendChild(eigen);

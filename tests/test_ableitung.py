@@ -150,7 +150,7 @@ def test_funktionsname_ohne_raum_und_verben() -> None:
     )
     punkt = leite_ab(projekt).datenpunkte[0]
     assert punkt.funktion is not None
-    assert punkt.funktion.wert == "deckenleuchte"
+    assert punkt.funktion.wert == "Deckenleuchte", "Schreibweise aus dem Projekt bleibt"
 
 
 def test_zentrale_ga_ohne_raum_keine_raum_rueckfrage() -> None:
@@ -300,4 +300,27 @@ def test_funktionsname_ohne_raumteilwort() -> None:
     )
     punkt = leite_ab(projekt).datenpunkte[0]
     assert punkt.funktion is not None
-    assert punkt.funktion.wert == "licht m"
+    assert punkt.funktion.wert == "Licht M", "Schreibweise aus dem Projekt bleibt"
+
+
+def test_funktionsname_behaelt_umlaute_aus_dem_projekt() -> None:
+    projekt = synthetisches_projekt(
+        [Gruppenadresse(id="GA-1", adresse=1, name="Türöffner schalten")]
+    )
+    punkt = leite_ab(projekt).datenpunkte[0]
+    assert punkt.funktion is not None
+    assert punkt.funktion.wert == "Türöffner"
+
+
+def test_wortpaare_zerlegen_wie_tokens() -> None:
+    from ets2td.pfad_b import lexikon
+
+    for text in (
+        "Rolladen Küche/ Wohnzimmer",
+        "Büro/ Flur",
+        "Betriebsm. Kompf.",
+        "Licht B Küche ",
+        "Straße 5",
+        "",
+    ):
+        assert lexikon.tokens(text) == tuple(norm for _, norm in lexikon.wortpaare(text))

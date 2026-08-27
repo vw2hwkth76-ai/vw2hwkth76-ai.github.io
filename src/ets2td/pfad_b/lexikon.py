@@ -23,6 +23,20 @@ def tokens(text: str) -> tuple[str, ...]:
     return tuple(normalisiere(text).split())
 
 
+def wortpaare(text: str) -> tuple[tuple[str, str], ...]:
+    """Liefert je Wort die Schreibweise aus dem Projekt und ihre Normalform.
+
+    Gebraucht, wo ein Ergebnis dem Anwender gezeigt wird: verglichen wird
+    normalisiert, ausgegeben wird, was im Projekt steht. Sonst wird aus
+    "Rolladen Kueche" der Anzeigename "rolladen kueche".
+    """
+    zusammengesetzt = unicodedata.normalize("NFC", text)
+    paare = [
+        (roh, normalisiere(roh)) for roh in re.findall(r"[^\W_]+", zusammengesetzt, re.UNICODE)
+    ]
+    return tuple((roh, norm) for roh, norm in paare if norm)
+
+
 def enthaelt_phrase(text: str, phrase: str) -> bool:
     return f" {normalisiere(phrase)} " in f" {normalisiere(text)} "
 
