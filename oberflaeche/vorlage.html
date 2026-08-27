@@ -371,7 +371,7 @@ button, input, select { font: inherit; color: inherit; }
 .herkunft[data-stufe="belegt"] { background: var(--belegt-weich); color: var(--belegt); }
 .herkunft[data-stufe="abgeleitet"] { background: var(--abgeleitet-weich); color: var(--abgeleitet); }
 .herkunft[data-stufe="offen"] { background: var(--offen-weich); color: var(--offen); }
-.herkunft[data-stufe="geaendert"] { background: var(--akzent); color: var(--akzent-text); }
+.herkunft[data-stufe="geändert"] { background: var(--akzent); color: var(--akzent-text); }
 
 /* Thing Description */
 .td-kopf { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); }
@@ -393,13 +393,13 @@ pre.td {
 .j-eigen { color: var(--text-leise); font-style: italic; }
 mark.aktiv { background: var(--akzent-weich); color: inherit; border-radius: 2px; }
 
-/* Pruefliste */
+/* Prüfliste */
 .pruefliste { padding: 8px 12px; border-top: 1px solid var(--border); background: var(--surface-2); font-size: 11.5px; }
 .pruefliste ul { margin: 5px 0 0; padding-left: 16px; }
 .pruefliste li { margin-bottom: 2px; }
 .pruefliste li[data-art="fehler"] { color: var(--kritisch); }
 
-/* Rueckfragen */
+/* Rückfragen */
 .rueckfrage {
   padding: 9px 14px;
   border-bottom: 1px solid var(--border);
@@ -414,6 +414,132 @@ mark.aktiv { background: var(--akzent-weich); color: inherit; border-radius: 2px
 .legende { display: flex; gap: 12px; padding: 7px 12px; border-top: 1px solid var(--border); font-size: 10.5px; color: var(--text-leise); flex-wrap: wrap; }
 .legende span { display: inline-flex; align-items: center; gap: 5px; }
 .legende i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+
+/* Startbildschirm */
+.start[hidden] { display: none; }
+.start {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow-y: auto;
+  background: var(--ground);
+  display: flex;
+  justify-content: center;
+}
+.start-inhalt {
+  width: 100%;
+  max-width: 940px;
+  padding: 44px 28px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+.start-kopf { display: flex; flex-direction: column; gap: 10px; }
+.start-marke {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: var(--akzent);
+}
+.start-kopf h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+.start-kopf p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--text-leise);
+  max-width: 62ch;
+}
+
+.ablauf { display: flex; gap: 10px; flex-wrap: wrap; align-items: stretch; }
+.schritt {
+  flex: 1 1 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+.schritt b { font-size: 12.5px; font-weight: 600; }
+.schritt span { font-size: 11.5px; color: var(--text-leise); line-height: 1.45; }
+.schritt-nr {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--akzent);
+  letter-spacing: 0.08em;
+}
+
+.start-abschnitt { display: flex; flex-direction: column; gap: 12px; }
+.start-abschnitt h2 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-zart);
+}
+.karten { display: grid; grid-template-columns: repeat(auto-fit, minmax(258px, 1fr)); gap: 12px; }
+.karte {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border-stark);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: border-color 0.12s, transform 0.12s;
+}
+.karte:hover { border-color: var(--akzent); transform: translateY(-1px); }
+.karte[data-art="eigen"] { border-style: dashed; }
+.karte-titel { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+.karte-unter { font-size: 11.5px; color: var(--text-leise); line-height: 1.45; }
+.karte-zahlen { display: flex; gap: 16px; margin-top: auto; padding-top: 4px; }
+.karte-zahl { display: flex; flex-direction: column; }
+.karte-zahl b {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.karte-zahl span {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-zart);
+}
+.karte-hinweis {
+  font-size: 11px;
+  color: var(--akzent);
+  font-weight: 500;
+}
+
+.begriffe { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px 22px; }
+.begriff { font-size: 11.5px; line-height: 1.5; color: var(--text-leise); }
+.begriff b { color: var(--text); font-weight: 600; }
+.start-fuss { font-size: 11px; color: var(--text-zart); line-height: 1.5; }
+
+.zurueck {
+  background: none;
+  border: 0;
+  padding: 4px 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-leise);
+  border-radius: var(--r);
+}
+.zurueck:hover { background: var(--surface-2); color: var(--text); }
 
 .ablage[hidden] { display: none; }
 .ablage {
@@ -472,8 +598,73 @@ mark.aktiv { background: var(--akzent-weich); color: inherit; border-radius: 2px
 }
 </style>
 
+<div class="start" id="start">
+  <div class="start-inhalt">
+    <div class="start-kopf">
+      <div class="start-marke">ets2td &middot; Prototyp</div>
+      <h1>Aus einem KNX-Projekt werden maschinenlesbare Gerätebeschreibungen</h1>
+      <p>
+        Das Werkzeug liest ein ETS-Projekt und erzeugt daraus Thing Descriptions nach
+        dem W3C-Standard für das Web of Things. Anschließend lässt sich jede
+        Gruppenadresse parametrieren wie ein Aktorkanal in der ETS.
+      </p>
+    </div>
+
+    <div class="ablauf">
+      <div class="schritt">
+        <span class="schritt-nr">01</span>
+        <b>Projekt lesen</b>
+        <span>Gruppenadressen, Gebäudestruktur, Funktionen und Datenpunkttypen.</span>
+      </div>
+      <div class="schritt">
+        <span class="schritt-nr">02</span>
+        <b>Semantik ableiten</b>
+        <span>Raum, Funktion, Rolle und Datentyp je Adresse, jeweils mit Herkunft.</span>
+      </div>
+      <div class="schritt">
+        <span class="schritt-nr">03</span>
+        <b>Beschreibung erzeugen</b>
+        <span>Eine Thing Description je Raum, im Werkzeug nachjustierbar.</span>
+      </div>
+    </div>
+
+    <div class="start-abschnitt">
+      <h2>Beispielprojekt öffnen</h2>
+      <div class="karten" id="startkarten"></div>
+    </div>
+
+    <div class="start-abschnitt">
+      <h2>Kurz erklärt</h2>
+      <div class="begriffe">
+        <div class="begriff">
+          <b>Thing Description</b> &ndash; ein Steckbrief eines Geräts in JSON. Er nennt
+          Werte zum Lesen, Befehle zum Auslösen und Meldungen zum Abonnieren, samt
+          Datentyp und Wertebereich.
+        </div>
+        <div class="begriff">
+          <b>Property, Action, Event</b> &ndash; ein Zustand wie eine Rückmeldung, ein
+          Vorgang wie ein Schaltbefehl, eine spontane Meldung wie ein Alarm.
+        </div>
+        <div class="begriff">
+          <b>Smart Linking</b> &ndash; in der ETS gepflegte Funktionen, die Gruppenadressen
+          zu einem Gewerk bündeln. Wo sie fehlen, bleibt nur die Auswertung der Namen.
+        </div>
+        <div class="begriff">
+          <b>Rückfrage</b> &ndash; was sich nicht belegen lässt, wird nicht geraten,
+          sondern zur Entscheidung vorgelegt.
+        </div>
+      </div>
+    </div>
+
+    <div class="start-fuss" id="startfuss"></div>
+  </div>
+</div>
+
 <div class="rahmen">
   <header class="kopf">
+    <button class="zurueck" id="zurueckknopf" type="button" title="Zur Startseite">
+      &larr; Start
+    </button>
     <div class="marke">
       <b>KNX Thing Description Konfigurator</b>
       <span>ets2td</span>
@@ -562,11 +753,11 @@ const zustand = {
   ansicht: "affordanz",
   suche: "",
   werte: {},
-  geaendert: {},
+  geändert: {},
 };
 
 const seiten = [...new Set(PARAM.map(p => p.seite))];
-const RUECKFRAGEN_SEITE = "Rueckfragen";
+const RUECKFRAGEN_SEITE = "Rückfragen";
 
 function pfadDaten() { return B.pfade[zustand.pfad]; }
 function punkte() { return pfadDaten().punkte; }
@@ -589,10 +780,10 @@ function werteVon(id) {
   return topf[id];
 }
 function istGeaendert(id, param) {
-  return Boolean(zustand.geaendert[zustandsSchluessel() + "|" + id + "|" + param]);
+  return Boolean(zustand.geändert[zustandsSchluessel() + "|" + id + "|" + param]);
 }
 function markiereGeaendert(id, param) {
-  zustand.geaendert[zustandsSchluessel() + "|" + id + "|" + param] = true;
+  zustand.geändert[zustandsSchluessel() + "|" + id + "|" + param] = true;
 }
 
 function stufeVon(punkt) {
@@ -626,7 +817,7 @@ function gilt(paramId, w) {
 function baueSchema(w, punkt) {
   if (!w.datentyp || w.datentyp === "null") return null;
   const s = { type: w.datentyp };
-  // Aufzaehlungen und zusammengesetzte Typen stehen nicht im Parametermodell;
+  // Aufzählungen und zusammengesetzte Typen stehen nicht im Parametermodell;
   // sie kommen unveraendert aus dem Datenpunkttyp, sonst faehrt die Thing
   // Description ein "object" ohne properties aus.
   const reich = punkt && punkt.schema ? punkt.schema : null;
@@ -636,7 +827,7 @@ function baueSchema(w, punkt) {
     if (reich.description) s.description = reich.description;
   }
   // Nur Felder uebernehmen, die zum Datentyp passen: ein boolean mit
-  // minimum und maximum faellt beim Playground durch.
+  // minimum und maximum fällt beim Playground durch.
   const gesetzt = (id, wert) => wert !== null && wert !== undefined && wert !== "" && gilt(id, w);
   if (gesetzt("einheit", w.einheit)) s.unit = w.einheit;
   if (gesetzt("minimum", w.minimum)) s.minimum = Number(w.minimum);
@@ -733,17 +924,17 @@ function mitgliederDesRaums(raumTitel) {
   return punkte().filter(p => raumVonPunkt(p) === raumTitel).map(p => p.id);
 }
 
-/* ---------- Pruefung ---------- */
+/* ---------- Prüfung ---------- */
 
 function pruefe(w) {
   const meldungen = [];
   if (!w.titel) meldungen.push({ art: "fehler", text: "Bezeichnung fehlt, title ist Pflicht." });
   if (!w.href) meldungen.push({ art: "fehler", text: "Adresse fehlt, jedes Formular braucht href." });
   if (!w.operationen || !w.operationen.length) {
-    meldungen.push({ art: "fehler", text: "Mindestens eine Operation waehlen." });
+    meldungen.push({ art: "fehler", text: "Mindestens eine Operation wählen." });
   }
   if (w.rolle === "property" && w.readonly && w.writeonly) {
-    meldungen.push({ art: "fehler", text: "readOnly und writeOnly schliessen sich aus." });
+    meldungen.push({ art: "fehler", text: "readOnly und writeOnly schließen sich aus." });
   }
   const ops = w.operationen || [];
   if (w.rolle === "property" && w.readonly && ops.includes("writeproperty")) {
@@ -765,12 +956,12 @@ function pruefe(w) {
     meldungen.push({ art: "fehler", text: "Nur schreibbare Werte sind nicht beobachtbar." });
   }
   if (w.rolle === "action" && w.safe && !w.idempotent) {
-    meldungen.push({ art: "hinweis", text: "Nebenwirkungsfrei ohne Wiederholbarkeit ist ungewoehnlich." });
+    meldungen.push({ art: "hinweis", text: "Nebenwirkungsfrei ohne Wiederholbarkeit ist ungewöhnlich." });
   }
   const zahl = ["integer", "number"].includes(w.datentyp);
   if (zahl && w.minimum !== null && w.maximum !== null && w.minimum !== "" && w.maximum !== "" &&
       Number(w.minimum) > Number(w.maximum)) {
-    meldungen.push({ art: "fehler", text: "Kleinster Wert liegt ueber dem groessten." });
+    meldungen.push({ art: "fehler", text: "Kleinster Wert liegt über dem größten." });
   }
   return meldungen;
 }
@@ -842,7 +1033,7 @@ function zeichneKennzahlen() {
     [mit("raum"), "mit Raum"],
     [mit("rolle"), "mit Rolle"],
     [mit("dpt"), "mit DPT"],
-    [pfadDaten().rueckfragen.length, "Rueckfragen"],
+    [pfadDaten().rueckfragen.length, "Rückfragen"],
   ];
   zahlen.forEach(([wert, titel]) => {
     const box = el("div", "kennzahl");
@@ -869,13 +1060,13 @@ function zeichneStatusband() {
   haken.appendChild(pfad);
   const marke = el("span", "pruefzeichen");
   marke.appendChild(haken);
-  marke.appendChild(el("span", null, (B.kennzahlen.validierung || "Erzeugte Thing Descriptions bestehen die Pruefung")));
+  marke.appendChild(el("span", null, (B.kennzahlen.validierung || "Erzeugte Thing Descriptions bestehen die Prüfung")));
   ziel.appendChild(marke);
 
   const rest = el("span");
   rest.innerHTML = "Erzeugt aus <strong>" + escape(B.kennzahlen.quelle || "ETS-Projekt") +
-    "</strong> &middot; Stand beim Erzeugen; Aenderungen in dieser Sitzung pruefen nur die " +
-    "Strukturpruefung unten rechts";
+    "</strong> &middot; Stand beim Erzeugen; Änderungen in dieser Sitzung prüfen nur die " +
+    "Strukturprüfung unten rechts";
   ziel.appendChild(rest);
 }
 
@@ -966,7 +1157,7 @@ function zeichneReiter() {
   ziel.textContent = "";
   [...seiten, RUECKFRAGEN_SEITE].forEach(seite => {
     const knopf = el("button", null, seite === RUECKFRAGEN_SEITE
-      ? "Rueckfragen (" + pfadDaten().rueckfragen.length + ")"
+      ? "Rückfragen (" + pfadDaten().rueckfragen.length + ")"
       : seite);
     knopf.type = "button";
     knopf.setAttribute("role", "tab");
@@ -985,7 +1176,7 @@ function zeichneKopf() {
   ziel.textContent = "";
   const punkt = zustand.punktId ? punktVon(zustand.punktId) : null;
   if (!punkt) {
-    ziel.appendChild(el("div", "parameter-hilfe", "Datenpunkt links waehlen."));
+    ziel.appendChild(el("div", "parameter-hilfe", "Datenpunkt links wählen."));
     return;
   }
   ziel.appendChild(el("h1", null, punkt.name || "Gruppenadresse " + punkt.ga_text));
@@ -1022,7 +1213,7 @@ function zeichneParameter() {
   }
   const punkt = zustand.punktId ? punktVon(zustand.punktId) : null;
   if (!punkt) {
-    ziel.appendChild(el("div", "leer", "Kein Datenpunkt gewaehlt."));
+    ziel.appendChild(el("div", "leer", "Kein Datenpunkt gewählt."));
     return;
   }
   const w = werteVon(punkt.id);
@@ -1039,8 +1230,8 @@ function zeichneEinParameter(parameter, punkt, w) {
   titel.appendChild(el("span", null, parameter.titel));
 
   if (istGeaendert(punkt.id, parameter.id)) {
-    const marke = el("span", "herkunft", "geaendert");
-    marke.dataset.stufe = "geaendert";
+    const marke = el("span", "herkunft", "geändert");
+    marke.dataset.stufe = "geändert";
     titel.appendChild(marke);
   } else {
     const herkunft = herkunftFuer(punkt, parameter.id);
@@ -1093,7 +1284,7 @@ function aendere(punkt, parameter, wert) {
 
 function aktualisiereBaummarken() {
   // Nur die Zustandspunkte auffrischen; ein Neuaufbau wuerde alle vom
-  // Benutzer geoeffneten Raeume wieder zuklappen.
+  // Benutzer geoeffneten Räume wieder zuklappen.
   document.querySelectorAll(".punkt").forEach(knopf => {
     const punkt = knopf.dataset.punktId ? punktVon(knopf.dataset.punktId) : null;
     const marke = knopf.querySelector(".punkt-marke");
@@ -1164,15 +1355,15 @@ function baueSteuerung(parameter, punkt, w) {
 function zeichneRueckfragen(ziel) {
   const fragen = pfadDaten().rueckfragen;
   if (!fragen.length) {
-    ziel.appendChild(el("div", "leer", "Keine offenen Rueckfragen."));
+    ziel.appendChild(el("div", "leer", "Keine offenen Rückfragen."));
     return;
   }
   const kopf = el("div", "parameter");
   const text = el("div", "parameter-kopf");
-  text.appendChild(el("div", "parameter-titel", fragen.length + " Faelle ohne belegte Zuordnung"));
+  text.appendChild(el("div", "parameter-titel", fragen.length + " Fälle ohne belegte Zuordnung"));
   text.appendChild(el("div", "parameter-hilfe",
-    "Der Prototyp raet hier nicht. Jeder Fall nennt die fehlenden Dimensionen und, wo moeglich, " +
-    "Vorschlaege aus der Gebaeudestruktur. Entschieden wird im Konfigurator."));
+    "Der Prototyp rät hier nicht. Jeder Fall nennt die fehlenden Dimensionen und, wo möglich, " +
+    "Vorschläge aus der Gebäudestruktur. Entschieden wird im Konfigurator."));
   kopf.appendChild(text);
   ziel.appendChild(kopf);
 
@@ -1181,7 +1372,7 @@ function zeichneRueckfragen(ziel) {
     box.appendChild(el("b", null, frage.ga_text + "  " + (frage.name || "")));
     box.appendChild(el("p", null, frage.frage));
     if (frage.vorschlaege && frage.vorschlaege.length) {
-      box.appendChild(el("div", "vorschlaege", "Vorschlaege: " + frage.vorschlaege.join(", ")));
+      box.appendChild(el("div", "vorschlaege", "Vorschläge: " + frage.vorschlaege.join(", ")));
     }
     ziel.appendChild(box);
   });
@@ -1249,10 +1440,10 @@ function zeichnePruefung(w) {
   const meldungen = pruefe(w);
   const kopf = el("div");
   if (!meldungen.length) {
-    kopf.innerHTML = '<span class="pruefzeichen">Strukturpruefung bestanden</span>';
+    kopf.innerHTML = '<span class="pruefzeichen">Strukturprüfung bestanden</span>';
   } else {
     const fehler = meldungen.filter(m => m.art === "fehler").length;
-    kopf.textContent = fehler ? fehler + " Punkt(e) zu klaeren" : "Hinweise";
+    kopf.textContent = fehler ? fehler + " Punkt(e) zu klären" : "Hinweise";
   }
   ziel.appendChild(kopf);
   if (meldungen.length) {
@@ -1305,7 +1496,7 @@ document.getElementById("kopieren").addEventListener("click", async () => {
     await navigator.clipboard.writeText(JSON.stringify(inhalt, null, 2));
     knopf.textContent = "Kopiert";
   } catch (fehler) {
-    knopf.textContent = "Nicht moeglich";
+    knopf.textContent = "Nicht möglich";
   }
   setTimeout(() => { knopf.textContent = "Kopieren"; }, 1400);
 });
@@ -1347,6 +1538,89 @@ function besterStartpunkt() {
   return bewertet.length ? bewertet[0].punkt : null;
 }
 
+/* ---------- Startbildschirm ---------- */
+
+function projektKennzahlen(projekt) {
+  const pfad = projekt.pfade.b || projekt.pfade[Object.keys(projekt.pfade)[0]];
+  const punkte = pfad.punkte;
+  return {
+    adressen: punkte.length,
+    zugeordnet: punkte.filter(p => p.herkunft.raum && p.herkunft.rolle).length,
+    rueckfragen: pfad.rueckfragen.length,
+    funktionen: (projekt.kennzahlen && projekt.kennzahlen.funktionen) || 0,
+  };
+}
+
+function zeichneStartkarten() {
+  const ziel = document.getElementById("startkarten");
+  ziel.textContent = "";
+
+  SAMMLUNG.projekte.forEach((projekt, i) => {
+    const zahlen = projektKennzahlen(projekt);
+    const karte = el("button", "karte");
+    karte.type = "button";
+    karte.appendChild(el("div", "karte-titel", projekt.titel));
+    karte.appendChild(el("div", "karte-unter", projekt.untertitel || ""));
+
+    const zahlenreihe = el("div", "karte-zahlen");
+    [
+      [zahlen.adressen, "Adressen"],
+      [zahlen.zugeordnet, "zugeordnet"],
+      [zahlen.rueckfragen, "Rückfragen"],
+    ].forEach(([wert, titel]) => {
+      const box = el("div", "karte-zahl");
+      box.appendChild(el("b", null, String(wert)));
+      box.appendChild(el("span", null, titel));
+      zahlenreihe.appendChild(box);
+    });
+    karte.appendChild(zahlenreihe);
+
+    karte.appendChild(el("div", "karte-hinweis", zahlen.funktionen
+      ? zahlen.funktionen + " gepflegte Funktionen im Projekt"
+      : "ohne Funktionen, nur Namen und Adressstruktur"));
+
+    karte.addEventListener("click", () => oeffneProjekt(i));
+    ziel.appendChild(karte);
+  });
+
+  const eigen = el("button", "karte");
+  eigen.type = "button";
+  eigen.dataset.art = "eigen";
+  eigen.appendChild(el("div", "karte-titel", "Eigenes Projekt laden"));
+  eigen.appendChild(el("div", "karte-unter",
+    "Eine knxproj-Datei aus ETS5 oder ETS6 auswählen oder auf das Fenster ziehen. " +
+    "Die Datei wird nur im Browser gelesen und nirgendwo hochgeladen."));
+  eigen.appendChild(el("div", "karte-hinweis", "Datei auswählen"));
+  eigen.addEventListener("click", () => document.getElementById("dateifeld").click());
+  ziel.appendChild(eigen);
+
+  const fuss = document.getElementById("startfuss");
+  const geprüft = SAMMLUNG.projekte[0] && SAMMLUNG.projekte[0].kennzahlen
+    ? SAMMLUNG.projekte[0].kennzahlen.validierung : "";
+  fuss.textContent = geprüft
+    ? geprüft + ". Die Beispielprojekte sind anonymisiert."
+    : "Die Beispielprojekte sind anonymisiert.";
+}
+
+function zeigeStart(sichtbar) {
+  document.getElementById("start").hidden = !sichtbar;
+  if (sichtbar) zeichneStartkarten();
+}
+
+function oeffneProjekt(index) {
+  B = SAMMLUNG.projekte[index];
+  zustand.pfad = besterPfad();
+  zustand.seite = PARAM[0].seite;
+  zustand.suche = "";
+  document.getElementById("suche").value = "";
+  const start = besterStartpunkt();
+  zustand.punktId = start ? start.id : null;
+  zeigeStart(false);
+  zeichneAlles();
+}
+
+document.getElementById("zurueckknopf").addEventListener("click", () => zeigeStart(true));
+
 /* ---------- Projektimport ---------- */
 
 function zeigeMeldung(text, art) {
@@ -1356,11 +1630,11 @@ function zeigeMeldung(text, art) {
   box.dataset.art = art;
   box.appendChild(el("span", null, text));
   if (art !== "arbeit") {
-    const schliessen = el("button", null, "\u00d7");
-    schliessen.type = "button";
-    schliessen.setAttribute("aria-label", "Meldung schliessen");
-    schliessen.addEventListener("click", () => bereich.textContent = "");
-    box.appendChild(schliessen);
+    const schließen = el("button", null, "\u00d7");
+    schließen.type = "button";
+    schließen.setAttribute("aria-label", "Meldung schließen");
+    schließen.addEventListener("click", () => bereich.textContent = "");
+    box.appendChild(schließen);
   }
   bereich.appendChild(box);
   return box;
@@ -1382,11 +1656,12 @@ async function ladeProjekt(datei) {
     document.getElementById("suche").value = "";
     const start = besterStartpunkt();
     zustand.punktId = start ? start.id : null;
+    zeigeStart(false);
     zeichneAlles();
     const anzahl = projekt.pfade.b.punkte.length;
     const offen = projekt.pfade.b.rueckfragen.length;
     zeigeMeldung(
-      `${projekt.projekt}: ${anzahl} Gruppenadressen umgewandelt, ${offen} Rueckfragen offen.`,
+      `${projekt.projekt}: ${anzahl} Gruppenadressen umgewandelt, ${offen} Rückfragen offen.`,
       "erfolg");
   } catch (fehler) {
     zeigeMeldung("Import fehlgeschlagen: " + fehler.message, "fehler");
@@ -1431,4 +1706,5 @@ window.addEventListener("dragend", () => zeigeAblage(false));
 const erster = besterStartpunkt();
 if (erster) zustand.punktId = erster.id;
 zeichneAlles();
+zeigeStart(true);
 </script>

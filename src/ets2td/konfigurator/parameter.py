@@ -71,7 +71,7 @@ PARAMETER: tuple[Parameter, ...] = (
         seite=SEITE_ALLGEMEIN,
         td_pfad="description",
         hilfe=(
-            "Freitext fuer Menschen. Vorbelegt aus dem Beschreibungsfeld der "
+            "Freitext für Menschen. Vorbelegt aus dem Beschreibungsfeld der "
             "Gruppenadresse, falls im Projekt gepflegt."
         ),
     ),
@@ -84,17 +84,17 @@ PARAMETER: tuple[Parameter, ...] = (
         hilfe=(
             "Ordnet die Interaktion einem Begriff aus einem Vokabular zu, damit "
             "fremde Systeme sie ohne Namensraten verstehen. Ohne Angabe bleibt die "
-            "Interaktion untypisiert und nur fuer Menschen lesbar."
+            "Interaktion untypisiert und nur für Menschen lesbar."
         ),
         optionen=(
             Option("", "ohne", "Keine semantische Annotation."),
             Option("saref:OnOffState", "Schaltzustand", "SAREF: Ein- und Ausschaltzustand."),
             Option("saref:Light", "Beleuchtung", "SAREF: Leuchte oder Lichtgruppe."),
-            Option("saref:Temperature", "Temperatur", "SAREF: Temperaturgroesse."),
+            Option("saref:Temperature", "Temperatur", "SAREF: Temperaturgröße."),
             Option("saref:Humidity", "Feuchte", "SAREF: relative Luftfeuchte."),
-            Option("saref:Motion", "Bewegung", "SAREF: Bewegungs- oder Praesenzmeldung."),
+            Option("saref:Motion", "Bewegung", "SAREF: Bewegungs- oder Präsenzmeldung."),
             Option("saref:Energy", "Energie", "SAREF: Energie oder Verbrauch."),
-            Option("saref:OpenClose", "Offen und geschlossen", "SAREF: Fenster- oder Tuerkontakt."),
+            Option("saref:OpenClose", "Offen und geschlossen", "SAREF: Fenster- oder Türkontakt."),
         ),
         standard="",
     ),
@@ -108,13 +108,13 @@ PARAMETER: tuple[Parameter, ...] = (
             "Bestimmt, in welchen Abschnitt der Thing Description die Gruppenadresse "
             "einsortiert wird, und damit alle weiteren Parameter dieser Seite. "
             "Property ist ein Zustand, den man liest, schreibt oder beobachtet. "
-            "Action ist ein Vorgang, den man ausloest. Event ist eine Meldung, die "
-            "das Geraet von sich aus schickt."
+            "Action ist ein Vorgang, den man auslöst. Event ist eine Meldung, die "
+            "das Gerät von sich aus schickt."
         ),
         optionen=(
             Option("property", "Property (Zustand)", "Lesbarer und beobachtbarer Wert."),
-            Option("action", "Action (Vorgang)", "Ausgeloester Befehl ohne eigenen Zustand."),
-            Option("event", "Event (Meldung)", "Spontane Meldung, meist Alarm oder Stoerung."),
+            Option("action", "Action (Vorgang)", "Ausgelöster Befehl ohne eigenen Zustand."),
+            Option("event", "Event (Meldung)", "Spontane Meldung, meist Alarm oder Störung."),
         ),
         standard="property",
     ),
@@ -125,8 +125,8 @@ PARAMETER: tuple[Parameter, ...] = (
         seite=SEITE_INTERAKTION,
         td_pfad="readOnly",
         hilfe=(
-            "Setzt readOnly. Passend fuer Rueckmeldungen und Messwerte, die der Bus "
-            "sendet, aber niemand beschreiben darf. Schliesst 'Nur schreibbar' aus."
+            "Setzt readOnly. Passend für Rückmeldungen und Messwerte, die der Bus "
+            "sendet, aber niemand beschreiben darf. Schließt 'Nur schreibbar' aus."
         ),
         standard=True,
         sichtbar_wenn=NUR_PROPERTY,
@@ -138,8 +138,8 @@ PARAMETER: tuple[Parameter, ...] = (
         seite=SEITE_INTERAKTION,
         td_pfad="writeOnly",
         hilfe=(
-            "Setzt writeOnly. Passend fuer reine Stellbefehle ohne Rueckleseweg. "
-            "Schliesst 'Nur lesbar' aus."
+            "Setzt writeOnly. Passend für reine Stellbefehle ohne Rückleseweg. "
+            "Schließt 'Nur lesbar' aus."
         ),
         standard=False,
         sichtbar_wenn=NUR_PROPERTY,
@@ -151,7 +151,7 @@ PARAMETER: tuple[Parameter, ...] = (
         seite=SEITE_INTERAKTION,
         td_pfad="observable",
         hilfe=(
-            "Setzt observable. Der Client kann sich auf Wertaenderungen anmelden, "
+            "Setzt observable. Der Client kann sich auf Wertänderungen anmelden, "
             "statt zyklisch zu pollen. Auf dem KNX-Bus ist das der Normalfall, weil "
             "Telegramme ohnehin gesendet werden."
         ),
@@ -165,8 +165,8 @@ PARAMETER: tuple[Parameter, ...] = (
         seite=SEITE_INTERAKTION,
         td_pfad="safe",
         hilfe=(
-            "Setzt safe. Nur waehlen, wenn der Aufruf den Anlagenzustand nicht "
-            "veraendert. Bei einem Schaltbefehl also nein."
+            "Setzt safe. Nur wählen, wenn der Aufruf den Anlagenzustand nicht "
+            "verändert. Bei einem Schaltbefehl also nein."
         ),
         standard=False,
         sichtbar_wenn=NUR_ACTION,
@@ -179,21 +179,21 @@ PARAMETER: tuple[Parameter, ...] = (
         td_pfad="idempotent",
         hilfe=(
             "Setzt idempotent. Mehrfaches Senden desselben Werts hat dieselbe "
-            "Wirkung wie einmaliges. Gilt fuer absolute Befehle (Ein, 50 Prozent), "
-            "nicht fuer relative (heller, Schritt auf)."
+            "Wirkung wie einmaliges. Gilt für absolute Befehle (Ein, 50 Prozent), "
+            "nicht für relative (heller, Schritt auf)."
         ),
         standard=True,
         sichtbar_wenn=NUR_ACTION,
     ),
     Parameter(
         id="synchronous",
-        titel="Antwortet erst nach Ausfuehrung",
+        titel="Antwortet erst nach Ausführung",
         steuerung="schalter",
         seite=SEITE_INTERAKTION,
         td_pfad="synchronous",
         hilfe=(
-            "Setzt synchronous. Auf KNX ueblicherweise nein, weil ein Telegramm "
-            "unbestaetigt abgesetzt wird und die Rueckmeldung getrennt kommt."
+            "Setzt synchronous. Auf KNX üblicherweise nein, weil ein Telegramm "
+            "unbestätigt abgesetzt wird und die Rückmeldung getrennt kommt."
         ),
         standard=False,
         sichtbar_wenn=NUR_ACTION,
@@ -207,7 +207,7 @@ PARAMETER: tuple[Parameter, ...] = (
         hilfe=(
             "JSON-Datentyp des Werts. Wird aus dem KNX-Datenpunkttyp vorbelegt: "
             "1 Bit ergibt boolean, Prozent und Temperatur ergeben number, "
-            "Aufzaehlungen ergeben integer."
+            "Aufzählungen ergeben integer."
         ),
         optionen=(
             Option("boolean", "boolean", "Wahrheitswert, typisch DPT 1.x."),
@@ -239,14 +239,14 @@ PARAMETER: tuple[Parameter, ...] = (
         seite=SEITE_DATEN,
         td_pfad="minimum",
         hilfe=(
-            "Untere Grenze des Wertebereichs. Aus dem Datenpunkttyp uebernommen, "
+            "Untere Grenze des Wertebereichs. Aus dem Datenpunkttyp übernommen, "
             "etwa 0 bei Prozent oder minus 273 bei Temperatur."
         ),
         sichtbar_wenn=NUR_ZAHL,
     ),
     Parameter(
         id="maximum",
-        titel="Groesster Wert",
+        titel="Größter Wert",
         steuerung="zahl",
         seite=SEITE_DATEN,
         td_pfad="maximum",
@@ -267,7 +267,7 @@ PARAMETER: tuple[Parameter, ...] = (
     ),
     Parameter(
         id="maxlength",
-        titel="Maximale Laenge",
+        titel="Maximale Länge",
         steuerung="zahl",
         seite=SEITE_DATEN,
         td_pfad="maxLength",
@@ -282,7 +282,7 @@ PARAMETER: tuple[Parameter, ...] = (
         td_pfad="forms[0].href",
         hilfe=(
             "Ziel des Zugriffs. Der Prototyp setzt die Gruppenadresse im Schema "
-            "knx ein. Ein echtes Gateway traegt hier seine HTTP- oder CoAP-Adresse ein."
+            "knx ein. Ein echtes Gateway trägt hier seine HTTP- oder CoAP-Adresse ein."
         ),
     ),
     Parameter(
@@ -291,7 +291,7 @@ PARAMETER: tuple[Parameter, ...] = (
         steuerung="auswahl",
         seite=SEITE_ANBINDUNG,
         td_pfad="forms[0].contentType",
-        hilfe="Format der uebertragenen Nutzdaten.",
+        hilfe="Format der übertragenen Nutzdaten.",
         optionen=(
             Option("application/json", "application/json", "Standardfall der TD."),
             Option("text/plain", "text/plain", "Roher Wert ohne Rahmen."),
@@ -306,7 +306,7 @@ PARAMETER: tuple[Parameter, ...] = (
         seite=SEITE_ANBINDUNG,
         td_pfad="forms[0].op",
         hilfe=(
-            "Welche Zugriffe das Formular erlaubt. Die Auswahl haengt an der Art der "
+            "Welche Zugriffe das Formular erlaubt. Die Auswahl hängt an der Art der "
             "Interaktion und ist deshalb nicht frei kombinierbar."
         ),
     ),

@@ -49,7 +49,7 @@ PROJEKTE = (
     Projektquelle(
         schluessel="muster-ets6",
         titel="Bestandsanlage ETS6",
-        untertitel="194 Gruppenadressen, 40 Geraete, ohne Smart Linking",
+        untertitel="194 Gruppenadressen, 40 Geräte, ohne Smart Linking",
         knxproj=WURZEL / "beispiele/musterprojekt-ets6.knxproj",
         export=WURZEL / "beispiele/musterprojekt-ets6.jsonld",
     ),
@@ -107,7 +107,7 @@ def baue_projekt(quelle: Projektquelle) -> dict[str, Any]:
         ergebnisse["b-pur"] = leite_ab(projekt, heuristik_pur=True)
 
     reihenfolge = [name for name in ("a", "b", "b-pur") if name in ergebnisse]
-    geordnet = {name: ergebnisse[name] for name in reihenfolge}
+    geordnet: dict[str, PfadErgebnis] = {name: ergebnisse[name] for name in reihenfolge}
 
     kennzahlen: dict[str, Any] = {
         "quelle": quelle.untertitel,

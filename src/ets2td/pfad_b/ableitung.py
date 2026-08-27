@@ -98,7 +98,7 @@ def _wende_funktionen_an(
             elif lexikon.GUID_MUSTER.fullmatch(verknuepfung.rolle):
                 ergebnis.hinweise.append(
                     f"GA {punkt.ga_text} '{punkt.name}': benutzerdefinierte Rolle (GUID) "
-                    "ohne exportierte Definition, Rolle bleibt Namensheuristik ueberlassen."
+                    "ohne exportierte Definition, Rolle bleibt Namensheuristik überlassen."
                 )
             elif verknuepfung.rolle:
                 ergebnis.hinweise.append(

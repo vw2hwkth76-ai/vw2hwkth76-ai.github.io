@@ -30,11 +30,11 @@ from ets2td.td.bauer import (
 QUELLEN_KLARTEXT = {
     "ets-semantik": "Semantischer Export",
     "semantik-zugriff": "Export: Zugriffsflags",
-    "semantik-geraetekette": "Export: Geraetestandort",
+    "semantik-geraetekette": "Export: Gerätestandort",
     "semantik-kommobjekt": "Export: Kommunikationsobjekt",
     "ets-funktion": "ETS-Funktion (Linking)",
     "ets-attribut": "ETS-Attribut",
-    "gebaeudestruktur": "Gebaeudestruktur",
+    "gebaeudestruktur": "Gebäudestruktur",
     "ga-hierarchie": "Gruppenadress-Hierarchie",
     "namenslexikon": "Namensheuristik",
     "llm": "Sprachmodell",

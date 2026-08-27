@@ -36,7 +36,7 @@ async function entpacke(zip, name) {
   const eintrag = zip.eintraege.find(e => e.name === name);
   if (!eintrag) return null;
   if (eintrag.flags & 0x1) {
-    throw new Error("Das Projekt ist passwortgeschuetzt. Bitte ohne Passwort exportieren.");
+    throw new Error("Das Projekt ist passwortgeschützt. Bitte ohne Passwort exportieren.");
   }
   const kopf = eintrag.versatz;
   const namenslaenge = zip.sicht.getUint16(kopf + 26, true);
@@ -217,7 +217,7 @@ function liesProjekt(projektXml, installationXml, stammdaten) {
   const stil = info ? (info.getAttribute("GroupAddressStyle") || "ThreeLevel") : "ThreeLevel";
 
   const doc = new DOMParser().parseFromString(installationXml, "application/xml");
-  if (doc.querySelector("parsererror")) throw new Error("Die Projektdatei ist kein gueltiges XML.");
+  if (doc.querySelector("parsererror")) throw new Error("Die Projektdatei ist kein gültiges XML.");
 
   const gruppenadressen = {};
   const bereiche = alle(doc.documentElement, "GroupAddresses")[0];
@@ -628,10 +628,10 @@ function vorbelegungFuer(punkt, stammdaten) {
 
 const QUELLEN_TEXT = {
   "ets-semantik": "Semantischer Export", "semantik-zugriff": "Export: Zugriffsflags",
-  "semantik-geraetekette": "Export: Geraetestandort",
+  "semantik-geraetekette": "Export: Gerätestandort",
   "semantik-kommobjekt": "Export: Kommunikationsobjekt",
   "ets-funktion": "ETS-Funktion (Linking)", "ets-attribut": "ETS-Attribut",
-  "gebaeudestruktur": "Gebaeudestruktur", "ga-hierarchie": "Gruppenadress-Hierarchie",
+  "gebaeudestruktur": "Gebäudestruktur", "ga-hierarchie": "Gruppenadress-Hierarchie",
   "namenslexikon": "Namensheuristik", "llm": "Sprachmodell",
 };
 
@@ -687,7 +687,7 @@ function baueImportProjekt(projekt, stammdaten, abgeleitet, dateiname) {
     if (!fehlend.length) return;
     rueckfragen.push({
       ga_text: p.ga_text, name: p.name, fehlende_dimensionen: fehlend,
-      frage: `Die Gruppenadresse ${p.ga_text} '${p.name}' liess sich nicht vollstaendig aufloesen. ` +
+      frage: `Die Gruppenadresse ${p.ga_text} '${p.name}' ließ sich nicht vollständig auflösen. ` +
              `Fehlend: ${fehlend.join(", ")}.`,
       vorschlaege: fehlend.includes("raum")
         ? baum.map(r => r.titel).filter(t => t !== "Unzugeordnet").slice(0, 3) : [],
@@ -713,7 +713,7 @@ function baueImportProjekt(projekt, stammdaten, abgeleitet, dateiname) {
     pfade: { b: { titel: "b", punkte, baum, rueckfragen, hinweise: abgeleitet.hinweise } },
     kennzahlen: {
       quelle: dateiname,
-      validierung: "Im Browser erzeugt, Strukturpruefung live",
+      validierung: "Im Browser erzeugt, Strukturprüfung live",
       abdeckung: { b: abdeckung },
       funktionen: projekt.funktionen.length,
       ga_stil: projekt.stil,
@@ -729,7 +729,7 @@ async function importiereKnxproj(datei, regeln) {
     .filter(e => /^[^/]+\/\d+\.xml$/.test(e.name))
     .sort((a, b) => a.name.localeCompare(b.name))[0];
   if (!projektDatei || !installation) {
-    throw new Error("Das Archiv enthaelt keine ETS-Projektstruktur (project.xml und 0.xml).");
+    throw new Error("Das Archiv enthält keine ETS-Projektstruktur (project.xml und 0.xml).");
   }
   const masterEintrag = zip.eintraege.find(e => e.name === "knx_master.xml");
   const [projektXml, installationXml, masterXml] = await Promise.all([

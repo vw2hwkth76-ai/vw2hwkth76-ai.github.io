@@ -202,7 +202,7 @@ def test_bundle_grundstruktur(style1: KnxProjekt) -> None:
 def test_bundle_punkt_traegt_herkunft(style1: KnxProjekt) -> None:
     bundle = _bundle(style1)
     punkt = next(p for p in bundle["pfade"]["b"]["punkte"] if p["ga"] == 2304)
-    assert punkt["herkunft"]["raum"]["quelle_klartext"] == "Gebaeudestruktur"
+    assert punkt["herkunft"]["raum"]["quelle_klartext"] == "Gebäudestruktur"
     assert punkt["herkunft"]["dpt"]["konfidenz"] == 1.0
     assert punkt["werte"]["href"].startswith("knx://")
 

@@ -39,7 +39,7 @@ def standard_rueckfrage(anfrage: NamensAnfrage) -> Rueckfrage:
         if teil
     )
     frage = (
-        f"Die Gruppenadresse {anfrage.ga_text} '{anfrage.name}' liess sich nicht aufloesen"
+        f"Die Gruppenadresse {anfrage.ga_text} '{anfrage.name}' ließ sich nicht auflösen"
         + (f" ({kontext})" if kontext else "")
         + ". Fehlend: "
         + ", ".join(anfrage.fehlende_dimensionen)
