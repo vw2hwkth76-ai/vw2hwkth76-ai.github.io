@@ -1,3 +1,7 @@
+<!DOCTYPE html>
+<html lang="de">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>KNX Thing Description Konfigurator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +16,7 @@
   --border-stark: #b9c1b9;
   --text: #171a17;
   --text-leise: #5c635c;
-  --text-zart: #838983;
+  --text-zart: #6b716b;
   --akzent: #146b3a;
   --akzent-text: #ffffff;
   --akzent-weich: #e3efe8;
@@ -20,7 +24,7 @@
   --belegt-weich: #e3efe8;
   --abgeleitet: #8a6112;
   --abgeleitet-weich: #f6eeda;
-  --offen: #6b706b;
+  --offen: #5d625d;
   --offen-weich: #e9ebe9;
   --kritisch: #9c3428;
   --kritisch-weich: #f7e5e2;
@@ -38,7 +42,7 @@
     --border-stark: #414741;
     --text: #e6eae6;
     --text-leise: #9aa19a;
-    --text-zart: #767d76;
+    --text-zart: #9aa19a;
     --akzent: #4ea373;
     --akzent-text: #0d1a12;
     --akzent-weich: #17281d;
@@ -46,7 +50,7 @@
     --belegt-weich: #17281d;
     --abgeleitet: #c9973a;
     --abgeleitet-weich: #2a2314;
-    --offen: #868c86;
+    --offen: #9aa19a;
     --offen-weich: #232723;
     --kritisch: #d2705f;
     --kritisch-weich: #2c1a17;
@@ -61,7 +65,7 @@
   --border-stark: #414741;
   --text: #e6eae6;
   --text-leise: #9aa19a;
-  --text-zart: #767d76;
+  --text-zart: #9aa19a;
   --akzent: #4ea373;
   --akzent-text: #0d1a12;
   --akzent-weich: #17281d;
@@ -69,7 +73,7 @@
   --belegt-weich: #17281d;
   --abgeleitet: #c9973a;
   --abgeleitet-weich: #2a2314;
-  --offen: #868c86;
+  --offen: #9aa19a;
   --offen-weich: #232723;
   --kritisch: #d2705f;
   --kritisch-weich: #2c1a17;
@@ -386,7 +390,7 @@ pre.td {
 .j-zahl { color: var(--abgeleitet); }
 .j-bool { color: var(--kritisch); }
 .j-null { color: var(--text-zart); }
-.j-eigen { color: var(--text-zart); font-style: italic; }
+.j-eigen { color: var(--text-leise); font-style: italic; }
 mark.aktiv { background: var(--akzent-weich); color: inherit; border-radius: 2px; }
 
 /* Pruefliste */
@@ -411,6 +415,7 @@ mark.aktiv { background: var(--akzent-weich); color: inherit; border-radius: 2px
 .legende span { display: inline-flex; align-items: center; gap: 5px; }
 .legende i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 
+.ablage[hidden] { display: none; }
 .ablage {
   position: fixed;
   inset: 0;
@@ -455,9 +460,15 @@ mark.aktiv { background: var(--akzent-weich); color: inherit; border-radius: 2px
 }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
-@media (max-width: 1100px) {
-  .flaeche { grid-template-columns: 220px 1fr; }
+@media (max-width: 1240px) {
+  .flaeche { grid-template-columns: 232px minmax(300px, 1fr) minmax(280px, 0.8fr); }
+}
+@media (max-width: 950px) {
+  .flaeche { grid-template-columns: 210px 1fr; }
   .spalte-td { display: none; }
+}
+@media (max-width: 640px) {
+  .reiter { overflow-x: auto; }
 }
 </style>
 
@@ -1309,9 +1320,16 @@ function pfadDaten() { return B.pfade[zustand.pfad]; }
 function punkte() { return pfadDaten().punkte; }
 function punktVon(id) { return punkte().find(p => p.id === id) || null; }
 
+function zustandsSchluessel() {
+  // Ohne das Projekt im Schluessel teilen sich gleichnamige Gruppenadressen
+  // verschiedener Projekte ihre Parameterwerte.
+  return (B.schluessel || B.projekt || "?") + "|" + zustand.pfad;
+}
+
 function werteVon(id) {
-  if (!zustand.werte[zustand.pfad]) zustand.werte[zustand.pfad] = {};
-  const topf = zustand.werte[zustand.pfad];
+  const bereich = zustandsSchluessel();
+  if (!zustand.werte[bereich]) zustand.werte[bereich] = {};
+  const topf = zustand.werte[bereich];
   if (!topf[id]) {
     const p = punktVon(id);
     topf[id] = p ? JSON.parse(JSON.stringify(p.werte)) : {};
@@ -1319,10 +1337,10 @@ function werteVon(id) {
   return topf[id];
 }
 function istGeaendert(id, param) {
-  return Boolean(zustand.geaendert[zustand.pfad + "|" + id + "|" + param]);
+  return Boolean(zustand.geaendert[zustandsSchluessel() + "|" + id + "|" + param]);
 }
 function markiereGeaendert(id, param) {
-  zustand.geaendert[zustand.pfad + "|" + id + "|" + param] = true;
+  zustand.geaendert[zustandsSchluessel() + "|" + id + "|" + param] = true;
 }
 
 function stufeVon(punkt) {
@@ -1348,6 +1366,11 @@ function stufeAusQuelle(quelle) {
 
 /* ---------- Thing Description ---------- */
 
+function gilt(paramId, w) {
+  const parameter = PARAM.find(p => p.id === paramId);
+  return parameter ? sichtbar(parameter, w) : true;
+}
+
 function baueSchema(w, punkt) {
   if (!w.datentyp || w.datentyp === "null") return null;
   const s = { type: w.datentyp };
@@ -1360,11 +1383,14 @@ function baueSchema(w, punkt) {
     if (reich.properties) s.properties = reich.properties;
     if (reich.description) s.description = reich.description;
   }
-  if (w.einheit) s.unit = w.einheit;
-  if (w.minimum !== null && w.minimum !== undefined && w.minimum !== "") s.minimum = Number(w.minimum);
-  if (w.maximum !== null && w.maximum !== undefined && w.maximum !== "") s.maximum = Number(w.maximum);
-  if (w.multipleof !== null && w.multipleof !== undefined && w.multipleof !== "") s.multipleOf = Number(w.multipleof);
-  if (w.maxlength !== null && w.maxlength !== undefined && w.maxlength !== "") s.maxLength = Number(w.maxlength);
+  // Nur Felder uebernehmen, die zum Datentyp passen: ein boolean mit
+  // minimum und maximum faellt beim Playground durch.
+  const gesetzt = (id, wert) => wert !== null && wert !== undefined && wert !== "" && gilt(id, w);
+  if (gesetzt("einheit", w.einheit)) s.unit = w.einheit;
+  if (gesetzt("minimum", w.minimum)) s.minimum = Number(w.minimum);
+  if (gesetzt("maximum", w.maximum)) s.maximum = Number(w.maximum);
+  if (gesetzt("multipleof", w.multipleof)) s.multipleOf = Number(w.multipleof);
+  if (gesetzt("maxlength", w.maxlength)) s.maxLength = Number(w.maxlength);
   return s;
 }
 
@@ -1467,8 +1493,24 @@ function pruefe(w) {
   if (w.rolle === "property" && w.readonly && w.writeonly) {
     meldungen.push({ art: "fehler", text: "readOnly und writeOnly schliessen sich aus." });
   }
-  if (w.rolle === "property" && w.readonly && (w.operationen || []).includes("writeproperty")) {
+  const ops = w.operationen || [];
+  if (w.rolle === "property" && w.readonly && ops.includes("writeproperty")) {
     meldungen.push({ art: "fehler", text: "writeproperty passt nicht zu readOnly." });
+  }
+  if (w.rolle === "property" && w.writeonly && ops.some(o => o.startsWith("read") || o.includes("observe"))) {
+    meldungen.push({
+      art: "fehler",
+      text: "Lesende Operationen passen nicht zu writeOnly.",
+    });
+  }
+  if (w.rolle === "property" && w.observable && !ops.includes("observeproperty")) {
+    meldungen.push({
+      art: "fehler",
+      text: "Beobachtbar gesetzt, aber observeproperty fehlt in den Operationen.",
+    });
+  }
+  if (w.rolle === "property" && w.writeonly && w.observable) {
+    meldungen.push({ art: "fehler", text: "Nur schreibbare Werte sind nicht beobachtbar." });
   }
   if (w.rolle === "action" && w.safe && !w.idempotent) {
     meldungen.push({ art: "hinweis", text: "Nebenwirkungsfrei ohne Wiederholbarkeit ist ungewoehnlich." });
@@ -1525,8 +1567,13 @@ function zeichnePfadschalter() {
     knopf.type = "button";
     knopf.setAttribute("aria-pressed", String(pfad === zustand.pfad));
     knopf.addEventListener("click", () => {
+      const vorher = zustand.punktId ? punktVon(zustand.punktId) : null;
       zustand.pfad = pfad;
-      zustand.punktId = null;
+      // Dieselbe Gruppenadresse im anderen Pfad zeigen, sonst steht die
+      // Haelfte des Bildschirms leer und der Vergleich bricht ab.
+      const gleiche = vorher ? punkte().find(p => p.ga === vorher.ga) : null;
+      const start = gleiche || besterStartpunkt();
+      zustand.punktId = start ? start.id : null;
       zeichneAlles();
     });
     ziel.appendChild(knopf);
@@ -1575,7 +1622,8 @@ function zeichneStatusband() {
 
   const rest = el("span");
   rest.innerHTML = "Erzeugt aus <strong>" + escape(B.kennzahlen.quelle || "ETS-Projekt") +
-    "</strong> &middot; Validierung mit dem Eclipse Thingweb Playground beim Erzeugen, Strukturpruefung im Browser live";
+    "</strong> &middot; Stand beim Erzeugen; Aenderungen in dieser Sitzung pruefen nur die " +
+    "Strukturpruefung unten rechts";
   ziel.appendChild(rest);
 }
 
@@ -1632,6 +1680,7 @@ function zeichneBaum() {
         if (!punkt) return;
         const knopf = el("button", "punkt");
         knopf.type = "button";
+        knopf.dataset.punktId = id;
         knopf.setAttribute("aria-current", String(id === zustand.punktId));
         knopf.appendChild(el("span", "punkt-ga", punkt.ga_text));
         knopf.appendChild(el("span", "punkt-name", punkt.name || "ohne Namen"));
@@ -1764,20 +1813,40 @@ function zeichneEinParameter(parameter, punkt, w) {
   return box;
 }
 
+/* Muss zu operationen_fuer in Python und operationenFuer in import.js passen. */
+function passendeOperationen(w) {
+  if (w.rolle === "action") return ["invokeaction"];
+  if (w.rolle === "event") return ["subscribeevent"];
+  if (w.writeonly) return ["writeproperty"];
+  if (w.readonly) return ["readproperty", "observeproperty"];
+  return ["readproperty", "writeproperty", "observeproperty"];
+}
+
 function aendere(punkt, parameter, wert) {
   const w = werteVon(punkt.id);
   w[parameter.id] = wert;
   markiereGeaendert(punkt.id, parameter.id);
   if (parameter.id === "readonly" && wert === true) w.writeonly = false;
   if (parameter.id === "writeonly" && wert === true) w.readonly = false;
-  if (parameter.id === "rolle") {
-    const erlaubt = B.operationen[wert] || [];
-    w.operationen = w.operationen.filter(op => erlaubt.includes(op));
-    if (!w.operationen.length) w.operationen = [erlaubt[0]];
+  if (parameter.id === "rolle" || parameter.id === "readonly" || parameter.id === "writeonly") {
+    w.operationen = passendeOperationen(w);
+    // Ein reiner Stellbefehl ist nicht beobachtbar; sonst widerspraechen sich
+    // observable und die Operationen des Formulars.
+    w.observable = w.rolle === "property" && !w.writeonly;
   }
   zeichneParameter();
   zeichneTd();
-  zeichneBaum();
+  aktualisiereBaummarken();
+}
+
+function aktualisiereBaummarken() {
+  // Nur die Zustandspunkte auffrischen; ein Neuaufbau wuerde alle vom
+  // Benutzer geoeffneten Raeume wieder zuklappen.
+  document.querySelectorAll(".punkt").forEach(knopf => {
+    const punkt = knopf.dataset.punktId ? punktVon(knopf.dataset.punktId) : null;
+    const marke = knopf.querySelector(".punkt-marke");
+    if (punkt && marke) marke.dataset.stufe = stufeVon(punkt);
+  });
 }
 
 function baueSteuerung(parameter, punkt, w) {
@@ -1995,9 +2064,12 @@ function themaSetzen(dunkel) {
   themaknopf.textContent = dunkel ? "Hell" : "Dunkel";
   try { localStorage.setItem("ets2td-thema", dunkel ? "dark" : "light"); } catch (e) { /* egal */ }
 }
-themaknopf.addEventListener("click", () => {
-  themaSetzen(document.documentElement.dataset.theme !== "dark");
-});
+function istDunkel() {
+  const gesetzt = document.documentElement.dataset.theme;
+  if (gesetzt) return gesetzt === "dark";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+themaknopf.addEventListener("click", () => themaSetzen(!istDunkel()));
 try {
   const gespeichert = localStorage.getItem("ets2td-thema");
   if (gespeichert) themaSetzen(gespeichert === "dark");
