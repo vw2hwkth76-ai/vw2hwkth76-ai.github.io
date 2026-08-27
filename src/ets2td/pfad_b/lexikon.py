@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from ets2td.modell import WotRolle
 
@@ -8,7 +9,14 @@ UMLAUTE = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss"})
 
 
 def normalisiere(text: str) -> str:
-    return re.sub(r"[^a-z0-9]+", " ", text.lower().translate(UMLAUTE)).strip()
+    # NFC zuerst: macOS liefert Umlaute zerlegt, sonst wird aus "Kueche" "ku che".
+    zusammengesetzt = unicodedata.normalize("NFC", text).lower().translate(UMLAUTE)
+    ohne_akzente = "".join(
+        zeichen
+        for zeichen in unicodedata.normalize("NFD", zusammengesetzt)
+        if unicodedata.category(zeichen) != "Mn"
+    )
+    return re.sub(r"[^a-z0-9]+", " ", ohne_akzente).strip()
 
 
 def tokens(text: str) -> tuple[str, ...]:
@@ -380,8 +388,13 @@ AUSSER_BETRIEB = ("out of use", "ausser betrieb", "unbenutzt", "alt", "obsolet",
 
 
 def ist_ausser_betrieb(text: str) -> bool:
-    normal = normalisiere(text)
-    return any(marker in normal for marker in AUSSER_BETRIEB)
+    """Erkennt stillgelegte Gruppen an ihrem Namenszusatz.
+
+    Der Abgleich laeuft ueber Wortgrenzen, sonst faende "alt" auch
+    "Schalten" und wuerde die haeufigste deutsche Mittelgruppe stilllegen.
+    """
+    woerter = f" {normalisiere(text)} "
+    return any(f" {normalisiere(marker)} " in woerter for marker in AUSSER_BETRIEB)
 
 
 MINDESTLAENGE_TEILNAME = 4
@@ -417,6 +430,16 @@ def erkenne_raum_lexikon(text: str) -> str | None:
     return None
 
 
+STAMMFORMEN = {
+    "schlafen": "schlaf",
+    "wohnen": "wohn",
+    "kochen": "koch",
+    "essen": "ess",
+    "arbeiten": "arbeit",
+    "dusche": "dusch",
+}
+
+
 def strukturraum_zu(phrase: str, kandidaten: tuple[str, ...]) -> str | None:
     """Bildet ein Lexikonstichwort auf den passenden Raum der Gebaeudestruktur ab.
 
@@ -425,12 +448,13 @@ def strukturraum_zu(phrase: str, kandidaten: tuple[str, ...]) -> str | None:
     Rueckfrage mehr.
     """
     stichwort = normalisiere(phrase)
+    stamm = STAMMFORMEN.get(stichwort, stichwort)
     treffer = {
         kandidat
         for kandidat in kandidaten
         if kandidat
         and any(
-            wort == stichwort or wort.startswith(stichwort)
+            wort == stichwort or wort.startswith(stichwort) or wort.startswith(stamm)
             for wort in tokens(kandidat)
         )
     }

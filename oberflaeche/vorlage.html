@@ -600,9 +600,18 @@ function stufeAusQuelle(quelle) {
 
 /* ---------- Thing Description ---------- */
 
-function baueSchema(w) {
+function baueSchema(w, punkt) {
   if (!w.datentyp || w.datentyp === "null") return null;
   const s = { type: w.datentyp };
+  // Aufzaehlungen und zusammengesetzte Typen stehen nicht im Parametermodell;
+  // sie kommen unveraendert aus dem Datenpunkttyp, sonst faehrt die Thing
+  // Description ein "object" ohne properties aus.
+  const reich = punkt && punkt.schema ? punkt.schema : null;
+  if (reich && reich.type === w.datentyp) {
+    if (reich.oneOf) s.oneOf = reich.oneOf;
+    if (reich.properties) s.properties = reich.properties;
+    if (reich.description) s.description = reich.description;
+  }
   if (w.einheit) s.unit = w.einheit;
   if (w.minimum !== null && w.minimum !== undefined && w.minimum !== "") s.minimum = Number(w.minimum);
   if (w.maximum !== null && w.maximum !== undefined && w.maximum !== "") s.maximum = Number(w.maximum);
@@ -615,10 +624,15 @@ function baueAffordanz(punkt, w) {
   const a = {};
   if (w.semantischer_typ) a["@type"] = w.semantischer_typ;
   a.title = w.titel;
-  if (w.beschreibung) a.description = w.beschreibung;
-  const schema = baueSchema(w);
+  const schema = baueSchema(w, punkt);
   if (w.rolle === "property") {
-    if (schema) Object.assign(a, schema);
+    if (schema) {
+      // Die Bitlegende darf die Projektbeschreibung nicht verdraengen.
+      const bedeutung = schema.description;
+      delete schema.description;
+      Object.assign(a, schema);
+      if (bedeutung) a["ets2td:bedeutung"] = bedeutung;
+    }
     if (w.readonly) a.readOnly = true;
     if (w.writeonly) a.writeOnly = true;
     a.observable = Boolean(w.observable);
@@ -630,12 +644,20 @@ function baueAffordanz(punkt, w) {
   } else {
     if (schema) a.data = schema;
   }
+  if (w.beschreibung) a.description = w.beschreibung;
   const form = { href: w.href, contentType: w.contenttype };
   if (w.operationen && w.operationen.length) form.op = w.operationen.slice();
   a.forms = [form];
   a["ets2td:gruppenadresse"] = punkt.ga_text;
   if (punkt.dpt) a["ets2td:dpt"] = punkt.dpt;
   if (punkt.knx_rolle) a["ets2td:knxRolle"] = punkt.knx_rolle;
+  a["ets2td:herkunft"] = ["raum", "funktion", "rolle", "dpt"]
+    .filter(dim => punkt.herkunft[dim])
+    .map(dim => ({
+      "ets2td:dimension": dim,
+      "ets2td:quelle": punkt.herkunft[dim].quelle,
+      "ets2td:konfidenz": punkt.herkunft[dim].konfidenz,
+    }));
   return a;
 }
 
@@ -648,7 +670,10 @@ function schluesselVon(punkt) {
 
 function baueThing(raumTitel, mitgliederIds, hervorId) {
   const td = {
-    "@context": [B.td_kontext, { ets2td: B.vokabular }],
+    "@context": [
+      B.td_kontext,
+      { ets2td: B.vokabular, saref: "https://saref.etsi.org/core/", "@language": "de" },
+    ],
     "@type": "Thing",
     id: "urn:ets2td:" + schluesselVon({ name: B.projekt, ga: 0 }) + ":" + schluesselVon({ name: raumTitel, ga: 0 }),
     title: raumTitel,

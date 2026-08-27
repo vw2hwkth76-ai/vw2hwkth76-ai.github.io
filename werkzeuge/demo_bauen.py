@@ -78,7 +78,7 @@ def _pruefe(ergebnis: PfadErgebnis, stammdaten: Stammdaten) -> str:
     if bericht.bestanden:
         return (
             f"Alle {len(bericht.dateien)} Thing Descriptions bestehen die "
-            "Playground-Pruefung"
+            "Referenzvalidierung (JSON, Schema, JSON-LD, Zusatzchecks)"
         )
     return f"{len(bericht.fehlgeschlagen)} von {len(bericht.dateien)} nicht bestanden"
 

@@ -19,7 +19,13 @@ from ets2td.konfigurator.vorbelegung import (
     wertebereich_text,
 )
 from ets2td.modell import DIMENSIONEN, Datenpunkt, PfadErgebnis
-from ets2td.td.bauer import OHNE_RAUM, TD_KONTEXT, VOKABULAR_IRI, slug
+from ets2td.td.bauer import (
+    OHNE_RAUM,
+    TD_KONTEXT,
+    VOKABULAR_IRI,
+    datenschema_fuer,
+    slug,
+)
 
 QUELLEN_KLARTEXT = {
     "ets-semantik": "Semantischer Export",
@@ -74,6 +80,7 @@ def _punkt_json(punkt: Datenpunkt, stammdaten: Stammdaten) -> dict[str, Any]:
         "dpt_name": dpt_info.name if dpt_info else "",
         "wertebereich": wertebereich_text(dpt_id, stammdaten) if dpt_id else "",
         "stufen": aufzaehlung_fuer(dpt_id, stammdaten) if dpt_id else [],
+        "schema": datenschema_fuer(dpt_id, stammdaten) if dpt_id else None,
         "raum": punkt.raum.wert if punkt.raum is not None else "",
         "funktion": punkt.funktion.wert if punkt.funktion is not None else "",
         "herkunft": herkunft,

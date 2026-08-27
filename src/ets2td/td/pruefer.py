@@ -9,6 +9,8 @@ from pathlib import Path
 CLI_RELATIV = Path("node_modules") / "@thing-description-playground" / "cli" / "index.js"
 
 PFLICHT_CHECKS = ("json", "schema", "additional")
+# "defaults" bleibt aussen vor: der Playground mahnt dort nur an, Vorgabewerte
+# wie writeOnly:false ausdruecklich hinzuschreiben. Das ist Stil, kein Fehler.
 _STATUS_MUSTER = re.compile(r"(\w+): '(passed|failed|warning)'")
 
 

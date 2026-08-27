@@ -17,6 +17,7 @@ from ets2td.konfigurator.parameter import (
 )
 from ets2td.konfigurator.vorbelegung import (
     aufzaehlung_fuer,
+    operationen_fuer,
     semantischer_typ,
     vorbelegung,
     wertebereich_text,
@@ -30,10 +31,19 @@ TD_SCHEMA = (
 )
 
 
-def _punkt(name: str, dpt: str = "", rolle: str = "property", knx_rolle: str = "") -> Datenpunkt:
+def _punkt(
+    name: str,
+    dpt: str = "",
+    rolle: str = "property",
+    knx_rolle: str = "",
+    lesbar: bool | None = True,
+    schreibbar: bool | None = False,
+) -> Datenpunkt:
     punkt = Datenpunkt(ga=2305, ga_text="1/1/1", name=name)
     punkt.rolle = Zuordnung(rolle, Quelle.NAMENSLEXIKON, 0.7)
     punkt.knx_rolle = knx_rolle
+    punkt.lesbar = lesbar
+    punkt.schreibbar = schreibbar
     if dpt:
         punkt.dpt = Zuordnung(dpt, Quelle.ETS_ATTRIBUT, 1.0)
     return punkt
@@ -127,6 +137,18 @@ def test_vorbelegung_prozent_mit_wertebereich(style1: KnxProjekt) -> None:
     assert werte["einheit"] == "%"
     assert werte["minimum"] == 0
     assert werte["maximum"] == 100
+
+
+def test_operationen_folgen_der_zugriffslage() -> None:
+    assert operationen_fuer("property", True, False) == ["readproperty", "observeproperty"]
+    assert operationen_fuer("property", False, True) == ["writeproperty"]
+    assert operationen_fuer("property", False, False) == [
+        "readproperty",
+        "writeproperty",
+        "observeproperty",
+    ]
+    assert operationen_fuer("action", True, False) == ["invokeaction"]
+    assert operationen_fuer("event", True, False) == ["subscribeevent"]
 
 
 def test_vorbelegung_action_bekommt_invokeaction(style1: KnxProjekt) -> None:

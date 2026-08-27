@@ -51,9 +51,13 @@ class Knoten:
 
     def zahl(self, eigenschaft: str) -> int | None:
         for wert in _werte(self.roh.get(eigenschaft)):
-            text = wert.get("@value") if isinstance(wert, dict) else wert
-            if isinstance(text, str) and text.lstrip("-").isdigit():
-                return int(text)
+            roh = wert.get("@value") if isinstance(wert, dict) else wert
+            if isinstance(roh, bool):
+                continue
+            if isinstance(roh, int | float):
+                return int(roh)
+            if isinstance(roh, str) and roh.strip().lstrip("-").isdigit():
+                return int(roh.strip())
         return None
 
     def verweise(self, eigenschaft: str) -> tuple[str, ...]:
@@ -118,11 +122,19 @@ def lade_graph(pfad: Path) -> Graph:
             f"{pfad.name} enthaelt kein @graph auf oberster Ebene. Erwartet wird ein "
             "semantischer ETS-Export (JSON Linked Data)."
         )
-    kontext = {
-        praefix: basis
-        for praefix, basis in rohdaten.get("@context", {}).items()
-        if isinstance(basis, str)
-    }
+    # Der Kontext darf laut JSON-LD auch eine Liste sein; die ETS liefert ein
+    # Objekt, fremde Werkzeuge nicht zwingend.
+    kontext: dict[str, str] = {}
+    for teil in _werte(rohdaten.get("@context")):
+        if not isinstance(teil, dict):
+            continue
+        kontext.update(
+            {
+                praefix: basis
+                for praefix, basis in teil.items()
+                if isinstance(basis, str) and isinstance(praefix, str)
+            }
+        )
     fehlend = [ns for ns in ERWARTETE_NAMESPACES if ns not in kontext.values()]
     if fehlend:
         raise KeinKnxExport(

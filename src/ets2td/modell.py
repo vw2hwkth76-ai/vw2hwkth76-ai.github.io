@@ -42,6 +42,8 @@ class Datenpunkt:
     mittelgruppe: str = ""
     knx_rolle: str = ""
     zentral: bool = False
+    lesbar: bool | None = None
+    schreibbar: bool | None = None
     dpt: Zuordnung | None = None
     raum: Zuordnung | None = None
     funktion: Zuordnung | None = None

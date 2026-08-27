@@ -288,8 +288,10 @@ function liesProjekt(projektXml, installationXml, stammdaten) {
 /* ---- Ableitung: nutzt die Regeln aus dem Bundle ---- */
 
 function normalisiere(text) {
-  return String(text || "").toLowerCase()
-    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+  // NFC zuerst, sonst zerfallen von macOS gelieferte Umlaute; danach Akzente entfernen.
+  const zusammen = String(text || "").normalize("NFC").toLowerCase()
+    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss");
+  return zusammen.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, " ").trim();
 }
 function woerterVon(text) {
@@ -338,16 +340,23 @@ function raumAusLexikon(text, regeln) {
   return treffer.length ? treffer.reduce((a, b) => (a.length >= b.length ? a : b)) : null;
 }
 
+const STAMMFORMEN = {
+  schlafen: "schlaf", wohnen: "wohn", kochen: "koch",
+  essen: "ess", arbeiten: "arbeit", dusche: "dusch",
+};
+
 function strukturraumZu(phrase, kandidaten) {
   const stichwort = normalisiere(phrase);
+  const stamm = STAMMFORMEN[stichwort] || stichwort;
   const treffer = new Set(kandidaten.filter(k => k && woerterVon(k)
-    .some(w => w === stichwort || w.startsWith(stichwort))));
+    .some(w => w === stichwort || w.startsWith(stichwort) || w.startsWith(stamm))));
   return treffer.size === 1 ? [...treffer][0] : null;
 }
 
 function ausserBetrieb(text, regeln) {
-  const n = normalisiere(text);
-  return regeln.ausser_betrieb.some(m => n.includes(normalisiere(m)));
+  // Wortgrenzen, sonst faende "alt" auch "Schalten".
+  const woerter = " " + normalisiere(text) + " ";
+  return regeln.ausser_betrieb.some(m => woerter.includes(" " + normalisiere(m) + " "));
 }
 
 function unbekanntesFolgewort(text, phrase, regeln) {
@@ -379,6 +388,8 @@ function leiteAb(projekt, stammdaten, regeln) {
       mittelgruppe: ga.mittelgruppe,
       zentral: ga.zentral,
       knx_rolle: "",
+      lesbar: null,
+      schreibbar: null,
       herkunft: { raum: null, funktion: null, rolle: null, dpt: null },
       dpt: ga.dpt,
     };
@@ -497,7 +508,16 @@ function leiteAb(projekt, stammdaten, regeln) {
     }
   });
 
+  Object.values(punkte).forEach(setzeZugriff);
   return { punkte: Object.values(punkte).sort((a, b) => a.ga - b.ga), hinweise };
+}
+
+/* Muss zu _setze_zugriff in src/ets2td/pfad_b/ableitung.py passen. */
+function setzeZugriff(punkt) {
+  const rolle = punkt.herkunft.rolle ? punkt.herkunft.rolle.wert : null;
+  if (!rolle) return;
+  if (rolle === "action") { punkt.schreibbar = true; punkt.lesbar = false; }
+  else { punkt.lesbar = true; punkt.schreibbar = false; }
 }
 
 /* ---- Vorbelegung und Bundle-Format ---- */
@@ -510,6 +530,15 @@ const STANDARD_OPS = {
   "event|true": ["subscribeevent"],
   "event|false": ["subscribeevent"],
 };
+
+/* Muss zu STANDARD_OPERATIONEN und _operationen in Python passen. */
+function operationenFuer(rolle, nurLesbar, nurSchreibbar) {
+  if (rolle === "action") return ["invokeaction"];
+  if (rolle === "event") return ["subscribeevent"];
+  if (nurSchreibbar) return ["writeproperty"];
+  if (nurLesbar) return ["readproperty", "observeproperty"];
+  return ["readproperty", "writeproperty", "observeproperty"];
+}
 
 const SEMANTIK_DPST = {
   "DPST-1-18": "saref:Motion", "DPST-1-19": "saref:OpenClose",
@@ -570,8 +599,9 @@ function vorbelegungFuer(punkt, stammdaten) {
   const rolle = punkt.herkunft.rolle ? punkt.herkunft.rolle.wert : "property";
   const dptId = punkt.dpt || "";
   const schema = dptId ? datenschemaFuer(dptId, stammdaten) : null;
-  const geschrieben = /^(switch|dimming|move|stop|hvac)/i.test(punkt.knx_rolle || "");
-  const nurLesbar = rolle === "property" && !geschrieben;
+  const istProperty = rolle === "property";
+  const nurLesbar = istProperty && punkt.lesbar === true && punkt.schreibbar !== true;
+  const nurSchreibbar = istProperty && punkt.schreibbar === true && punkt.lesbar !== true;
   const relativ = /(dimming|step|stop|relative)/i.test(punkt.knx_rolle || "");
   return {
     titel: punkt.name || ("GA " + punkt.ga_text),
@@ -579,7 +609,7 @@ function vorbelegungFuer(punkt, stammdaten) {
     semantischer_typ: semantischerTyp(dptId),
     rolle,
     readonly: nurLesbar,
-    writeonly: false,
+    writeonly: nurSchreibbar,
     observable: true,
     safe: false,
     idempotent: !relativ,
@@ -592,7 +622,7 @@ function vorbelegungFuer(punkt, stammdaten) {
     maxlength: haupttypVon(dptId) === "DPT-16" ? 14 : null,
     href: "knx://" + punkt.ga_text,
     contenttype: "application/json",
-    operationen: (STANDARD_OPS[rolle + "|" + nurLesbar] || ["readproperty"]).slice(),
+    operationen: operationenFuer(rolle, nurLesbar, nurSchreibbar),
   };
 }
 
@@ -627,6 +657,7 @@ function baueImportProjekt(projekt, stammdaten, abgeleitet, dateiname) {
       dpt_name: info ? info.name : "",
       wertebereich: p.dpt ? wertebereichText(p.dpt, stammdaten) : "",
       stufen: p.dpt ? stufenFuer(p.dpt, stammdaten) : [],
+      schema: p.dpt ? datenschemaFuer(p.dpt, stammdaten) : null,
       raum: herkunft.raum ? herkunft.raum.wert : "",
       funktion: herkunft.funktion ? herkunft.funktion.wert : "",
       herkunft,

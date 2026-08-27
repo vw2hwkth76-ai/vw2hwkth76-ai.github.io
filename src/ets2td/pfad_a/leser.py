@@ -48,12 +48,19 @@ def _ort_je_geraet(graph: Graph) -> dict[str, Knoten]:
     return zuordnung
 
 
-def _funktion_je_punkt(graph: Graph) -> dict[str, Knoten]:
-    zuordnung: dict[str, Knoten] = {}
-    for typ in ("core:ApplicationFunction", "knx:Channel"):
+def _funktion_je_punkt(graph: Graph) -> dict[str, tuple[Knoten, float]]:
+    """Ordnet Datenpunkte ihrer Funktion zu.
+
+    Eine echte Anwendungsfunktion aus dem Smart Linking wiegt schwerer als der
+    Kanalname eines Geraets; letzterer benennt die Hardware, nicht das Gewerk.
+    """
+    zuordnung: dict[str, tuple[Knoten, float]] = {}
+    for typ, gewicht in (("knx:Channel", 0.5), ("core:ApplicationFunction", 0.9)):
         for funktion in graph.vom_typ(typ):
             for punkt_id in funktion.verweise("core:hasPoint"):
-                zuordnung[punkt_id] = funktion
+                vorhanden = zuordnung.get(punkt_id)
+                if vorhanden is None or vorhanden[1] < gewicht:
+                    zuordnung[punkt_id] = (funktion, gewicht)
     return zuordnung
 
 
@@ -178,6 +185,8 @@ def lies_semantischen_export(pfad: Path, ga_stil: str = "ThreeLevel") -> PfadErg
             beschreibung=funktionspunkt.text("dct:description").strip(),
         )
 
+        punkt.lesbar = funktionspunkt.wahrheit("core:readable")
+        punkt.schreibbar = funktionspunkt.wahrheit("core:writable")
         zugriff = _rolle_aus_zugriff(funktionspunkt)
         if zugriff is not None:
             rolle, _nur_lesbar = zugriff
@@ -197,15 +206,15 @@ def lies_semantischen_export(pfad: Path, ga_stil: str = "ThreeLevel") -> PfadErg
             )
             raum_grund = ""
 
-        funktion = None
+        beste: tuple[Knoten, float] | None = None
         for datenpunkt_id in funktionspunkt.verweise("core:groups"):
-            funktion = funktion_je_punkt.get(datenpunkt_id)
-            if funktion is not None:
-                break
-        if funktion is not None:
-            punkt.funktion = Zuordnung(
-                funktion.text("dct:title"), Quelle.ETS_SEMANTIK, 0.9
-            )
+            gefunden = funktion_je_punkt.get(datenpunkt_id)
+            if gefunden is not None and (beste is None or gefunden[1] > beste[1]):
+                beste = gefunden
+        if beste is not None:
+            titel = beste[0].text("dct:title")
+            if titel:
+                punkt.funktion = Zuordnung(titel, Quelle.ETS_SEMANTIK, beste[1])
 
         fehlend = tuple(
             dimension

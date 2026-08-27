@@ -11,14 +11,21 @@ from ets2td.knxproj.stammdaten import (
 from ets2td.modell import Datenpunkt, WotRolle
 from ets2td.td.bauer import datenschema_fuer
 
-STANDARD_OPERATIONEN = {
-    ("property", True): ("readproperty", "observeproperty"),
-    ("property", False): ("readproperty", "writeproperty", "observeproperty"),
-    ("action", True): ("invokeaction",),
-    ("action", False): ("invokeaction",),
-    ("event", True): ("subscribeevent",),
-    ("event", False): ("subscribeevent",),
-}
+
+def operationen_fuer(rolle: str, nur_lesbar: bool, nur_schreibbar: bool) -> list[str]:
+    """Haelt die Operationen zur Zugriffslage passend.
+
+    Muss zu operationenFuer in oberflaeche/import.js passen.
+    """
+    if rolle == "action":
+        return ["invokeaction"]
+    if rolle == "event":
+        return ["subscribeevent"]
+    if nur_schreibbar:
+        return ["writeproperty"]
+    if nur_lesbar:
+        return ["readproperty", "observeproperty"]
+    return ["readproperty", "writeproperty", "observeproperty"]
 
 SEMANTIK_JE_HAUPTTYP = {
     "DPT-1": "saref:OnOffState",
@@ -54,7 +61,9 @@ def vorbelegung(punkt: Datenpunkt, stammdaten: Stammdaten) -> dict[str, Any]:
     schema = datenschema_fuer(dpt_id, stammdaten) if dpt_id else None
 
     datentyp = str(schema.get("type", "boolean")) if schema else "boolean"
-    nur_lesbar = rolle is WotRolle.PROPERTY and not _wird_geschrieben(punkt)
+    ist_property = rolle is WotRolle.PROPERTY
+    nur_lesbar = ist_property and punkt.lesbar is True and punkt.schreibbar is not True
+    nur_schreibbar = ist_property and punkt.schreibbar is True and punkt.lesbar is not True
 
     werte: dict[str, Any] = {
         "titel": punkt.name or f"GA {punkt.ga_text}",
@@ -62,7 +71,7 @@ def vorbelegung(punkt: Datenpunkt, stammdaten: Stammdaten) -> dict[str, Any]:
         "semantischer_typ": semantischer_typ(dpt_id, rolle),
         "rolle": rolle.value,
         "readonly": nur_lesbar,
-        "writeonly": False,
+        "writeonly": nur_schreibbar,
         "observable": True,
         "safe": False,
         "idempotent": _ist_idempotent(punkt),
@@ -75,15 +84,9 @@ def vorbelegung(punkt: Datenpunkt, stammdaten: Stammdaten) -> dict[str, Any]:
         "maxlength": 14 if _haupttyp(dpt_id) == "DPT-16" else None,
         "href": f"knx://{punkt.ga_text}",
         "contenttype": "application/json",
-        "operationen": list(STANDARD_OPERATIONEN[(rolle.value, nur_lesbar)]),
+        "operationen": operationen_fuer(rolle.value, nur_lesbar, nur_schreibbar),
     }
     return werte
-
-
-def _wird_geschrieben(punkt: Datenpunkt) -> bool:
-    if punkt.knx_rolle:
-        return punkt.knx_rolle.lower().startswith(("switch", "dimming", "move", "stop", "hvac"))
-    return False
 
 
 def _ist_idempotent(punkt: Datenpunkt) -> bool:

@@ -1,7 +1,14 @@
 from __future__ import annotations
 
 from ets2td.knxproj.leser import KnxProjekt, formatiere_ga
-from ets2td.modell import DIMENSIONEN, Datenpunkt, PfadErgebnis, Quelle, Zuordnung
+from ets2td.modell import (
+    DIMENSIONEN,
+    Datenpunkt,
+    PfadErgebnis,
+    Quelle,
+    WotRolle,
+    Zuordnung,
+)
 from ets2td.pfad_b import lexikon
 from ets2td.pfad_b.aufloeser import NamensAnfrage, NameResolver, standard_rueckfrage
 
@@ -41,8 +48,28 @@ def leite_ab(
 
     _resolver_runde(punkte, kandidaten, resolver, ergebnis)
 
+    for punkt in punkte.values():
+        _setze_zugriff(punkt)
+
     ergebnis.datenpunkte = sorted(punkte.values(), key=lambda punkt: punkt.ga)
     return ergebnis
+
+
+def _setze_zugriff(punkt: Datenpunkt) -> None:
+    """Leitet Lese- und Schreibrecht aus der erkannten Rolle ab.
+
+    Auf KNX sind Kommando- und Statusadressen getrennt: ein Schaltbefehl wird
+    geschrieben, eine Rueckmeldung gelesen. Ohne erkannte Rolle bleibt beides
+    offen, damit die Thing Description nichts behauptet.
+    """
+    if punkt.rolle is None:
+        return
+    if punkt.rolle.wert == WotRolle.ACTION.value:
+        punkt.schreibbar = True
+        punkt.lesbar = False
+    elif punkt.rolle.wert == WotRolle.PROPERTY.value or punkt.rolle.wert == WotRolle.EVENT.value:
+        punkt.lesbar = True
+        punkt.schreibbar = False
 
 
 def _wende_funktionen_an(

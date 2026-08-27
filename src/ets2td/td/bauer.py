@@ -14,6 +14,8 @@ from ets2td.pfad_b.lexikon import normalisiere
 
 TD_KONTEXT = "https://www.w3.org/2022/wot/td/v1.1"
 VOKABULAR_IRI = "https://vw2hwkth76-ai.github.io/ets2td/vokabular#"
+SAREF_IRI = "https://saref.etsi.org/core/"
+SPRACHE = "de"
 
 OHNE_RAUM = "Unzugeordnet"
 
@@ -38,10 +40,34 @@ def baue_tds(
         gruppen.setdefault(titel, []).append(punkt)
 
     tds: dict[str, dict[str, Any]] = {}
+    vergeben: dict[str, str] = {}
     for titel, punkte in sorted(gruppen.items()):
-        dateiname = f"{slug(ergebnis.projekt)}--{slug(titel)}.td.json"
+        dateiname = _freier_dateiname(ergebnis.projekt, titel, vergeben, ergebnis)
         tds[dateiname] = _baue_td(ergebnis, titel, punkte, stammdaten)
     return tds
+
+
+def _freier_dateiname(
+    projekt: str, titel: str, vergeben: dict[str, str], ergebnis: PfadErgebnis
+) -> str:
+    """Vergibt einen eindeutigen Dateinamen.
+
+    Zwei Raumnamen koennen auf denselben Slug fallen ("Buero 1" und "Buero_1").
+    Ohne Suffix wuerde die zweite Thing Description die erste ueberschreiben und
+    ganze Raeume verschwaenden lautlos aus der Ausgabe.
+    """
+    basis = f"{slug(projekt)}--{slug(titel)}"
+    name = f"{basis}.td.json"
+    laufnummer = 2
+    while name in vergeben:
+        ergebnis.hinweise.append(
+            f"Die Titel '{vergeben[name]}' und '{titel}' ergeben denselben Dateinamen; "
+            f"'{titel}' wird mit Suffix {laufnummer} abgelegt."
+        )
+        name = f"{basis}-{laufnummer}.td.json"
+        laufnummer += 1
+    vergeben[name] = titel
+    return name
 
 
 def _baue_td(
@@ -51,7 +77,10 @@ def _baue_td(
     stammdaten: Stammdaten,
 ) -> dict[str, Any]:
     td: dict[str, Any] = {
-        "@context": [TD_KONTEXT, {"ets2td": VOKABULAR_IRI}],
+        "@context": [
+            TD_KONTEXT,
+            {"ets2td": VOKABULAR_IRI, "saref": SAREF_IRI, "@language": SPRACHE},
+        ],
         "@type": "Thing",
         "id": f"urn:ets2td:{slug(ergebnis.projekt)}:{slug(titel)}",
         "title": titel,
@@ -86,15 +115,22 @@ def _baue_affordanz(punkt: Datenpunkt, rolle: WotRolle, stammdaten: Stammdaten) 
     href = f"knx://{punkt.ga_text}"
 
     affordanz: dict[str, Any] = {"title": punkt.name}
-    if punkt.beschreibung:
-        affordanz["description"] = punkt.beschreibung
 
     if rolle is WotRolle.PROPERTY:
         if schema is not None:
+            # Die Bitlegende des Datenpunkttyps darf die Projektbeschreibung
+            # nicht verdraengen; sie wandert nach ets2td:bedeutung.
+            bedeutung = schema.pop("description", "")
             affordanz.update(schema)
-        affordanz["readOnly"] = True
-        affordanz["observable"] = True
-        affordanz["forms"] = [{"href": href, "op": ["readproperty", "observeproperty"]}]
+            if bedeutung:
+                affordanz["ets2td:bedeutung"] = bedeutung
+        nur_lesen, nur_schreiben = _zugriff(punkt)
+        if nur_lesen:
+            affordanz["readOnly"] = True
+        if nur_schreiben:
+            affordanz["writeOnly"] = True
+        affordanz["observable"] = not nur_schreiben
+        affordanz["forms"] = [{"href": href, "op": _operationen(nur_lesen, nur_schreiben)}]
     elif rolle is WotRolle.ACTION:
         if schema is not None:
             affordanz["input"] = schema
@@ -104,17 +140,44 @@ def _baue_affordanz(punkt: Datenpunkt, rolle: WotRolle, stammdaten: Stammdaten) 
             affordanz["data"] = schema
         affordanz["forms"] = [{"href": href, "op": ["subscribeevent"]}]
 
+    if punkt.beschreibung:
+        affordanz["description"] = punkt.beschreibung
+
     affordanz["ets2td:gruppenadresse"] = punkt.ga_text
     if punkt.dpt is not None:
         affordanz["ets2td:dpt"] = punkt.dpt.wert
     if punkt.knx_rolle:
         affordanz["ets2td:knxRolle"] = punkt.knx_rolle
-    affordanz["ets2td:quellen"] = {
-        dimension: {"quelle": zuordnung.quelle.value, "konfidenz": zuordnung.konfidenz}
+    affordanz["ets2td:herkunft"] = [
+        {
+            "ets2td:dimension": dimension,
+            "ets2td:quelle": zuordnung.quelle.value,
+            "ets2td:konfidenz": zuordnung.konfidenz,
+        }
         for dimension in ("raum", "funktion", "rolle", "dpt")
         if (zuordnung := punkt.zuordnung(dimension)) is not None
-    }
+    ]
     return affordanz
+
+
+def _zugriff(punkt: Datenpunkt) -> tuple[bool, bool]:
+    """Ermittelt, ob die Adresse ausschliesslich gelesen oder geschrieben wird.
+
+    Sind beide Rechte gesetzt oder ist keines belegt, bleibt die Thing
+    Description offen: readOnly und writeOnly entfallen dann beide.
+    """
+    lesbar, schreibbar = punkt.lesbar, punkt.schreibbar
+    if lesbar is None and schreibbar is None:
+        return False, False
+    return bool(lesbar) and not schreibbar, bool(schreibbar) and not lesbar
+
+
+def _operationen(nur_lesen: bool, nur_schreiben: bool) -> list[str]:
+    if nur_schreiben:
+        return ["writeproperty"]
+    if nur_lesen:
+        return ["readproperty", "observeproperty"]
+    return ["readproperty", "writeproperty", "observeproperty"]
 
 
 def datenschema_fuer(dpt_id: str, stammdaten: Stammdaten) -> dict[str, Any] | None:

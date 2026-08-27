@@ -76,8 +76,12 @@ def _punkt(
     dpt: str | None,
     raum: str = "Wohnzimmer",
     funktion: str = "Deckenlicht",
+    lesbar: bool | None = None,
+    schreibbar: bool | None = None,
 ) -> Datenpunkt:
     punkt = Datenpunkt(ga=ga, ga_text=f"1/2/{ga}", name=name)
+    punkt.lesbar = lesbar
+    punkt.schreibbar = schreibbar
     punkt.raum = Zuordnung(raum, Quelle.GEBAEUDESTRUKTUR, 1.0)
     punkt.funktion = Zuordnung(funktion, Quelle.ETS_FUNKTION, 1.0)
     if rolle is not None:
@@ -99,7 +103,9 @@ def test_slug_mit_umlauten() -> None:
 
 
 def test_property_mit_prozent_schema() -> None:
-    td = _einzige_td([_punkt(1, "Helligkeit Status", "property", "DPST-5-1")])
+    td = _einzige_td(
+        [_punkt(1, "Helligkeit Status", "property", "DPST-5-1", lesbar=True, schreibbar=False)]
+    )
     affordanz = td["properties"]["helligkeit-status"]
     assert affordanz["type"] == "number"
     assert affordanz["minimum"] == 0.0
@@ -109,6 +115,42 @@ def test_property_mit_prozent_schema() -> None:
     assert affordanz["observable"] is True
     assert affordanz["forms"][0]["op"] == ["readproperty", "observeproperty"]
     assert affordanz["forms"][0]["href"] == "knx://1/2/1"
+
+
+def test_schreibbare_property_ist_nicht_readonly() -> None:
+    td = _einzige_td(
+        [_punkt(1, "Soll-Temp", "property", "DPST-9-1", lesbar=True, schreibbar=True)]
+    )
+    affordanz = td["properties"]["soll-temp"]
+    assert "readOnly" not in affordanz
+    assert "writeOnly" not in affordanz
+    assert affordanz["forms"][0]["op"] == ["readproperty", "writeproperty", "observeproperty"]
+
+
+def test_nur_schreibbare_property_ist_writeonly() -> None:
+    td = _einzige_td(
+        [_punkt(1, "Stellbefehl", "property", "DPST-1-1", lesbar=False, schreibbar=True)]
+    )
+    affordanz = td["properties"]["stellbefehl"]
+    assert affordanz["writeOnly"] is True
+    assert "readOnly" not in affordanz
+    assert affordanz["observable"] is False
+    assert affordanz["forms"][0]["op"] == ["writeproperty"]
+
+
+def test_ohne_zugriffsangabe_keine_behauptung() -> None:
+    td = _einzige_td([_punkt(1, "Unklar", "property", "DPST-1-1")])
+    affordanz = td["properties"]["unklar"]
+    assert "readOnly" not in affordanz
+    assert "writeOnly" not in affordanz
+
+
+def test_projektbeschreibung_ueberlebt_die_bitlegende() -> None:
+    punkt = _punkt(1, "Licht", "property", "DPST-1-1", lesbar=True, schreibbar=False)
+    punkt.beschreibung = "Deckenlicht ueber dem Esstisch"
+    affordanz = _einzige_td([punkt])["properties"]["licht"]
+    assert affordanz["description"] == "Deckenlicht ueber dem Esstisch"
+    assert affordanz["ets2td:bedeutung"] == "false = Off, true = On"
 
 
 def test_action_mit_bool_input() -> None:
@@ -168,9 +210,12 @@ def test_je_funktion_gruppiert_nach_funktion() -> None:
 def test_td_pflichtfelder_und_metadaten() -> None:
     td = _einzige_td([_punkt(11, "Licht schalten", "action", "DPST-1-1")])
     assert td["@context"][0] == "https://www.w3.org/2022/wot/td/v1.1"
+    assert td["@context"][1]["saref"] == "https://saref.etsi.org/core/"
+    assert td["@context"][1]["@language"] == "de"
     assert td["securityDefinitions"]["nosec_sc"]["scheme"] == "nosec"
     assert td["security"] == "nosec_sc"
     affordanz = td["actions"]["licht-schalten"]
     assert affordanz["ets2td:gruppenadresse"] == "1/2/11"
     assert affordanz["ets2td:dpt"] == "DPST-1-1"
-    assert affordanz["ets2td:quellen"]["rolle"]["quelle"] == "ets-funktion"
+    herkunft = {e["ets2td:dimension"]: e for e in affordanz["ets2td:herkunft"]}
+    assert herkunft["rolle"]["ets2td:quelle"] == "ets-funktion"
