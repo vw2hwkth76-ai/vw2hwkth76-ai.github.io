@@ -26,31 +26,152 @@ function leseZip(puffer) {
     const versatz = sicht.getUint32(zeiger + 42, true);
     const name = new TextDecoder().decode(
       new Uint8Array(puffer, zeiger + 46, namenslaenge));
-    eintraege.push({ name, methode, flags, komprimiert, versatz });
+    const extra = new Uint8Array(puffer, zeiger + 46 + namenslaenge, extralaenge);
+    eintraege.push({ name, methode, flags, komprimiert, versatz, extra });
     zeiger += 46 + namenslaenge + extralaenge + kommentarlaenge;
   }
   return { puffer, sicht, eintraege };
 }
 
-async function entpacke(zip, name) {
-  const eintrag = zip.eintraege.find(e => e.name === name);
-  if (!eintrag) return null;
-  if (eintrag.flags & 0x1) {
-    throw new Error("Das Projekt ist passwortgeschützt. Bitte ohne Passwort exportieren.");
-  }
+const AES_METHODE = 99;
+const AES_KENNUNG = 0x9901;
+const AES_RUNDEN = 1000;
+const SALZLAENGEN = { 1: 8, 2: 12, 3: 16 };
+const AES_STAPEL = 256;
+
+class PasswortNoetig extends Error {}
+class PasswortFalsch extends Error {}
+
+function rohbytes(zip, eintrag) {
   const kopf = eintrag.versatz;
   const namenslaenge = zip.sicht.getUint16(kopf + 26, true);
   const extralaenge = zip.sicht.getUint16(kopf + 28, true);
   const start = kopf + 30 + namenslaenge + extralaenge;
-  const roh = new Uint8Array(zip.puffer, start, eintrag.komprimiert);
-  if (eintrag.methode === 0) return new TextDecoder("utf-8").decode(roh);
-  if (eintrag.methode !== 8) throw new Error("Unbekanntes ZIP-Verfahren " + eintrag.methode);
+  return new Uint8Array(zip.puffer, start, eintrag.komprimiert);
+}
+
+async function blase(roh) {
   if (typeof DecompressionStream === "undefined") {
     throw new Error("Dieser Browser kann kein ZIP entpacken. Bitte Chrome, Edge oder Safari nutzen.");
   }
   const strom = new Blob([roh]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
-  const text = await new Response(strom).text();
-  return text;
+  return new Uint8Array(await new Response(strom).arrayBuffer());
+}
+
+function aesAngaben(eintrag) {
+  const sicht = new DataView(eintrag.extra.buffer, eintrag.extra.byteOffset, eintrag.extra.byteLength);
+  let pos = 0;
+  while (pos + 4 <= eintrag.extra.byteLength) {
+    const kennung = sicht.getUint16(pos, true);
+    const laenge = sicht.getUint16(pos + 2, true);
+    if (kennung === AES_KENNUNG && laenge >= 7) {
+      return { staerke: sicht.getUint8(pos + 8), methode: sicht.getUint16(pos + 9, true) };
+    }
+    pos += 4 + laenge;
+  }
+  return null;
+}
+
+function gleich(a, b) {
+  if (a.length !== b.length) return false;
+  let abweichung = 0;
+  for (let i = 0; i < a.length; i++) abweichung |= a[i] ^ b[i];
+  return abweichung === 0;
+}
+
+function zaehlerblock(nummer) {
+  // WinZip zaehlt little endian ab 1, WebCrypto kennt nur big endian.
+  // Deshalb wird jeder Block einzeln maskiert.
+  const block = new Uint8Array(16);
+  let rest = nummer;
+  for (let i = 0; i < 16 && rest > 0; i++) {
+    block[i] = rest & 0xff;
+    rest = Math.floor(rest / 256);
+  }
+  return block;
+}
+
+async function aesCtr(schluesselbytes, daten) {
+  const schluessel = await crypto.subtle.importKey(
+    "raw", schluesselbytes, "AES-CTR", false, ["encrypt"]);
+  const leer = new Uint8Array(16);
+  const klartext = new Uint8Array(daten.length);
+  const bloecke = Math.ceil(daten.length / 16);
+  for (let start = 1; start <= bloecke; start += AES_STAPEL) {
+    const stapel = [];
+    for (let n = start; n < start + AES_STAPEL && n <= bloecke; n++) {
+      stapel.push(crypto.subtle.encrypt(
+        { name: "AES-CTR", counter: zaehlerblock(n), length: 128 }, schluessel, leer));
+    }
+    const masken = await Promise.all(stapel);
+    masken.forEach((maske, i) => {
+      const bytes = new Uint8Array(maske);
+      const versatz = (start - 1 + i) * 16;
+      for (let j = 0; j < 16 && versatz + j < daten.length; j++) {
+        klartext[versatz + j] = daten[versatz + j] ^ bytes[j];
+      }
+    });
+  }
+  return klartext;
+}
+
+async function entschluessele(eintrag, roh, passwort) {
+  if (!crypto.subtle) {
+    throw new Error(
+      "Passwortgeschützte Projekte brauchen die Web-Crypto-Schnittstelle. " +
+      "Die Seite dafür über https oder localhost öffnen, nicht als lokale Datei.");
+  }
+  const angaben = aesAngaben(eintrag);
+  if (!angaben) throw new Error(eintrag.name + " ist verschlüsselt, nennt aber keine AES-Angaben.");
+  const salzlaenge = SALZLAENGEN[angaben.staerke];
+  if (!salzlaenge) throw new Error("Unbekannte Verschlüsselungsstärke " + angaben.staerke);
+
+  const salz = roh.subarray(0, salzlaenge);
+  const pruefwert = roh.subarray(salzlaenge, salzlaenge + 2);
+  const nutzdaten = roh.subarray(salzlaenge + 2, roh.length - 10);
+  const signatur = roh.subarray(roh.length - 10);
+
+  const basis = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(passwort), "PBKDF2", false, ["deriveBits"]);
+  const laenge = salzlaenge * 2;
+  const abgeleitet = new Uint8Array(await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt: salz, iterations: AES_RUNDEN, hash: "SHA-1" },
+    basis, (2 * laenge + 2) * 8));
+
+  if (!gleich(abgeleitet.subarray(2 * laenge), pruefwert)) {
+    throw new PasswortFalsch("Das Projektpasswort passt nicht.");
+  }
+
+  const hmacSchluessel = await crypto.subtle.importKey(
+    "raw", abgeleitet.subarray(laenge, 2 * laenge),
+    { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
+  const gerechnet = new Uint8Array(
+    await crypto.subtle.sign("HMAC", hmacSchluessel, nutzdaten)).subarray(0, 10);
+  if (!gleich(gerechnet, signatur)) {
+    throw new Error(eintrag.name + ": Prüfsumme stimmt nicht, das Archiv ist beschädigt.");
+  }
+
+  const inhalt = await aesCtr(abgeleitet.subarray(0, laenge), nutzdaten);
+  return angaben.methode === 8 ? blase(inhalt) : inhalt;
+}
+
+async function entpackeBytes(zip, name, passwort) {
+  const eintrag = zip.eintraege.find(e => e.name === name);
+  if (!eintrag) return null;
+  const geschuetzt = eintrag.methode === AES_METHODE || (eintrag.flags & 0x1);
+  const roh = rohbytes(zip, eintrag);
+  if (geschuetzt) {
+    if (!passwort) throw new PasswortNoetig("Das Projekt ist mit einem Projektpasswort geschützt.");
+    return entschluessele(eintrag, roh, passwort);
+  }
+  if (eintrag.methode === 0) return roh;
+  if (eintrag.methode !== 8) throw new Error("Unbekanntes ZIP-Verfahren " + eintrag.methode);
+  return blase(roh);
+}
+
+async function entpacke(zip, name, passwort) {
+  const bytes = await entpackeBytes(zip, name, passwort);
+  return bytes === null ? null : new TextDecoder("utf-8").decode(bytes);
 }
 
 function lokal(knoten) {
@@ -729,21 +850,57 @@ function baueImportProjekt(projekt, stammdaten, abgeleitet, dateiname) {
   };
 }
 
-async function importiereKnxproj(datei, regeln) {
+const PROJEKT_XML = /(?:^|\/)[Pp]roject\.xml$/;
+const INSTALLATION_XML = /(?:^|\/)\d+\.xml$/;
+const INNERES_ARCHIV = /^P-[0-9A-Fa-f]+\.zip$/;
+
+async function oeffneProjektarchiv(zip) {
+  // Die ETS legt project.xml und 0.xml entweder in einen Ordner P-XXXX oder
+  // in ein eigenes Archiv P-XXXX.zip darin. Die zweite Form ist der
+  // Regelfall, sobald ein Projektpasswort gesetzt ist.
+  if (zip.eintraege.some(e => PROJEKT_XML.test(e.name))) return zip;
+  const innen = zip.eintraege.filter(e => INNERES_ARCHIV.test(e.name))
+    .sort((a, b) => a.name.localeCompare(b.name))[0];
+  if (!innen) {
+    throw new Error("Das Archiv enthält keine ETS-Projektstruktur (project.xml und 0.xml).");
+  }
+  let inhalt;
+  try {
+    inhalt = await entpackeBytes(zip, innen.name, null);
+  } catch (fehler) {
+    throw new Error(innen.name + " lässt sich nicht auspacken: " + fehler.message +
+      ". Das Archiv ist vermutlich beschädigt, bitte in der ETS neu exportieren.");
+  }
+  const kopie = inhalt.buffer.slice(inhalt.byteOffset, inhalt.byteOffset + inhalt.byteLength);
+  return leseZip(kopie);
+}
+
+function brauchtPasswort(zip) {
+  return zip.eintraege.some(e =>
+    (PROJEKT_XML.test(e.name) || INSTALLATION_XML.test(e.name)) &&
+    (e.methode === AES_METHODE || (e.flags & 0x1)));
+}
+
+async function importiereKnxproj(datei, regeln, passwort) {
   const puffer = await datei.arrayBuffer();
-  const zip = leseZip(puffer);
-  const projektDatei = zip.eintraege.find(e => /^[^/]+\/[Pp]roject\.xml$/.test(e.name));
+  const aussen = leseZip(puffer);
+  const zip = await oeffneProjektarchiv(aussen);
+  const projektDatei = zip.eintraege.find(e => PROJEKT_XML.test(e.name));
   const installation = zip.eintraege
-    .filter(e => /^[^/]+\/\d+\.xml$/.test(e.name))
+    .filter(e => INSTALLATION_XML.test(e.name))
     .sort((a, b) => a.name.localeCompare(b.name))[0];
   if (!projektDatei || !installation) {
     throw new Error("Das Archiv enthält keine ETS-Projektstruktur (project.xml und 0.xml).");
   }
-  const masterEintrag = zip.eintraege.find(e => e.name === "knx_master.xml");
+  if (!passwort && brauchtPasswort(zip)) {
+    throw new PasswortNoetig("Das Projekt ist mit einem Projektpasswort geschützt.");
+  }
+  const masterZip = aussen.eintraege.some(e => e.name === "knx_master.xml") ? aussen : zip;
+  const masterEintrag = masterZip.eintraege.find(e => e.name === "knx_master.xml");
   const [projektXml, installationXml, masterXml] = await Promise.all([
-    entpacke(zip, projektDatei.name),
-    entpacke(zip, installation.name),
-    masterEintrag ? entpacke(zip, "knx_master.xml") : Promise.resolve(null),
+    entpacke(zip, projektDatei.name, passwort),
+    entpacke(zip, installation.name, passwort),
+    masterEintrag ? entpacke(masterZip, "knx_master.xml", passwort) : Promise.resolve(null),
   ]);
   const stammdaten = liesStammdaten(masterXml);
   const projekt = liesProjekt(projektXml, installationXml, stammdaten);

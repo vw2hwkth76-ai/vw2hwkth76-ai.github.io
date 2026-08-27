@@ -35,6 +35,22 @@ aiocoap liefert keinen py.typed-Marker aus, deshalb steht in pyproject.toml
 eine mypy-Ausnahme fuer `aiocoap.*`. Sie gilt ausschliesslich fuer das
 Gateway; der Kern bleibt vollstaendig unter --strict geprueft.
 
+## Laufzeit fuer geschuetzte Projekte (optionales Extra `passwort`)
+
+Nur noetig, wenn ein knxproj mit gesetztem Projektpasswort gelesen werden
+soll. Installation mit `pip install -e .[passwort]`.
+
+| Abhaengigkeit | Lizenz (SPDX) |
+|---|---|
+| cryptography | Apache-2.0 OR BSD-3-Clause |
+
+Gebraucht wird davon allein die AES-Blockchiffre. Das Format selbst
+(WinZip-AES: PBKDF2-HMAC-SHA1 mit 1000 Runden, Zaehlermodus mit
+little-endian Zaehler, HMAC-SHA1 als Signatur) steckt in
+`src/ets2td/knxproj/archiv.py` und braucht sonst nur die
+Standardbibliothek. Im Browser uebernimmt das die Web-Crypto-Schnittstelle,
+dort kommt keine Abhaengigkeit hinzu.
+
 ## Entwicklung (Python)
 
 | Abhaengigkeit | Lizenz (SPDX) |
@@ -42,7 +58,14 @@ Gateway; der Kern bleibt vollstaendig unter --strict geprueft.
 | pytest | MIT |
 | mypy | MIT |
 | ruff | MIT |
+| pyzipper | MIT |
 | setuptools (Build-Backend) | MIT |
+
+pyzipper dient ausschliesslich dazu, in den Tests verschluesselte Archive zu
+erzeugen. Damit wird die eigene Entschluesselung gegen eine unabhaengige
+Implementierung geprueft; ein Rundlauf durch den eigenen Code waere
+zirkulaer. Es wird nicht ausgeliefert. Seine Abhaengigkeit pycryptodomex
+steht unter BSD-2-Clause beziehungsweise Public Domain.
 
 ## Validierung (Node, nur Entwicklung, wird nicht mit ausgeliefert)
 

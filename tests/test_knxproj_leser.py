@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import zipfile
 from pathlib import Path
-from typing import cast
 
 import pytest
 
@@ -10,7 +9,6 @@ from ets2td.knxproj.leser import (
     KnxProjekt,
     KnxProjektFehler,
     PasswortGeschuetzt,
-    _pruefe_verschluesselung,
     formatiere_ga,
     lies_knxproj,
 )
@@ -99,14 +97,17 @@ def test_unerwartete_archivstruktur(tmp_path: Path) -> None:
         lies_knxproj(datei)
 
 
-class _VerschluesseltesArchiv:
-    def infolist(self) -> list[zipfile.ZipInfo]:
-        info = zipfile.ZipInfo("P-0001/0.xml")
-        info.flag_bits |= 0x1
-        return [info]
-
-
-def test_passwortschutz_erkannt() -> None:
-    archiv = cast(zipfile.ZipFile, _VerschluesseltesArchiv())
-    with pytest.raises(PasswortGeschuetzt, match="passwortgeschuetzt"):
-        _pruefe_verschluesselung(archiv)
+def test_passwortschutz_wird_als_solcher_gemeldet(tmp_path: Path) -> None:
+    pyzipper = pytest.importorskip("pyzipper", reason="nur zum Erzeugen der Fixture")
+    innen = tmp_path / "innen.zip"
+    with pyzipper.AESZipFile(
+        innen, "w", compression=pyzipper.ZIP_DEFLATED, encryption=pyzipper.WZ_AES
+    ) as archiv:
+        archiv.setpassword(b"geheim")
+        archiv.writestr("project.xml", "<Project/>")
+        archiv.writestr("0.xml", "<Installation/>")
+    datei = tmp_path / "geschuetzt.knxproj"
+    with zipfile.ZipFile(datei, "w") as archiv:
+        archiv.writestr("P-0001.zip", innen.read_bytes())
+    with pytest.raises(PasswortGeschuetzt, match="Projektpasswort"):
+        lies_knxproj(datei)

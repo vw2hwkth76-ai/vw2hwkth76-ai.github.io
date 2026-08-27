@@ -1,11 +1,16 @@
 from __future__ import annotations
 
-import re
 import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from xml.etree.ElementTree import Element, fromstring
 
+from ets2td.knxproj.archiv import (
+    ArchivFehler,
+    PasswortNoetig,
+    Projektdateien,
+    oeffne_projekt,
+)
 from ets2td.knxproj.stammdaten import Stammdaten, lade_stammdaten, lokal
 
 
@@ -212,35 +217,40 @@ def _lies_geraete(
         )
 
 
-def _pruefe_verschluesselung(archiv: zipfile.ZipFile) -> None:
-    for info in archiv.infolist():
-        if info.flag_bits & 0x1:
-            raise PasswortGeschuetzt(
-                "Das Projektarchiv ist passwortgeschuetzt. Bitte das Projekt in der ETS "
-                "ohne Passwort exportieren oder das Passwort mitteilen."
-            )
+def _dateien(archiv: zipfile.ZipFile, passwort: str | None) -> Projektdateien:
+    try:
+        return oeffne_projekt(archiv, passwort)
+    except PasswortNoetig as fehler:
+        raise PasswortGeschuetzt(str(fehler)) from fehler
+    except ArchivFehler as fehler:
+        raise KnxProjektFehler(str(fehler)) from fehler
 
 
-def lies_knxproj(pfad: Path) -> KnxProjekt:
+def lies_knxproj(pfad: Path, passwort: str | None = None) -> KnxProjekt:
     try:
         archiv = zipfile.ZipFile(pfad)
     except zipfile.BadZipFile as fehler:
         raise KnxProjektFehler(f"{pfad} ist kein gueltiges ZIP-Archiv (knxproj).") from fehler
     with archiv:
-        _pruefe_verschluesselung(archiv)
+        dateien = _dateien(archiv, passwort)
         namen = archiv.namelist()
 
-        projekt_xmls = [n for n in namen if re.fullmatch(r"[^/]+/[Pp]roject\.xml", n)]
-        installations_xmls = [n for n in namen if re.fullmatch(r"[^/]+/\d+\.xml", n)]
+        projekt_xmls = dateien.projekt_xmls()
+        installations_xmls = dateien.installations_xmls()
         if not projekt_xmls or not installations_xmls:
             raise KnxProjektFehler(
                 "Unerwartete Archivstruktur, gefunden wurden: "
-                + ", ".join(sorted(namen)[:20])
-                + ". Erwartet werden <Projekt-Id>/project.xml und <Projekt-Id>/0.xml. "
+                + ", ".join(sorted(dateien.namen)[:20])
+                + ". Erwartet werden project.xml und 0.xml. "
                 "Bitte diese Struktur melden, damit der Leser erweitert werden kann."
             )
 
-        projekt_wurzel = fromstring(archiv.read(projekt_xmls[0]))
+        try:
+            projekt_wurzel = fromstring(dateien.lies(projekt_xmls[0]))
+        except PasswortNoetig as fehler:
+            raise PasswortGeschuetzt(str(fehler)) from fehler
+        except ArchivFehler as fehler:
+            raise KnxProjektFehler(str(fehler)) from fehler
         info = _erstes(projekt_wurzel, "ProjectInformation")
         if info is None:
             raise KnxProjektFehler("ProjectInformation nicht gefunden in project.xml.")
@@ -261,8 +271,8 @@ def lies_knxproj(pfad: Path) -> KnxProjekt:
         if not projekt.stammdaten.dpts:
             projekt.hinweise.append("Keine knx_master.xml im Archiv, DPT-Details fehlen.")
 
-        for datei in sorted(installations_xmls):
-            wurzel = fromstring(archiv.read(datei))
+        for datei in installations_xmls:
+            wurzel = fromstring(dateien.lies(datei))
             for installation in wurzel.iter():
                 if lokal(installation.tag) != "Installation":
                     continue

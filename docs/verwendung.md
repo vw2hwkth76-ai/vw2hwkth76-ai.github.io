@@ -5,6 +5,7 @@
 ```
 pip install -e '.[dev]'
 pip install -e '.[gateway]'    # nur fuer das CoAP-Gateway am Bus
+pip install -e '.[passwort]'   # nur fuer knxproj mit Projektpasswort
 cd validator && npm install    # einmalig, fuer --validieren
 ```
 
@@ -28,6 +29,10 @@ TDs Einheiten und Wertebereiche; die CLI weist darauf hin.
 
 Wichtige Schalter:
 
+- `--passwort <text>`: fuer knxproj-Dateien mit gesetztem Projektpasswort.
+  Die ETS legt project.xml und 0.xml dann in ein inneres Archiv P-XXXX.zip
+  und verschluesselt sie mit WinZip-AES. Ohne das Passwort bricht der Lauf
+  mit einem entsprechenden Hinweis ab, statt einen Rohfehler zu zeigen.
 - `--gold <datei>`: misst Korrektheit gegen den Gold-Standard, sonst werden
   nur Abdeckungszahlen berichtet.
 - `--gold-vorlage`: schreibt `gold-vorlage.json` aus Pfad B zum

@@ -14,7 +14,10 @@ ets2td = "ets2td.cli:main"
 ets2td-gateway = "ets2td.gateway.cli:main"
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "mypy>=1.10", "ruff>=0.5"]
+dev = ["pytest>=8", "mypy>=1.10", "ruff>=0.5", "pyzipper>=0.3"]
+# Nur fuer knxproj-Dateien mit gesetztem Projektpasswort. Die Entschluesselung
+# selbst steckt in knxproj/archiv.py, gebraucht wird allein die AES-Blockchiffre.
+passwort = ["cryptography>=41"]
 # Nur fuer das CoAP-Gateway. Der Kern bleibt ohne externe Abhaengigkeiten,
 # damit Auswertung und Konfigurator ohne Installation laufen.
 gateway = ["aiocoap>=0.4.7", "xknx>=3.0", "cbor2>=5.4"]

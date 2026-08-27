@@ -39,6 +39,10 @@ def baue_parser() -> argparse.ArgumentParser:
         help=".knxproj fuer Pfad B, .jsonld/.ttl (semantischer Export) fuer Pfad A",
     )
     parser.add_argument("--pfad", choices=("a", "b", "beide"), default="beide")
+    parser.add_argument(
+        "--passwort",
+        help="Projektpasswort, falls das knxproj in der ETS geschuetzt wurde",
+    )
     parser.add_argument("--out", type=Path, required=True, help="Ausgabeverzeichnis")
     parser.add_argument(
         "--gold", type=Path, help="Gold-Standard-Datei fuer die Korrektheitsmessung"
@@ -133,9 +137,9 @@ def _schreibe_gold_vorlage(ergebnis: PfadErgebnis, out: Path) -> None:
 
 
 def _verarbeite_pfad_b(
-    knxproj: Path, ergebnisse: list[PfadErgebnis]
+    knxproj: Path, ergebnisse: list[PfadErgebnis], passwort: str | None = None
 ) -> KnxProjekt:
-    projekt = lies_knxproj(knxproj)
+    projekt = lies_knxproj(knxproj, passwort)
     ergebnisse.append(leite_ab(projekt))
     if projekt.funktionen:
         ergebnisse.append(leite_ab(projekt, heuristik_pur=True))
@@ -201,7 +205,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if braucht_b and knxprojs:
         try:
-            projekt = _verarbeite_pfad_b(knxprojs[0], ergebnisse)
+            projekt = _verarbeite_pfad_b(knxprojs[0], ergebnisse, args.passwort)
         except KnxProjektFehler as fehler:
             print(f"Pfad B fehlgeschlagen: {fehler}", file=sys.stderr)
             return 2

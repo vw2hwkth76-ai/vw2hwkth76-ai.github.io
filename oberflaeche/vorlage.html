@@ -1564,7 +1564,8 @@ function zeichneStartkarten() {
   eigen.appendChild(el("div", "karte-titel", "Eigenes Projekt laden"));
   eigen.appendChild(el("div", "karte-unter",
     "Eine knxproj-Datei aus ETS5 oder ETS6 auswählen oder auf das Fenster ziehen. " +
-    "Die Datei wird nur im Browser gelesen und nirgendwo hochgeladen."));
+    "Bei gesetztem Projektpasswort wird danach gefragt. Die Datei wird nur im " +
+    "Browser gelesen und nirgendwo hochgeladen."));
   // Leere Zahlenzeile, damit die Fusszeile dieser Karte auf einer Linie mit
   // den Projektkarten sitzt; das Raster erwartet vier Zeilen je Karte.
   eigen.appendChild(el("div", "karte-zahlen"));
@@ -1618,11 +1619,37 @@ function zeigeMeldung(text, art) {
   return box;
 }
 
+function fragePasswort(dateiname, nochmal) {
+  // Das Passwort bleibt im Browser: es geht direkt in die Entschluesselung
+  // und wird weder gespeichert noch weitergereicht.
+  const frage = nochmal
+    ? `Das Passwort passt nicht. Projektpasswort fuer ${dateiname}:`
+    : `${dateiname} ist mit einem Projektpasswort geschuetzt.\n\n` +
+      `Projektpasswort eingeben, oder Abbrechen und das Projekt in der ETS ` +
+      `ohne Passwort exportieren.`;
+  return window.prompt(frage, "");
+}
+
 async function ladeProjekt(datei) {
   if (!datei) return;
   zeigeMeldung("Lese " + datei.name + " ...", "arbeit");
   try {
-    const projekt = await importiereKnxproj(datei, SAMMLUNG.regeln);
+    let passwort = null;
+    let projekt = null;
+    for (let versuch = 0; projekt === null; versuch++) {
+      try {
+        projekt = await importiereKnxproj(datei, SAMMLUNG.regeln, passwort);
+      } catch (fehler) {
+        const nochmal = fehler instanceof PasswortFalsch;
+        if (!(fehler instanceof PasswortNoetig) && !nochmal) throw fehler;
+        passwort = fragePasswort(datei.name, nochmal);
+        if (!passwort) {
+          zeigeMeldung("Import abgebrochen: ohne Projektpasswort nicht lesbar.", "fehler");
+          return;
+        }
+        zeigeMeldung("Entschluessele " + datei.name + " ...", "arbeit");
+      }
+    }
     projekt.titel = "Importiert";
     SAMMLUNG.projekte.push(projekt);
     B = projekt;

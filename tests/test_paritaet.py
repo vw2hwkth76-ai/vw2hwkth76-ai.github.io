@@ -29,9 +29,9 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def _browser_ergebnis(knxproj: Path) -> dict[str, Any]:
+def _browser_ergebnis(knxproj: Path, passwort: str | None = None) -> dict[str, Any]:
     lauf = subprocess.run(
-        ["node", str(HARNESS), str(SEITE), str(knxproj)],
+        ["node", str(HARNESS), str(SEITE), str(knxproj), *( [passwort] if passwort else [] )],
         capture_output=True,
         text=True,
         timeout=180,
@@ -43,8 +43,8 @@ def _browser_ergebnis(knxproj: Path) -> dict[str, Any]:
     return dict(json.loads(lauf.stdout.strip().splitlines()[-1]))
 
 
-def _python_ergebnis(knxproj: Path) -> dict[int, dict[str, Any]]:
-    projekt = lies_knxproj(knxproj)
+def _python_ergebnis(knxproj: Path, passwort: str | None = None) -> dict[int, dict[str, Any]]:
+    projekt = lies_knxproj(knxproj, passwort)
     ergebnis = leite_ab(projekt)
     daten: dict[int, dict[str, Any]] = {}
     for punkt in ergebnis.datenpunkte:
@@ -127,3 +127,53 @@ def test_vorbelegung_stimmt_ueberein() -> None:
     assert not abweichungen, (
         f"{len(abweichungen)} Abweichungen in der Vorbelegung:\n" + "\n".join(abweichungen[:25])
     )
+
+
+def _verpacke_verschachtelt(quelle: Path, ziel: Path, passwort: str | None) -> None:
+    """Baut aus einem Beispielprojekt die Form, die die ETS mit Passwort schreibt."""
+    import io
+    import zipfile
+
+    innen = io.BytesIO()
+    with zipfile.ZipFile(quelle) as alt:
+        xmls = [n for n in alt.namelist() if n.startswith("P-") and n.endswith(".xml")]
+        if passwort:
+            pyzipper = pytest.importorskip("pyzipper", reason="nur zum Erzeugen der Fixture")
+            with pyzipper.AESZipFile(
+                innen, "w", compression=pyzipper.ZIP_DEFLATED, encryption=pyzipper.WZ_AES
+            ) as neu:
+                neu.setpassword(passwort.encode())
+                for name in xmls:
+                    neu.writestr(name.split("/")[-1], alt.read(name))
+        else:
+            with zipfile.ZipFile(innen, "w", zipfile.ZIP_DEFLATED) as neu:
+                for name in xmls:
+                    neu.writestr(name.split("/")[-1], alt.read(name))
+        with zipfile.ZipFile(ziel, "w") as aussen:
+            aussen.writestr("P-0001.zip", innen.getvalue())
+            aussen.writestr("knx_master.xml", alt.read("knx_master.xml"))
+
+
+@pytest.mark.parametrize("passwort", [None, "testpasswort"])
+def test_verschachteltes_archiv_liest_sich_in_beiden_wegen_gleich(
+    tmp_path: Path, passwort: str | None
+) -> None:
+    """Prueft die Archivschicht und, mit Passwort, zwei Entschluesselungen gegeneinander."""
+    ziel = tmp_path / "verschachtelt.knxproj"
+    _verpacke_verschachtelt(BEISPIELE / "musterprojekt-ets6.knxproj", ziel, passwort)
+
+    browser = _browser_ergebnis(ziel, passwort)
+    assert "fehler" not in browser, browser.get("fehler")
+    python = _python_ergebnis(ziel, passwort)
+
+    js = {int(p["ga"]): p for p in browser["punkte"]}
+    assert set(js) == set(python)
+    assert len(python) == 194
+
+    abweichungen = [
+        f"GA {erwartet['ga_text']} Feld {feld}"
+        for ga, erwartet in sorted(python.items())
+        for feld in ("ga_text", "name", "dpt", "raum", "funktion", "rolle", "wertebereich")
+        if erwartet[feld] != js[ga][feld]
+    ]
+    assert not abweichungen, abweichungen[:10]
