@@ -4,6 +4,7 @@
 
 ```
 pip install -e '.[dev]'
+pip install -e '.[gateway]'    # nur fuer das CoAP-Gateway am Bus
 cd validator && npm install    # einmalig, fuer --validieren
 ```
 
@@ -65,6 +66,21 @@ Raumkandidaten), Ausgabe sind Zuordnungen mit Konfidenz oder eine
 Rueckfrage mit Vorschlaegen. Erfundene Zuordnungen sind per Vertrag
 unerwuenscht.
 
+## Erzeugte Beschreibungen am Bus betreiben
+
+Die erzeugten Thing Descriptions tragen `knx://<gruppenadresse>`. Ein
+KNX-Binding gibt es bei der W3C nicht, deshalb macht erst das Gateway sie
+bedienbar:
+
+```
+ets2td-gateway ausgabe/td/b/projekt--wohnzimmer.td.json --selbsttest
+ets2td-gateway ausgabe/td/b/projekt--wohnzimmer.td.json \
+    --bus tunneling --gateway-ip 192.168.1.50
+```
+
+Ohne `--bus` laeuft der Simulator, also ohne Anlage und ohne Netz. Details,
+Ressourcenlayout und Grenzen stehen in docs/gateway.md.
+
 ## Werkzeuge
 
 - `werkzeuge/kim_dpt_tabelle.py <ontology.ttl>`: erzeugt die Zuordnung von
@@ -85,4 +101,6 @@ python3 -m pytest
 
 Die Testsuite arbeitet ausschliesslich lokal (Fixtures in `beispiele/`,
 Validierungstests werden uebersprungen, wenn `validator/node_modules`
-fehlt).
+fehlt). Auch die Gateway-Tests kommen ohne Socket und ohne Bus aus: die
+CoAP-Handler werden direkt aufgerufen, der Bus ist der Simulator. Fehlt das
+Gateway-Extra, werden sie uebersprungen.

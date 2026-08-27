@@ -1,6 +1,6 @@
 # Abhaengigkeiten und Lizenzen
 
-Stand 2026-08-26. Regel des Projekts: keine Copyleft-Lizenzen, xknxproject
+Stand 2026-08-27. Regel des Projekts: keine Copyleft-Lizenzen, xknxproject
 (GPL-2.0-only) wird nicht verwendet, auch nicht dessen Test-Fixtures.
 
 ## Laufzeit (Python)
@@ -9,8 +9,31 @@ Stand 2026-08-26. Regel des Projekts: keine Copyleft-Lizenzen, xknxproject
 |---|---|---|
 | Python-Standardbibliothek (zipfile, xml.etree, json, argparse, ...) | 3.11+ | PSF-2.0 |
 
-Keine externen Laufzeitabhaengigkeiten. xknx (MIT) wird nicht gebraucht,
-weil kein Buszugriff stattfindet.
+Der Kern hat keine externen Laufzeitabhaengigkeiten. Auswertung,
+TD-Erzeugung und Konfigurator laufen allein mit der Standardbibliothek.
+
+## Laufzeit des CoAP-Gateways (optionales Extra `gateway`)
+
+Nur noetig fuer `ets2td-gateway`, also den Buszugriff. Installation mit
+`pip install -e .[gateway]`.
+
+| Abhaengigkeit | Version | Lizenz (SPDX) |
+|---|---|---|
+| aiocoap | 0.4.17 | MIT AND BSD-3-Clause |
+| xknx | 3.20.0 | MIT |
+| cbor2 | 6.1.4 | MIT |
+
+Transitiv kommen hinzu: cryptography (Apache-2.0 OR BSD-3-Clause, ueber
+xknx fuer KNX Secure), cffi (MIT-0), pycparser (BSD-3-Clause), ifaddr (MIT)
+und typing-extensions (PSF-2.0). Vollscan ueber den Abhaengigkeitsbaum der
+drei Wurzeln: 3 MIT, je 1 MIT-0, BSD-3-Clause, PSF-2.0,
+"MIT AND BSD-3-Clause" und "Apache-2.0 OR BSD-3-Clause". Kein Copyleft, kein
+Paket ohne Lizenzangabe. Bei der Dual-Lizenz von cryptography gilt die
+gewaehlte permissive Option.
+
+aiocoap liefert keinen py.typed-Marker aus, deshalb steht in pyproject.toml
+eine mypy-Ausnahme fuer `aiocoap.*`. Sie gilt ausschliesslich fuer das
+Gateway; der Kern bleibt vollstaendig unter --strict geprueft.
 
 ## Entwicklung (Python)
 
@@ -64,3 +87,15 @@ Details und Abrufdatum: beispiele/LIZENZEN.md.
 | xknxproject | GPL-2.0-only, laut Vorgabe tabu, eigener Parser implementiert |
 | Test-Fixtures aus xknxproject | Teil desselben GPL-Repos |
 | EPL-only-Quellen (z. B. guw/knx-utils) | schwaches Copyleft |
+| Eclipse 4diac FORTE (IEC 61499) | EPL-2.0, schwaches Copyleft. Als eigenstaendige Laufzeit neben dem Gateway betreibbar, aber nicht einbettbar, ohne die Projektregel zu verletzen. Fuer eine Kopplung waere MQTT der Weg, den beide Seiten ohne Eigenbau sprechen. |
+
+## Wozu es kein Binding gibt
+
+Die W3C fuehrt Bindings fuer HTTP, CoAP, MQTT, Modbus, BACnet, PROFINET,
+LoRaWAN und OPC-UA. **Ein KNX-Binding gibt es nicht.** Deshalb tragen die
+erzeugten Thing Descriptions `knx://<gruppenadresse>` als Kennung, nicht als
+Protokoll: sie benennen die Adresse, ohne einen Zugriffsweg zu behaupten.
+Erst das Gateway bindet sie an CoAP und schreibt die Forms entsprechend um.
+
+Der CoAP-Praefix `cov` zeigt auf `https://www.w3.org/2019/wot/coap#`,
+uebernommen aus der Kontextdatei des Bindings im Repo w3c/wot-binding-templates.

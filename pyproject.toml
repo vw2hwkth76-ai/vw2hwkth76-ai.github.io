@@ -11,9 +11,13 @@ dependencies = []
 
 [project.scripts]
 ets2td = "ets2td.cli:main"
+ets2td-gateway = "ets2td.gateway.cli:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "mypy>=1.10", "ruff>=0.5"]
+# Nur fuer das CoAP-Gateway. Der Kern bleibt ohne externe Abhaengigkeiten,
+# damit Auswertung und Konfigurator ohne Installation laufen.
+gateway = ["aiocoap>=0.4.7", "xknx>=3.0", "cbor2>=5.4"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -23,6 +27,17 @@ strict = true
 python_version = "3.11"
 mypy_path = "src:tests"
 files = ["src", "tests"]
+
+# aiocoap liefert keinen py.typed-Marker aus. Betroffen ist nur das
+# Gateway-Extra; der Kern bleibt vollstaendig typgeprueft.
+[[tool.mypy.overrides]]
+module = ["aiocoap.*"]
+ignore_missing_imports = true
+disallow_subclassing_any = false
+
+[[tool.mypy.overrides]]
+module = ["ets2td.gateway.server", "tests.test_gateway_server"]
+disallow_subclassing_any = false
 
 [tool.ruff]
 line-length = 100
