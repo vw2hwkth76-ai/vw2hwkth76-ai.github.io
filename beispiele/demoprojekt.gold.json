@@ -1,0 +1,158 @@
+{
+  "projekt": "DemoProject",
+  "kommentar": "Abgeleitet aus ETS-Funktionen, Gebaeudestruktur und gepflegten DPT-Attributen. Leere Werte sind unbewertet und warten auf manuelle Korrektur. Rollenkonvention: Kommandos = action, Zustaende und Rueckmeldungen = property, Alarme = event.",
+  "datenpunkte": {
+    "1": {
+      "text": "0/0/1",
+      "name": "L LR Switching",
+      "raum": "Living room",
+      "funktion": "Light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2": {
+      "text": "0/0/2",
+      "name": "L LR Status",
+      "raum": "Living room",
+      "funktion": "Light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3": {
+      "text": "0/0/3",
+      "name": "LD LR Switching",
+      "raum": "Living room",
+      "funktion": "Dimmable light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "4": {
+      "text": "0/0/4",
+      "name": "LD LR Status",
+      "raum": "Living room",
+      "funktion": "Dimmable light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "5": {
+      "text": "0/0/5",
+      "name": "LD LR Dimming",
+      "raum": "Living room",
+      "funktion": "Dimmable light",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "6": {
+      "text": "0/0/6",
+      "name": "LD LR Dimming value",
+      "raum": "Living room",
+      "funktion": "Dimmable light",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "7": {
+      "text": "0/0/7",
+      "name": "LD LR Value",
+      "raum": "Living room",
+      "funktion": "Dimmable light",
+      "rolle": "action",
+      "dpt": "DPST-5-1"
+    },
+    "8": {
+      "text": "0/0/8",
+      "name": "R LR Movement",
+      "raum": "Living room",
+      "funktion": "Rollershutter",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "9": {
+      "text": "0/0/9",
+      "name": "R LR Step/Stop",
+      "raum": "Living room",
+      "funktion": "Rollershutter",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "10": {
+      "text": "0/0/10",
+      "name": "R LR Wind alert",
+      "raum": "Living room",
+      "funktion": "Rollershutter",
+      "rolle": "event",
+      "dpt": "DPST-1-5"
+    },
+    "11": {
+      "text": "0/0/11",
+      "name": "R LR Rain alert",
+      "raum": "Living room",
+      "funktion": "Rollershutter",
+      "rolle": "event",
+      "dpt": "DPST-1-5"
+    },
+    "12": {
+      "text": "0/0/12",
+      "name": "R LR Blinds position",
+      "raum": "Living room",
+      "funktion": "Rollershutter",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "13": {
+      "text": "0/0/13",
+      "name": "R LR Slat position",
+      "raum": "Living room",
+      "funktion": "Rollershutter",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "14": {
+      "text": "0/0/14",
+      "name": "H LR Current temperature",
+      "raum": "Living room",
+      "funktion": "Heating",
+      "rolle": "property",
+      "dpt": "DPST-9-1"
+    },
+    "15": {
+      "text": "0/0/15",
+      "name": "H LR Setpoint value offset",
+      "raum": "Living room",
+      "funktion": "Heating",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "16": {
+      "text": "0/0/16",
+      "name": "H LR current setpoint",
+      "raum": "Living room",
+      "funktion": "Heating",
+      "rolle": "property",
+      "dpt": "DPST-9-1"
+    },
+    "17": {
+      "text": "0/0/17",
+      "name": "H LR Operation mode",
+      "raum": "Living room",
+      "funktion": "Heating",
+      "rolle": "action",
+      "dpt": "DPST-20-102"
+    },
+    "19": {
+      "text": "0/0/19",
+      "name": "Switching",
+      "raum": "Living room",
+      "funktion": "Switch",
+      "rolle": "",
+      "dpt": "DPST-1-1"
+    },
+    "20": {
+      "text": "0/0/20",
+      "name": "Status",
+      "raum": "Living room",
+      "funktion": "Switch",
+      "rolle": "",
+      "dpt": "DPST-1-11"
+    }
+  }
+}

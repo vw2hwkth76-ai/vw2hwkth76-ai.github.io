@@ -1,0 +1,1337 @@
+<title>KNX Thing Description Konfigurator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  --ground: #f6f7f5;
+  --surface: #ffffff;
+  --surface-2: #eef1ee;
+  --surface-3: #e4e9e4;
+  --border: #d6dbd6;
+  --border-stark: #b9c1b9;
+  --text: #171a17;
+  --text-leise: #5c635c;
+  --text-zart: #838983;
+  --akzent: #146b3a;
+  --akzent-text: #ffffff;
+  --akzent-weich: #e3efe8;
+  --belegt: #146b3a;
+  --belegt-weich: #e3efe8;
+  --abgeleitet: #8a6112;
+  --abgeleitet-weich: #f6eeda;
+  --offen: #6b706b;
+  --offen-weich: #e9ebe9;
+  --kritisch: #9c3428;
+  --kritisch-weich: #f7e5e2;
+  --schrift: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r: 3px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #111311;
+    --surface: #181b18;
+    --surface-2: #1f231f;
+    --surface-3: #272c27;
+    --border: #2e332e;
+    --border-stark: #414741;
+    --text: #e6eae6;
+    --text-leise: #9aa19a;
+    --text-zart: #767d76;
+    --akzent: #4ea373;
+    --akzent-text: #0d1a12;
+    --akzent-weich: #17281d;
+    --belegt: #4ea373;
+    --belegt-weich: #17281d;
+    --abgeleitet: #c9973a;
+    --abgeleitet-weich: #2a2314;
+    --offen: #868c86;
+    --offen-weich: #232723;
+    --kritisch: #d2705f;
+    --kritisch-weich: #2c1a17;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #111311;
+  --surface: #181b18;
+  --surface-2: #1f231f;
+  --surface-3: #272c27;
+  --border: #2e332e;
+  --border-stark: #414741;
+  --text: #e6eae6;
+  --text-leise: #9aa19a;
+  --text-zart: #767d76;
+  --akzent: #4ea373;
+  --akzent-text: #0d1a12;
+  --akzent-weich: #17281d;
+  --belegt: #4ea373;
+  --belegt-weich: #17281d;
+  --abgeleitet: #c9973a;
+  --abgeleitet-weich: #2a2314;
+  --offen: #868c86;
+  --offen-weich: #232723;
+  --kritisch: #d2705f;
+  --kritisch-weich: #2c1a17;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--schrift);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
+
+.rahmen {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  height: 100dvh;
+}
+
+/* Kopfleiste */
+.kopf {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.marke { display: flex; align-items: baseline; gap: 9px; }
+.marke b { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+.marke span {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-zart);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+.projektwahl { padding-left: 20px; border-left: 1px solid var(--border); }
+.projektwahl select {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 4px 7px;
+  border: 1px solid var(--border-stark);
+  border-radius: var(--r);
+  background: var(--ground);
+  max-width: 320px;
+}
+.kopf-rechts { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+.kennzahlen { display: flex; gap: 18px; margin-left: 8px; }
+.kennzahl { display: flex; flex-direction: column; }
+.kennzahl b {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.kennzahl span {
+  font-size: 9.5px;
+  color: var(--text-zart);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.schalter { display: flex; border: 1px solid var(--border-stark); border-radius: var(--r); overflow: hidden; }
+.schalter button {
+  background: var(--surface);
+  border: 0;
+  padding: 5px 11px;
+  font-size: 12px;
+  cursor: pointer;
+  border-right: 1px solid var(--border);
+}
+.schalter button:last-child { border-right: 0; }
+.schalter button[aria-pressed="true"] { background: var(--akzent); color: var(--akzent-text); font-weight: 500; }
+.schalter button:hover:not([aria-pressed="true"]) { background: var(--surface-2); }
+
+.knopf {
+  background: var(--surface);
+  border: 1px solid var(--border-stark);
+  border-radius: var(--r);
+  padding: 5px 11px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.knopf:hover { background: var(--surface-2); }
+
+/* Statusband */
+.statusband {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 7px 16px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--text-leise);
+  flex-wrap: wrap;
+}
+.statusband strong { color: var(--text); font-weight: 500; }
+.pruefzeichen {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+  color: var(--belegt);
+}
+.pruefzeichen svg { width: 13px; height: 13px; }
+
+/* Arbeitsflaeche */
+.flaeche {
+  display: grid;
+  grid-template-columns: 268px minmax(340px, 1fr) minmax(320px, 0.92fr);
+  overflow: hidden;
+}
+.spalte { display: flex; flex-direction: column; overflow: hidden; background: var(--surface); }
+.spalte + .spalte { border-left: 1px solid var(--border); }
+.spalte-kopf {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.spalte-kopf h2 {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-zart);
+}
+.spalte-inhalt { overflow-y: auto; overflow-x: hidden; flex: 1; }
+
+/* Baum */
+.suche {
+  width: 100%;
+  padding: 6px 9px;
+  border: 1px solid var(--border-stark);
+  border-radius: var(--r);
+  background: var(--ground);
+  font-size: 12px;
+}
+.suchzeile { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.baum { padding: 4px 0 20px; }
+.raum > .raum-kopf {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 12px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+}
+.raum > .raum-kopf:hover { background: var(--surface-2); }
+.raum-zahl {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-zart);
+  font-variant-numeric: tabular-nums;
+}
+.pfeil { width: 9px; height: 9px; flex: 0 0 9px; transition: transform 0.12s; color: var(--text-zart); }
+.raum[data-offen="false"] .pfeil { transform: rotate(-90deg); }
+.raum[data-offen="false"] .funktionen { display: none; }
+.funktion-titel {
+  padding: 3px 12px 3px 27px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-zart);
+}
+.punkt {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 12px 4px 27px;
+  background: none;
+  border: 0;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  text-align: left;
+}
+.punkt:hover { background: var(--surface-2); }
+.punkt[aria-current="true"] {
+  background: var(--akzent-weich);
+  border-left-color: var(--akzent);
+}
+.punkt-ga {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+  flex: 0 0 auto;
+  min-width: 48px;
+}
+.punkt[aria-current="true"] .punkt-ga { color: var(--akzent); }
+.punkt-name {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.punkt-marke { margin-left: auto; width: 6px; height: 6px; border-radius: 50%; flex: 0 0 6px; }
+.punkt-marke[data-stufe="belegt"] { background: var(--belegt); }
+.punkt-marke[data-stufe="abgeleitet"] { background: var(--abgeleitet); }
+.punkt-marke[data-stufe="offen"] { background: var(--offen); }
+
+/* Reiter */
+.reiter { display: flex; gap: 1px; padding: 0 12px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.reiter button {
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 8px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-leise);
+  margin-bottom: -1px;
+}
+.reiter button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--akzent); font-weight: 500; }
+.reiter button:hover { color: var(--text); }
+
+/* Datenpunktkopf */
+.dp-kopf { padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.dp-kopf h1 { margin: 0 0 3px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+.dp-zeile { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11px; color: var(--text-leise); }
+.dp-zeile code { font-family: var(--mono); font-size: 11px; color: var(--text); }
+
+/* Parameter */
+.parameterliste { padding: 4px 0 28px; }
+.parameter {
+  display: grid;
+  grid-template-columns: 1fr minmax(120px, 168px);
+  gap: 10px 12px;
+  align-items: start;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.parameter[hidden] { display: none; }
+.parameter-kopf { min-width: 0; }
+.parameter-titel { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 500; }
+.parameter-hilfe { margin-top: 2px; font-size: 11px; color: var(--text-leise); max-width: 62ch; }
+.parameter-feld { display: flex; flex-direction: column; gap: 5px; }
+.parameter-feld select,
+.parameter-feld input[type="text"],
+.parameter-feld input[type="number"] {
+  width: 100%;
+  padding: 5px 7px;
+  border: 1px solid var(--border-stark);
+  border-radius: var(--r);
+  background: var(--ground);
+  font-size: 12px;
+}
+.parameter-feld input[type="number"] { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.schalterfeld { display: flex; gap: 5px; }
+.schalterfeld button {
+  flex: 1;
+  padding: 5px 6px;
+  border: 1px solid var(--border-stark);
+  border-radius: var(--r);
+  background: var(--ground);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.schalterfeld button[aria-pressed="true"] { background: var(--akzent); color: var(--akzent-text); border-color: var(--akzent); font-weight: 500; }
+.opliste { display: flex; flex-direction: column; gap: 3px; }
+.opliste label { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; cursor: pointer; }
+
+.herkunft {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: 9px;
+  font-size: 9.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.herkunft[data-stufe="belegt"] { background: var(--belegt-weich); color: var(--belegt); }
+.herkunft[data-stufe="abgeleitet"] { background: var(--abgeleitet-weich); color: var(--abgeleitet); }
+.herkunft[data-stufe="offen"] { background: var(--offen-weich); color: var(--offen); }
+.herkunft[data-stufe="geaendert"] { background: var(--akzent); color: var(--akzent-text); }
+
+/* Thing Description */
+.td-kopf { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.td-flaeche { flex: 1; overflow: auto; }
+pre.td {
+  margin: 0;
+  padding: 12px 14px 28px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.55;
+  tab-size: 2;
+  white-space: pre;
+}
+.j-schluessel { color: var(--text); font-weight: 500; }
+.j-text { color: var(--akzent); }
+.j-zahl { color: var(--abgeleitet); }
+.j-bool { color: var(--kritisch); }
+.j-null { color: var(--text-zart); }
+.j-eigen { color: var(--text-zart); font-style: italic; }
+mark.aktiv { background: var(--akzent-weich); color: inherit; border-radius: 2px; }
+
+/* Pruefliste */
+.pruefliste { padding: 8px 12px; border-top: 1px solid var(--border); background: var(--surface-2); font-size: 11.5px; }
+.pruefliste ul { margin: 5px 0 0; padding-left: 16px; }
+.pruefliste li { margin-bottom: 2px; }
+.pruefliste li[data-art="fehler"] { color: var(--kritisch); }
+
+/* Rueckfragen */
+.rueckfrage {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  border-left: 2px solid var(--abgeleitet);
+}
+.rueckfrage b { display: block; font-family: var(--mono); font-size: 11px; color: var(--text-leise); }
+.rueckfrage p { margin: 3px 0 0; font-size: 12px; }
+.rueckfrage .vorschlaege { margin-top: 4px; font-size: 11px; color: var(--text-leise); }
+
+.leer { padding: 28px 16px; color: var(--text-zart); font-size: 12px; text-align: center; }
+
+.legende { display: flex; gap: 12px; padding: 7px 12px; border-top: 1px solid var(--border); font-size: 10.5px; color: var(--text-leise); flex-wrap: wrap; }
+.legende span { display: inline-flex; align-items: center; gap: 5px; }
+.legende i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+
+.ablage {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--ground) 82%, transparent);
+  backdrop-filter: blur(2px);
+}
+.ablage-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 40px 56px;
+  border: 2px dashed var(--akzent);
+  border-radius: 6px;
+  background: var(--surface);
+  text-align: center;
+}
+.ablage-box strong { font-size: 15px; }
+.ablage-box span { font-size: 12px; color: var(--text-leise); }
+
+.meldung {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.meldung[data-art="fehler"] { background: var(--kritisch-weich); color: var(--kritisch); }
+.meldung[data-art="erfolg"] { background: var(--belegt-weich); color: var(--belegt); }
+.meldung[data-art="arbeit"] { background: var(--surface-2); color: var(--text-leise); }
+.meldung button {
+  margin-left: auto;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+  font-size: 15px;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+@media (max-width: 1100px) {
+  .flaeche { grid-template-columns: 220px 1fr; }
+  .spalte-td { display: none; }
+}
+</style>
+
+<div class="rahmen">
+  <header class="kopf">
+    <div class="marke">
+      <b>KNX Thing Description Konfigurator</b>
+      <span>ets2td</span>
+    </div>
+    <label class="projektwahl" for="projektwahl">
+      <select id="projektwahl" aria-label="Projekt"></select>
+    </label>
+    <div class="kennzahlen" id="kennzahlen"></div>
+    <div class="kopf-rechts">
+      <div class="schalter" id="pfadschalter" role="group" aria-label="Auswertungspfad"></div>
+      <button class="knopf" id="importknopf" type="button">Projekt laden</button>
+      <button class="knopf" id="themaknopf" type="button">Dunkel</button>
+    </div>
+  </header>
+
+  <div class="statusband" id="statusband"></div>
+  <div id="meldungen"></div>
+
+  <div class="flaeche">
+    <section class="spalte">
+      <div class="spalte-kopf"><h2>Anlage</h2></div>
+      <div class="suchzeile">
+        <input class="suche" id="suche" type="text" placeholder="Gruppenadresse oder Name" aria-label="Datenpunkte durchsuchen">
+      </div>
+      <div class="spalte-inhalt"><div class="baum" id="baum"></div></div>
+      <div class="legende">
+        <span><i style="background:var(--belegt)"></i>aus Projektdaten</span>
+        <span><i style="background:var(--abgeleitet)"></i>abgeleitet</span>
+        <span><i style="background:var(--offen)"></i>offen</span>
+      </div>
+    </section>
+
+    <section class="spalte">
+      <div class="reiter" id="reiter" role="tablist"></div>
+      <div class="dp-kopf" id="dpkopf"></div>
+      <div class="spalte-inhalt"><div class="parameterliste" id="parameterliste"></div></div>
+    </section>
+
+    <section class="spalte spalte-td">
+      <div class="td-kopf">
+        <div class="schalter" id="tdschalter" role="group" aria-label="Ansicht">
+          <button type="button" data-ansicht="affordanz" aria-pressed="true">Diese Interaktion</button>
+          <button type="button" data-ansicht="thing" aria-pressed="false">Ganzes Thing</button>
+        </div>
+        <button class="knopf" id="kopieren" type="button" style="margin-left:auto">Kopieren</button>
+      </div>
+      <div class="td-flaeche"><pre class="td" id="tdausgabe"></pre></div>
+      <div class="pruefliste" id="pruefliste"></div>
+    </section>
+  </div>
+</div>
+
+<input type="file" id="dateifeld" accept=".knxproj,.zip" hidden>
+<div class="ablage" id="ablage" hidden>
+  <div class="ablage-box">
+    <strong>ETS-Projekt hier ablegen</strong>
+    <span>knxproj aus ETS5 oder ETS6 &middot; wird nur im Browser verarbeitet</span>
+  </div>
+</div>
+
+<script type="application/json" id="bundle">__BUNDLE__</script>
+<script>
+__IMPORT__
+</script>
+<script>
+"use strict";
+const SAMMLUNG = JSON.parse(document.getElementById("bundle").textContent);
+const PARAM = SAMMLUNG.parameter;
+let B = SAMMLUNG.projekte[0];
+function besterPfad() {
+  let bester = Object.keys(B.pfade)[0];
+  let bestwert = -1;
+  Object.keys(B.pfade).forEach(name => {
+    const punkte = B.pfade[name].punkte;
+    const wert = punkte.reduce((summe, p) =>
+      summe + ["raum", "funktion", "rolle", "dpt"].filter(d => p.herkunft[d]).length, 0);
+    if (wert > bestwert) { bestwert = wert; bester = name; }
+  });
+  return bester;
+}
+
+const zustand = {
+  pfad: besterPfad(),
+  punktId: null,
+  seite: PARAM[0].seite,
+  ansicht: "affordanz",
+  suche: "",
+  werte: {},
+  geaendert: {},
+};
+
+const seiten = [...new Set(PARAM.map(p => p.seite))];
+const RUECKFRAGEN_SEITE = "Rueckfragen";
+
+function pfadDaten() { return B.pfade[zustand.pfad]; }
+function punkte() { return pfadDaten().punkte; }
+function punktVon(id) { return punkte().find(p => p.id === id) || null; }
+
+function werteVon(id) {
+  if (!zustand.werte[zustand.pfad]) zustand.werte[zustand.pfad] = {};
+  const topf = zustand.werte[zustand.pfad];
+  if (!topf[id]) {
+    const p = punktVon(id);
+    topf[id] = p ? JSON.parse(JSON.stringify(p.werte)) : {};
+  }
+  return topf[id];
+}
+function istGeaendert(id, param) {
+  return Boolean(zustand.geaendert[zustand.pfad + "|" + id + "|" + param]);
+}
+function markiereGeaendert(id, param) {
+  zustand.geaendert[zustand.pfad + "|" + id + "|" + param] = true;
+}
+
+function stufeVon(punkt) {
+  const h = punkt.herkunft;
+  const belegteQuellen = ["ets-funktion", "ets-attribut", "gebaeudestruktur", "ets-semantik"];
+  const vorhanden = ["raum", "rolle", "dpt"].map(d => h[d]).filter(Boolean);
+  if (vorhanden.length < 3) return "offen";
+  if (vorhanden.every(z => belegteQuellen.includes(z.quelle))) return "belegt";
+  return "abgeleitet";
+}
+
+function herkunftFuer(punkt, paramId) {
+  const abbildung = { rolle: "rolle", datentyp: "dpt", einheit: "dpt", minimum: "dpt", maximum: "dpt" };
+  const dim = abbildung[paramId];
+  if (!dim) return null;
+  return punkt.herkunft[dim];
+}
+
+function stufeAusQuelle(quelle) {
+  const belegt = ["ets-funktion", "ets-attribut", "gebaeudestruktur", "ets-semantik"];
+  return belegt.includes(quelle) ? "belegt" : "abgeleitet";
+}
+
+/* ---------- Thing Description ---------- */
+
+function baueSchema(w) {
+  if (!w.datentyp || w.datentyp === "null") return null;
+  const s = { type: w.datentyp };
+  if (w.einheit) s.unit = w.einheit;
+  if (w.minimum !== null && w.minimum !== undefined && w.minimum !== "") s.minimum = Number(w.minimum);
+  if (w.maximum !== null && w.maximum !== undefined && w.maximum !== "") s.maximum = Number(w.maximum);
+  if (w.multipleof !== null && w.multipleof !== undefined && w.multipleof !== "") s.multipleOf = Number(w.multipleof);
+  if (w.maxlength !== null && w.maxlength !== undefined && w.maxlength !== "") s.maxLength = Number(w.maxlength);
+  return s;
+}
+
+function baueAffordanz(punkt, w) {
+  const a = {};
+  if (w.semantischer_typ) a["@type"] = w.semantischer_typ;
+  a.title = w.titel;
+  if (w.beschreibung) a.description = w.beschreibung;
+  const schema = baueSchema(w);
+  if (w.rolle === "property") {
+    if (schema) Object.assign(a, schema);
+    if (w.readonly) a.readOnly = true;
+    if (w.writeonly) a.writeOnly = true;
+    a.observable = Boolean(w.observable);
+  } else if (w.rolle === "action") {
+    if (schema) a.input = schema;
+    if (w.safe) a.safe = true;
+    if (w.idempotent) a.idempotent = true;
+    if (w.synchronous) a.synchronous = true;
+  } else {
+    if (schema) a.data = schema;
+  }
+  const form = { href: w.href, contentType: w.contenttype };
+  if (w.operationen && w.operationen.length) form.op = w.operationen.slice();
+  a.forms = [form];
+  a["ets2td:gruppenadresse"] = punkt.ga_text;
+  if (punkt.dpt) a["ets2td:dpt"] = punkt.dpt;
+  if (punkt.knx_rolle) a["ets2td:knxRolle"] = punkt.knx_rolle;
+  return a;
+}
+
+function schluesselVon(punkt) {
+  const roh = (punkt.name || ("ga " + punkt.ga)).toLowerCase()
+    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+    .replace(/[^a-z0-9]+/g, " ").trim().replace(/ /g, "-");
+  return roh || ("ga-" + punkt.ga);
+}
+
+function baueThing(raumTitel, mitgliederIds, hervorId) {
+  const td = {
+    "@context": [B.td_kontext, { ets2td: B.vokabular }],
+    "@type": "Thing",
+    id: "urn:ets2td:" + schluesselVon({ name: B.projekt, ga: 0 }) + ":" + schluesselVon({ name: raumTitel, ga: 0 }),
+    title: raumTitel,
+    securityDefinitions: { nosec_sc: { scheme: "nosec" } },
+    security: "nosec_sc",
+  };
+  const faecher = { property: {}, action: {}, event: {} };
+  const namen = { property: "properties", action: "actions", event: "events" };
+  let hervorPfad = null;
+  mitgliederIds.forEach(id => {
+    const punkt = punktVon(id);
+    if (!punkt) return;
+    const w = werteVon(id);
+    let schluessel = schluesselVon(punkt);
+    const fach = faecher[w.rolle] || faecher.property;
+    if (fach[schluessel]) schluessel = schluessel + "-" + punkt.ga;
+    fach[schluessel] = baueAffordanz(punkt, w);
+    if (id === hervorId) hervorPfad = [namen[w.rolle] || "properties", schluessel];
+  });
+  Object.keys(faecher).forEach(rolle => {
+    if (Object.keys(faecher[rolle]).length) td[namen[rolle]] = faecher[rolle];
+  });
+  return { td: td, hervor: hervorPfad };
+}
+
+function raumVonPunkt(punkt) {
+  return punkt.raum || "Unzugeordnet";
+}
+
+function mitgliederDesRaums(raumTitel) {
+  return punkte().filter(p => raumVonPunkt(p) === raumTitel).map(p => p.id);
+}
+
+/* ---------- Pruefung ---------- */
+
+function pruefe(w) {
+  const meldungen = [];
+  if (!w.titel) meldungen.push({ art: "fehler", text: "Bezeichnung fehlt, title ist Pflicht." });
+  if (!w.href) meldungen.push({ art: "fehler", text: "Adresse fehlt, jedes Formular braucht href." });
+  if (!w.operationen || !w.operationen.length) {
+    meldungen.push({ art: "fehler", text: "Mindestens eine Operation waehlen." });
+  }
+  if (w.rolle === "property" && w.readonly && w.writeonly) {
+    meldungen.push({ art: "fehler", text: "readOnly und writeOnly schliessen sich aus." });
+  }
+  if (w.rolle === "property" && w.readonly && (w.operationen || []).includes("writeproperty")) {
+    meldungen.push({ art: "fehler", text: "writeproperty passt nicht zu readOnly." });
+  }
+  if (w.rolle === "action" && w.safe && !w.idempotent) {
+    meldungen.push({ art: "hinweis", text: "Nebenwirkungsfrei ohne Wiederholbarkeit ist ungewoehnlich." });
+  }
+  const zahl = ["integer", "number"].includes(w.datentyp);
+  if (zahl && w.minimum !== null && w.maximum !== null && w.minimum !== "" && w.maximum !== "" &&
+      Number(w.minimum) > Number(w.maximum)) {
+    meldungen.push({ art: "fehler", text: "Kleinster Wert liegt ueber dem groessten." });
+  }
+  return meldungen;
+}
+
+/* ---------- Darstellung ---------- */
+
+function el(tag, klasse, text) {
+  const e = document.createElement(tag);
+  if (klasse) e.className = klasse;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function zeichneProjektwahl() {
+  const feld = document.getElementById("projektwahl");
+  if (feld.dataset.gefuellt !== "ja") {
+    SAMMLUNG.projekte.forEach((projekt, i) => {
+      const option = document.createElement("option");
+      option.value = String(i);
+      option.textContent = projekt.titel + " · " + projekt.projekt;
+      feld.appendChild(option);
+    });
+    feld.dataset.gefuellt = "ja";
+    feld.addEventListener("change", () => {
+      B = SAMMLUNG.projekte[Number(feld.value)];
+      zustand.pfad = besterPfad();
+      zustand.punktId = null;
+      zustand.seite = PARAM[0].seite;
+      zustand.suche = "";
+      document.getElementById("suche").value = "";
+      const start = besterStartpunkt();
+      if (start) zustand.punktId = start.id;
+      zeichneAlles();
+    });
+  }
+  feld.value = String(SAMMLUNG.projekte.indexOf(B));
+  feld.disabled = SAMMLUNG.projekte.length < 2;
+}
+
+function zeichnePfadschalter() {
+  const ziel = document.getElementById("pfadschalter");
+  ziel.textContent = "";
+  const beschriftung = { a: "Pfad A · Export", b: "Pfad B · Heuristik", "b-pur": "B ohne Linking" };
+  Object.keys(B.pfade).forEach(pfad => {
+    const knopf = el("button", null, beschriftung[pfad] || pfad);
+    knopf.type = "button";
+    knopf.setAttribute("aria-pressed", String(pfad === zustand.pfad));
+    knopf.addEventListener("click", () => {
+      zustand.pfad = pfad;
+      zustand.punktId = null;
+      zeichneAlles();
+    });
+    ziel.appendChild(knopf);
+  });
+}
+
+function zeichneKennzahlen() {
+  const ziel = document.getElementById("kennzahlen");
+  ziel.textContent = "";
+  const alle = punkte();
+  const mit = d => alle.filter(p => p.herkunft[d]).length;
+  const zahlen = [
+    [alle.length, "Datenpunkte"],
+    [mit("raum"), "mit Raum"],
+    [mit("rolle"), "mit Rolle"],
+    [mit("dpt"), "mit DPT"],
+    [pfadDaten().rueckfragen.length, "Rueckfragen"],
+  ];
+  zahlen.forEach(([wert, titel]) => {
+    const box = el("div", "kennzahl");
+    box.appendChild(el("b", null, String(wert)));
+    box.appendChild(el("span", null, titel));
+    ziel.appendChild(box);
+  });
+  zeichneProjektwahl();
+}
+
+function zeichneStatusband() {
+  const ziel = document.getElementById("statusband");
+  ziel.textContent = "";
+  const haken = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  haken.setAttribute("viewBox", "0 0 16 16");
+  haken.setAttribute("aria-hidden", "true");
+  const pfad = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  pfad.setAttribute("d", "M3 8.5l3.2 3.2L13 5");
+  pfad.setAttribute("fill", "none");
+  pfad.setAttribute("stroke", "currentColor");
+  pfad.setAttribute("stroke-width", "2");
+  pfad.setAttribute("stroke-linecap", "round");
+  pfad.setAttribute("stroke-linejoin", "round");
+  haken.appendChild(pfad);
+  const marke = el("span", "pruefzeichen");
+  marke.appendChild(haken);
+  marke.appendChild(el("span", null, (B.kennzahlen.validierung || "Erzeugte Thing Descriptions bestehen die Pruefung")));
+  ziel.appendChild(marke);
+
+  const rest = el("span");
+  rest.innerHTML = "Erzeugt aus <strong>" + escape(B.kennzahlen.quelle || "ETS-Projekt") +
+    "</strong> &middot; Validierung mit dem Eclipse Thingweb Playground beim Erzeugen, Strukturpruefung im Browser live";
+  ziel.appendChild(rest);
+}
+
+function escape(text) {
+  return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function zeichneBaum() {
+  const ziel = document.getElementById("baum");
+  ziel.textContent = "";
+  const suchtext = zustand.suche.trim().toLowerCase();
+  const treffer = id => {
+    if (!suchtext) return true;
+    const p = punktVon(id);
+    return p && ((p.name || "").toLowerCase().includes(suchtext) || p.ga_text.includes(suchtext));
+  };
+
+  pfadDaten().baum.forEach(raum => {
+    const sichtbareFunktionen = raum.funktionen
+      .map(f => ({ f: f, punkte: f.punkte.filter(treffer) }))
+      .filter(x => x.punkte.length);
+    if (!sichtbareFunktionen.length) return;
+
+    const box = el("div", "raum");
+    box.dataset.offen = suchtext ? "true" : String(raum.titel === aktuellerRaum());
+    const kopf = el("button", "raum-kopf");
+    kopf.type = "button";
+    const pfeil = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    pfeil.setAttribute("class", "pfeil");
+    pfeil.setAttribute("viewBox", "0 0 12 12");
+    const pp = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    pp.setAttribute("d", "M2.5 4.5L6 8l3.5-3.5");
+    pp.setAttribute("fill", "none");
+    pp.setAttribute("stroke", "currentColor");
+    pp.setAttribute("stroke-width", "1.6");
+    pp.setAttribute("stroke-linecap", "round");
+    pfeil.appendChild(pp);
+    kopf.appendChild(pfeil);
+    kopf.appendChild(el("span", null, raum.titel));
+    const anzahl = sichtbareFunktionen.reduce((s, x) => s + x.punkte.length, 0);
+    kopf.appendChild(el("span", "raum-zahl", String(anzahl)));
+    kopf.addEventListener("click", () => {
+      box.dataset.offen = box.dataset.offen === "true" ? "false" : "true";
+    });
+    box.appendChild(kopf);
+
+    const liste = el("div", "funktionen");
+    sichtbareFunktionen.forEach(({ f, punkte: ids }) => {
+      if (f.titel && f.titel !== "Ohne Funktion") {
+        liste.appendChild(el("div", "funktion-titel", f.titel));
+      }
+      ids.forEach(id => {
+        const punkt = punktVon(id);
+        if (!punkt) return;
+        const knopf = el("button", "punkt");
+        knopf.type = "button";
+        knopf.setAttribute("aria-current", String(id === zustand.punktId));
+        knopf.appendChild(el("span", "punkt-ga", punkt.ga_text));
+        knopf.appendChild(el("span", "punkt-name", punkt.name || "ohne Namen"));
+        knopf.title = punkt.ga_text + "  " + (punkt.name || "ohne Namen");
+        const marke = el("span", "punkt-marke");
+        marke.dataset.stufe = stufeVon(punkt);
+        knopf.appendChild(marke);
+        knopf.addEventListener("click", () => {
+          zustand.punktId = id;
+          zeichneAlles();
+        });
+        liste.appendChild(knopf);
+      });
+    });
+    box.appendChild(liste);
+    ziel.appendChild(box);
+  });
+
+  if (!ziel.children.length) {
+    ziel.appendChild(el("div", "leer", "Keine Treffer."));
+  }
+}
+
+function aktuellerRaum() {
+  const punkt = zustand.punktId ? punktVon(zustand.punktId) : null;
+  return punkt ? raumVonPunkt(punkt) : null;
+}
+
+function zeichneReiter() {
+  const ziel = document.getElementById("reiter");
+  ziel.textContent = "";
+  [...seiten, RUECKFRAGEN_SEITE].forEach(seite => {
+    const knopf = el("button", null, seite === RUECKFRAGEN_SEITE
+      ? "Rueckfragen (" + pfadDaten().rueckfragen.length + ")"
+      : seite);
+    knopf.type = "button";
+    knopf.setAttribute("role", "tab");
+    knopf.setAttribute("aria-selected", String(seite === zustand.seite));
+    knopf.addEventListener("click", () => {
+      zustand.seite = seite;
+      zeichneReiter();
+      zeichneParameter();
+    });
+    ziel.appendChild(knopf);
+  });
+}
+
+function zeichneKopf() {
+  const ziel = document.getElementById("dpkopf");
+  ziel.textContent = "";
+  const punkt = zustand.punktId ? punktVon(zustand.punktId) : null;
+  if (!punkt) {
+    ziel.appendChild(el("div", "parameter-hilfe", "Datenpunkt links waehlen."));
+    return;
+  }
+  ziel.appendChild(el("h1", null, punkt.name || "Gruppenadresse " + punkt.ga_text));
+  const zeile = el("div", "dp-zeile");
+  const teile = [
+    ["Gruppenadresse", punkt.ga_text],
+    ["Datenpunkttyp", punkt.dpt ? punkt.dpt + (punkt.dpt_text ? " · " + punkt.dpt_text : "") : "nicht gepflegt"],
+    ["Wertebereich", punkt.wertebereich || "unbekannt"],
+    ["Hauptgruppe", punkt.hauptgruppe || "ohne"],
+    ["Mittelgruppe", punkt.mittelgruppe || "ohne"],
+  ];
+  if (punkt.knx_rolle) teile.push(["ETS-Rolle", punkt.knx_rolle]);
+  teile.forEach(([titel, wert]) => {
+    const span = el("span");
+    span.appendChild(document.createTextNode(titel + ": "));
+    const code = el("code", null, wert);
+    span.appendChild(code);
+    zeile.appendChild(span);
+  });
+  ziel.appendChild(zeile);
+}
+
+function sichtbar(parameter, w) {
+  const regeln = parameter.sichtbar_wenn || {};
+  return Object.keys(regeln).every(schluessel => regeln[schluessel].includes(w[schluessel]));
+}
+
+function zeichneParameter() {
+  const ziel = document.getElementById("parameterliste");
+  ziel.textContent = "";
+  if (zustand.seite === RUECKFRAGEN_SEITE) {
+    zeichneRueckfragen(ziel);
+    return;
+  }
+  const punkt = zustand.punktId ? punktVon(zustand.punktId) : null;
+  if (!punkt) {
+    ziel.appendChild(el("div", "leer", "Kein Datenpunkt gewaehlt."));
+    return;
+  }
+  const w = werteVon(punkt.id);
+  PARAM.filter(p => p.seite === zustand.seite).forEach(parameter => {
+    if (!sichtbar(parameter, w)) return;
+    ziel.appendChild(zeichneEinParameter(parameter, punkt, w));
+  });
+}
+
+function zeichneEinParameter(parameter, punkt, w) {
+  const box = el("div", "parameter");
+  const kopf = el("div", "parameter-kopf");
+  const titel = el("div", "parameter-titel");
+  titel.appendChild(el("span", null, parameter.titel));
+
+  if (istGeaendert(punkt.id, parameter.id)) {
+    const marke = el("span", "herkunft", "geaendert");
+    marke.dataset.stufe = "geaendert";
+    titel.appendChild(marke);
+  } else {
+    const herkunft = herkunftFuer(punkt, parameter.id);
+    if (herkunft) {
+      const marke = el("span", "herkunft",
+        herkunft.quelle_klartext + " · " + Math.round(herkunft.konfidenz * 100) + "%");
+      marke.dataset.stufe = stufeAusQuelle(herkunft.quelle);
+      titel.appendChild(marke);
+    } else if (["rolle", "datentyp"].includes(parameter.id)) {
+      const marke = el("span", "herkunft", "Vorschlag");
+      marke.dataset.stufe = "offen";
+      titel.appendChild(marke);
+    }
+  }
+  kopf.appendChild(titel);
+  kopf.appendChild(el("div", "parameter-hilfe", parameter.hilfe));
+  box.appendChild(kopf);
+
+  const feld = el("div", "parameter-feld");
+  feld.appendChild(baueSteuerung(parameter, punkt, w));
+  box.appendChild(feld);
+  return box;
+}
+
+function aendere(punkt, parameter, wert) {
+  const w = werteVon(punkt.id);
+  w[parameter.id] = wert;
+  markiereGeaendert(punkt.id, parameter.id);
+  if (parameter.id === "readonly" && wert === true) w.writeonly = false;
+  if (parameter.id === "writeonly" && wert === true) w.readonly = false;
+  if (parameter.id === "rolle") {
+    const erlaubt = B.operationen[wert] || [];
+    w.operationen = w.operationen.filter(op => erlaubt.includes(op));
+    if (!w.operationen.length) w.operationen = [erlaubt[0]];
+  }
+  zeichneParameter();
+  zeichneTd();
+  zeichneBaum();
+}
+
+function baueSteuerung(parameter, punkt, w) {
+  const wert = w[parameter.id];
+  if (parameter.steuerung === "auswahl") {
+    const feld = document.createElement("select");
+    (parameter.optionen || []).forEach(option => {
+      const o = document.createElement("option");
+      o.value = option.wert;
+      o.textContent = option.titel;
+      o.selected = option.wert === wert;
+      feld.appendChild(o);
+    });
+    feld.addEventListener("change", () => aendere(punkt, parameter, feld.value));
+    return feld;
+  }
+  if (parameter.steuerung === "schalter") {
+    const box = el("div", "schalterfeld");
+    [["ja", true], ["nein", false]].forEach(([titel, w2]) => {
+      const knopf = el("button", null, titel);
+      knopf.type = "button";
+      knopf.setAttribute("aria-pressed", String(Boolean(wert) === w2));
+      knopf.addEventListener("click", () => aendere(punkt, parameter, w2));
+      box.appendChild(knopf);
+    });
+    return box;
+  }
+  if (parameter.steuerung === "zahl") {
+    const feld = document.createElement("input");
+    feld.type = "number";
+    feld.step = "any";
+    feld.value = wert === null || wert === undefined ? "" : String(wert);
+    feld.addEventListener("change", () =>
+      aendere(punkt, parameter, feld.value === "" ? null : Number(feld.value)));
+    return feld;
+  }
+  if (parameter.steuerung === "liste") {
+    const box = el("div", "opliste");
+    const erlaubt = B.operationen[w.rolle] || [];
+    erlaubt.forEach(op => {
+      const label = document.createElement("label");
+      const haken = document.createElement("input");
+      haken.type = "checkbox";
+      haken.checked = (w.operationen || []).includes(op);
+      haken.addEventListener("change", () => {
+        const aktuell = new Set(w.operationen || []);
+        if (haken.checked) aktuell.add(op); else aktuell.delete(op);
+        aendere(punkt, parameter, erlaubt.filter(x => aktuell.has(x)));
+      });
+      label.appendChild(haken);
+      label.appendChild(document.createTextNode(op));
+      box.appendChild(label);
+    });
+    return box;
+  }
+  const feld = document.createElement("input");
+  feld.type = "text";
+  feld.value = wert === null || wert === undefined ? "" : String(wert);
+  feld.addEventListener("change", () => aendere(punkt, parameter, feld.value));
+  return feld;
+}
+
+function zeichneRueckfragen(ziel) {
+  const fragen = pfadDaten().rueckfragen;
+  if (!fragen.length) {
+    ziel.appendChild(el("div", "leer", "Keine offenen Rueckfragen."));
+    return;
+  }
+  const kopf = el("div", "parameter");
+  const text = el("div", "parameter-kopf");
+  text.appendChild(el("div", "parameter-titel", fragen.length + " Faelle ohne belegte Zuordnung"));
+  text.appendChild(el("div", "parameter-hilfe",
+    "Der Prototyp raet hier nicht. Jeder Fall nennt die fehlenden Dimensionen und, wo moeglich, " +
+    "Vorschlaege aus der Gebaeudestruktur. Entschieden wird im Konfigurator."));
+  kopf.appendChild(text);
+  ziel.appendChild(kopf);
+
+  fragen.slice(0, 120).forEach(frage => {
+    const box = el("div", "rueckfrage");
+    box.appendChild(el("b", null, frage.ga_text + "  " + (frage.name || "")));
+    box.appendChild(el("p", null, frage.frage));
+    if (frage.vorschlaege && frage.vorschlaege.length) {
+      box.appendChild(el("div", "vorschlaege", "Vorschlaege: " + frage.vorschlaege.join(", ")));
+    }
+    ziel.appendChild(box);
+  });
+  if (fragen.length > 120) {
+    ziel.appendChild(el("div", "leer", "... und " + (fragen.length - 120) + " weitere."));
+  }
+}
+
+function faerbe(json, hervorPfad) {
+  const roh = JSON.stringify(json, null, 2);
+  const zeilen = roh.split("\n");
+  let start = -1, ende = -1;
+  if (hervorPfad) {
+    const suchmuster = '"' + hervorPfad[1] + '":';
+    let tiefe = 0;
+    zeilen.forEach((zeile, i) => {
+      if (start === -1 && zeile.includes(suchmuster)) {
+        start = i;
+        tiefe = 0;
+      }
+      if (start !== -1 && ende === -1) {
+        tiefe += (zeile.match(/[{[]/g) || []).length - (zeile.match(/[}\]]/g) || []).length;
+        if (i > start && tiefe <= 0) ende = i;
+      }
+    });
+  }
+  return zeilen.map((zeile, i) => {
+    let h = escape(zeile)
+      .replace(/&quot;([^&]*?)&quot;(\s*:)/g, '<span class="j-schluessel">"$1"</span>$2')
+      .replace(/:\s&quot;(.*?)&quot;/g, ': <span class="j-text">"$1"</span>')
+      .replace(/:\s(-?\d+\.?\d*)/g, ': <span class="j-zahl">$1</span>')
+      .replace(/:\s(true|false)/g, ': <span class="j-bool">$1</span>')
+      .replace(/:\s(null)/g, ': <span class="j-null">$1</span>');
+    h = h.replace(/<span class="j-schluessel">"(ets2td:[^"]*)"<\/span>/g,
+      '<span class="j-eigen">"$1"</span>');
+    if (start !== -1 && i >= start && i <= ende) return '<mark class="aktiv">' + h + "</mark>";
+    return h;
+  }).join("\n");
+}
+
+function zeichneTd() {
+  const ziel = document.getElementById("tdausgabe");
+  const punkt = zustand.punktId ? punktVon(zustand.punktId) : null;
+  if (!punkt) {
+    ziel.textContent = "";
+    document.getElementById("pruefliste").textContent = "";
+    return;
+  }
+  const w = werteVon(punkt.id);
+  if (zustand.ansicht === "affordanz") {
+    ziel.innerHTML = faerbe(baueAffordanz(punkt, w), null);
+  } else {
+    const raum = raumVonPunkt(punkt);
+    const gebaut = baueThing(raum, mitgliederDesRaums(raum), punkt.id);
+    ziel.innerHTML = faerbe(gebaut.td, gebaut.hervor);
+    const marke = ziel.querySelector("mark.aktiv");
+    if (marke && marke.scrollIntoView) marke.scrollIntoView({ block: "nearest" });
+  }
+  zeichnePruefung(w);
+}
+
+function zeichnePruefung(w) {
+  const ziel = document.getElementById("pruefliste");
+  ziel.textContent = "";
+  const meldungen = pruefe(w);
+  const kopf = el("div");
+  if (!meldungen.length) {
+    kopf.innerHTML = '<span class="pruefzeichen">Strukturpruefung bestanden</span>';
+  } else {
+    const fehler = meldungen.filter(m => m.art === "fehler").length;
+    kopf.textContent = fehler ? fehler + " Punkt(e) zu klaeren" : "Hinweise";
+  }
+  ziel.appendChild(kopf);
+  if (meldungen.length) {
+    const liste = document.createElement("ul");
+    meldungen.forEach(m => {
+      const li = el("li", null, m.text);
+      li.dataset.art = m.art;
+      liste.appendChild(li);
+    });
+    ziel.appendChild(liste);
+  }
+}
+
+function zeichneAlles() {
+  zeichnePfadschalter();
+  zeichneKennzahlen();
+  zeichneStatusband();
+  zeichneBaum();
+  zeichneReiter();
+  zeichneKopf();
+  zeichneParameter();
+  zeichneTd();
+}
+
+/* ---------- Ereignisse ---------- */
+
+document.getElementById("suche").addEventListener("input", e => {
+  zustand.suche = e.target.value;
+  zeichneBaum();
+});
+
+document.getElementById("tdschalter").addEventListener("click", e => {
+  const knopf = e.target.closest("button");
+  if (!knopf) return;
+  zustand.ansicht = knopf.dataset.ansicht;
+  [...e.currentTarget.children].forEach(k =>
+    k.setAttribute("aria-pressed", String(k === knopf)));
+  zeichneTd();
+});
+
+document.getElementById("kopieren").addEventListener("click", async () => {
+  const knopf = document.getElementById("kopieren");
+  const punkt = zustand.punktId ? punktVon(zustand.punktId) : null;
+  if (!punkt) return;
+  const w = werteVon(punkt.id);
+  const inhalt = zustand.ansicht === "affordanz"
+    ? baueAffordanz(punkt, w)
+    : baueThing(raumVonPunkt(punkt), mitgliederDesRaums(raumVonPunkt(punkt)), null).td;
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(inhalt, null, 2));
+    knopf.textContent = "Kopiert";
+  } catch (fehler) {
+    knopf.textContent = "Nicht moeglich";
+  }
+  setTimeout(() => { knopf.textContent = "Kopieren"; }, 1400);
+});
+
+const themaknopf = document.getElementById("themaknopf");
+function themaSetzen(dunkel) {
+  document.documentElement.dataset.theme = dunkel ? "dark" : "light";
+  themaknopf.textContent = dunkel ? "Hell" : "Dunkel";
+  try { localStorage.setItem("ets2td-thema", dunkel ? "dark" : "light"); } catch (e) { /* egal */ }
+}
+themaknopf.addEventListener("click", () => {
+  themaSetzen(document.documentElement.dataset.theme !== "dark");
+});
+try {
+  const gespeichert = localStorage.getItem("ets2td-thema");
+  if (gespeichert) themaSetzen(gespeichert === "dark");
+  else themaknopf.textContent =
+    window.matchMedia("(prefers-color-scheme: dark)").matches ? "Hell" : "Dunkel";
+} catch (e) {
+  themaknopf.textContent = "Dunkel";
+}
+
+function besterStartpunkt() {
+  const bewertet = punkte().map(p => {
+    let wert = 0;
+    if (p.raum) wert += 3;
+    if (p.funktion) wert += 1;
+    if (p.herkunft.rolle) wert += 2;
+    if (p.dpt) wert += 3;
+    if (p.wertebereich) wert += 2;
+    if (["integer", "number"].includes(p.werte.datentyp)) wert += 3;
+    if (p.herkunft.dpt && p.herkunft.dpt.konfidenz === 1) wert += 1;
+    return { punkt: p, wert: wert };
+  });
+  bewertet.sort((a, b) => b.wert - a.wert || a.punkt.ga - b.punkt.ga);
+  return bewertet.length ? bewertet[0].punkt : null;
+}
+
+/* ---------- Projektimport ---------- */
+
+function zeigeMeldung(text, art) {
+  const bereich = document.getElementById("meldungen");
+  bereich.textContent = "";
+  const box = el("div", "meldung");
+  box.dataset.art = art;
+  box.appendChild(el("span", null, text));
+  if (art !== "arbeit") {
+    const schliessen = el("button", null, "\u00d7");
+    schliessen.type = "button";
+    schliessen.setAttribute("aria-label", "Meldung schliessen");
+    schliessen.addEventListener("click", () => bereich.textContent = "");
+    box.appendChild(schliessen);
+  }
+  bereich.appendChild(box);
+  return box;
+}
+
+async function ladeProjekt(datei) {
+  if (!datei) return;
+  zeigeMeldung("Lese " + datei.name + " ...", "arbeit");
+  try {
+    const projekt = await importiereKnxproj(datei, SAMMLUNG.regeln);
+    projekt.titel = "Importiert";
+    SAMMLUNG.projekte.push(projekt);
+    B = projekt;
+    document.getElementById("projektwahl").dataset.gefuellt = "";
+    document.getElementById("projektwahl").textContent = "";
+    zustand.pfad = besterPfad();
+    zustand.seite = PARAM[0].seite;
+    zustand.suche = "";
+    document.getElementById("suche").value = "";
+    const start = besterStartpunkt();
+    zustand.punktId = start ? start.id : null;
+    zeichneAlles();
+    const anzahl = projekt.pfade.b.punkte.length;
+    const offen = projekt.pfade.b.rueckfragen.length;
+    zeigeMeldung(
+      `${projekt.projekt}: ${anzahl} Gruppenadressen umgewandelt, ${offen} Rueckfragen offen.`,
+      "erfolg");
+  } catch (fehler) {
+    zeigeMeldung("Import fehlgeschlagen: " + fehler.message, "fehler");
+  }
+}
+
+document.getElementById("importknopf").addEventListener("click", () => {
+  document.getElementById("dateifeld").click();
+});
+document.getElementById("dateifeld").addEventListener("change", e => {
+  ladeProjekt(e.target.files[0]);
+  e.target.value = "";
+});
+
+const ablage = document.getElementById("ablage");
+let ziehTimer = null;
+
+function zeigeAblage(sichtbar) {
+  ablage.hidden = !sichtbar;
+  if (ziehTimer) { clearTimeout(ziehTimer); ziehTimer = null; }
+  // dragleave feuert unzuverlaessig, deshalb blendet ein Nachlauf sicher aus.
+  if (sichtbar) ziehTimer = setTimeout(() => { ablage.hidden = true; }, 400);
+}
+
+function ziehtDatei(e) {
+  return e.dataTransfer && [...(e.dataTransfer.types || [])].includes("Files");
+}
+
+window.addEventListener("dragover", e => {
+  if (!ziehtDatei(e)) return;
+  e.preventDefault();
+  zeigeAblage(true);
+});
+window.addEventListener("drop", e => {
+  if (!ziehtDatei(e)) return;
+  e.preventDefault();
+  zeigeAblage(false);
+  ladeProjekt(e.dataTransfer.files[0]);
+});
+window.addEventListener("dragend", () => zeigeAblage(false));
+
+const erster = besterStartpunkt();
+if (erster) zustand.punktId = erster.id;
+zeichneAlles();
+</script>

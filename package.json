@@ -1,0 +1,8 @@
+{
+  "name": "ets2td-testwerkzeuge",
+  "private": true,
+  "description": "Browsergestuetzte Tests der Konfigurator-Oberflaeche",
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}

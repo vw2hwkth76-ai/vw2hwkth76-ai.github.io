@@ -1,0 +1,2014 @@
+{
+  "projekt": "Style",
+  "kommentar": "Abgeleitet aus ETS-Funktionen, Gebaeudestruktur und gepflegten DPT-Attributen. Leere Werte sind unbewertet und warten auf manuelle Korrektur. Rollenkonvention: Kommandos = action, Zustaende und Rueckmeldungen = property, Alarme = event.",
+  "datenpunkte": {
+    "2048": {
+      "text": "1/0/0",
+      "name": "Switch light central",
+      "raum": "One-family house",
+      "funktion": "Central light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2049": {
+      "text": "1/0/1",
+      "name": "Dawn switch",
+      "raum": "",
+      "funktion": "",
+      "rolle": "",
+      "dpt": ""
+    },
+    "2050": {
+      "text": "1/0/2",
+      "name": "Dimming light central",
+      "raum": "One-family house",
+      "funktion": "Central light",
+      "rolle": "",
+      "dpt": ""
+    },
+    "2051": {
+      "text": "1/0/3",
+      "name": "Value light central",
+      "raum": "One-family house",
+      "funktion": "Central light",
+      "rolle": "",
+      "dpt": ""
+    },
+    "2058": {
+      "text": "1/0/10",
+      "name": "Living room Light room switch",
+      "raum": "Living room",
+      "funktion": "Light room switch",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2059": {
+      "text": "1/0/11",
+      "name": "Living room Light room dimming",
+      "raum": "Living room",
+      "funktion": "Light room switch",
+      "rolle": "",
+      "dpt": ""
+    },
+    "2060": {
+      "text": "1/0/12",
+      "name": "Living room Light room value",
+      "raum": "Living room",
+      "funktion": "Light room switch",
+      "rolle": "",
+      "dpt": ""
+    },
+    "2061": {
+      "text": "1/0/13",
+      "name": "Kitchen Light room switch",
+      "raum": "Kitchen",
+      "funktion": "Light room switch",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2062": {
+      "text": "1/0/14",
+      "name": "Dining room Light room switch",
+      "raum": "Dining room",
+      "funktion": "Light room switch",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2063": {
+      "text": "1/0/15",
+      "name": "Dining room Light room dimming",
+      "raum": "Dining room",
+      "funktion": "Light room switch",
+      "rolle": "",
+      "dpt": ""
+    },
+    "2064": {
+      "text": "1/0/16",
+      "name": "Dining room Light room value",
+      "raum": "Dining room",
+      "funktion": "Light room switch",
+      "rolle": "",
+      "dpt": ""
+    },
+    "2065": {
+      "text": "1/0/17",
+      "name": "Guest toilet Light room switch",
+      "raum": "Guest toilet",
+      "funktion": "Light room switch",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2066": {
+      "text": "1/0/18",
+      "name": "Hallway Light room switch",
+      "raum": "Hallway",
+      "funktion": "Light room switch",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2067": {
+      "text": "1/0/19",
+      "name": "Staircase Light room switch",
+      "raum": "Staircase",
+      "funktion": "Light room switch",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2068": {
+      "text": "1/0/20",
+      "name": "Staircase Light room dimming",
+      "raum": "Staircase",
+      "funktion": "Light room switch",
+      "rolle": "",
+      "dpt": ""
+    },
+    "2069": {
+      "text": "1/0/21",
+      "name": "Staircase Light room value",
+      "raum": "Staircase",
+      "funktion": "Light room switch",
+      "rolle": "",
+      "dpt": ""
+    },
+    "2070": {
+      "text": "1/0/22",
+      "name": "Bedroom Light room switch",
+      "raum": "Bedroom",
+      "funktion": "Light room switch",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2071": {
+      "text": "1/0/23",
+      "name": "Bath room Light room switch",
+      "raum": "Bath room",
+      "funktion": "Light room switch",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2072": {
+      "text": "1/0/24",
+      "name": "Nursery 1 Light room switch",
+      "raum": "Nursery 1",
+      "funktion": "Light room switch",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2073": {
+      "text": "1/0/25",
+      "name": "Nursery 2 Light room switch",
+      "raum": "Nursery 2",
+      "funktion": "Light room switch",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2074": {
+      "text": "1/0/26",
+      "name": "Office Light room switch",
+      "raum": "Office",
+      "funktion": "Light room switch",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2075": {
+      "text": "1/0/27",
+      "name": "Garden Light room switch",
+      "raum": "Garden",
+      "funktion": "Light room switch",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2304": {
+      "text": "1/1/0",
+      "name": "Living room Ceiling light switching",
+      "raum": "Living room",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2305": {
+      "text": "1/1/1",
+      "name": "Living room Wall light switching",
+      "raum": "Living room",
+      "funktion": "Wall light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2306": {
+      "text": "1/1/2",
+      "name": "Living room Desk light switching",
+      "raum": "Living room",
+      "funktion": "Desk light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2307": {
+      "text": "1/1/3",
+      "name": "Living room Effect light switching",
+      "raum": "Living room",
+      "funktion": "Effect light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2308": {
+      "text": "1/1/4",
+      "name": "Living room Socket switching",
+      "raum": "Living room",
+      "funktion": "Socket",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2314": {
+      "text": "1/1/10",
+      "name": "Kitchen Ceiling light switching",
+      "raum": "Kitchen",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2315": {
+      "text": "1/1/11",
+      "name": "Kitchen Working light switching",
+      "raum": "Kitchen",
+      "funktion": "Working light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2321": {
+      "text": "1/1/17",
+      "name": "Dining room Ceiling light switching",
+      "raum": "Dining room",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2322": {
+      "text": "1/1/18",
+      "name": "Dining room Dining table switching",
+      "raum": "Dining room",
+      "funktion": "Dining table",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2328": {
+      "text": "1/1/24",
+      "name": "Guest toilet Ceiling light switching",
+      "raum": "Guest toilet",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2329": {
+      "text": "1/1/25",
+      "name": "Guest toilet Mirror switching",
+      "raum": "Guest toilet",
+      "funktion": "Mirror",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2335": {
+      "text": "1/1/31",
+      "name": "Hallway Ceiling light switching",
+      "raum": "Hallway",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2336": {
+      "text": "1/1/32",
+      "name": "Hallway Wardrobe switching",
+      "raum": "Hallway",
+      "funktion": "Wardrobe",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2342": {
+      "text": "1/1/38",
+      "name": "Store room Ceiling light switching",
+      "raum": "Store room",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2343": {
+      "text": "1/1/39",
+      "name": "Utility room Ceiling light switching",
+      "raum": "Utility room",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2344": {
+      "text": "1/1/40",
+      "name": "Staircase Stairs Ground/Upper switching",
+      "raum": "Staircase",
+      "funktion": "Stairs Ground/Upper",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2345": {
+      "text": "1/1/41",
+      "name": "Staircase Wall Ground/Upper switching",
+      "raum": "Staircase",
+      "funktion": "Wall Ground/Upper",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2346": {
+      "text": "1/1/42",
+      "name": "Staircase Stairs Upper/Attic switching",
+      "raum": "Staircase",
+      "funktion": "Stairs Upper/Attic",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2347": {
+      "text": "1/1/43",
+      "name": "Staircase Wall Upper/Attic switching",
+      "raum": "Staircase",
+      "funktion": "Wall Upper/Attic",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2353": {
+      "text": "1/1/49",
+      "name": "Bedroom Ceiling light switching",
+      "raum": "Bedroom",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2354": {
+      "text": "1/1/50",
+      "name": "Bedroom Closet light switching",
+      "raum": "Bedroom",
+      "funktion": "Closet light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2355": {
+      "text": "1/1/51",
+      "name": "Bedroom Bed left switching",
+      "raum": "Bedroom",
+      "funktion": "Bed left",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2356": {
+      "text": "1/1/52",
+      "name": "Bedroom Bed right switching",
+      "raum": "Bedroom",
+      "funktion": "Bed right",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2362": {
+      "text": "1/1/58",
+      "name": "Bath room Ceiling light switching",
+      "raum": "Bath room",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2363": {
+      "text": "1/1/59",
+      "name": "Bath room Mirror switching",
+      "raum": "Bath room",
+      "funktion": "Mirror",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2369": {
+      "text": "1/1/65",
+      "name": "Nursery 1 Ceiling light switching",
+      "raum": "Nursery 1",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2370": {
+      "text": "1/1/66",
+      "name": "Nursery 1 Bed switching",
+      "raum": "Nursery 1",
+      "funktion": "Bed",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2371": {
+      "text": "1/1/67",
+      "name": "Nursery 1 Desk switching",
+      "raum": "Nursery 1",
+      "funktion": "Desk",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2377": {
+      "text": "1/1/73",
+      "name": "Nursery 2 Ceiling light switching",
+      "raum": "Nursery 2",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2378": {
+      "text": "1/1/74",
+      "name": "Nursery 2 Bed switching",
+      "raum": "Nursery 2",
+      "funktion": "Bed",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2379": {
+      "text": "1/1/75",
+      "name": "Nursery 2 Desk switching",
+      "raum": "Nursery 2",
+      "funktion": "Desk",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2385": {
+      "text": "1/1/81",
+      "name": "Office Ceiling light switching",
+      "raum": "Office",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2386": {
+      "text": "1/1/82",
+      "name": "Office Working light switching",
+      "raum": "Office",
+      "funktion": "Working light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2392": {
+      "text": "1/1/88",
+      "name": "Garage Ceiling light switching",
+      "raum": "Garage",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2393": {
+      "text": "1/1/89",
+      "name": "Terrace/Balcony Wall light switching",
+      "raum": "Terrace/Balcony",
+      "funktion": "Wall light",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2394": {
+      "text": "1/1/90",
+      "name": "Garden Entrance area switching",
+      "raum": "Garden",
+      "funktion": "Entrance area",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2395": {
+      "text": "1/1/91",
+      "name": "Garden Driveway switching",
+      "raum": "Garden",
+      "funktion": "Driveway",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2396": {
+      "text": "1/1/92",
+      "name": "Garden Canopy switching",
+      "raum": "Garden",
+      "funktion": "Canopy",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2397": {
+      "text": "1/1/93",
+      "name": "Garden Walkway switching",
+      "raum": "Garden",
+      "funktion": "Walkway",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2398": {
+      "text": "1/1/94",
+      "name": "Garden Pond switching",
+      "raum": "Garden",
+      "funktion": "Pond",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2399": {
+      "text": "1/1/95",
+      "name": "Garden Garden bed switching",
+      "raum": "Garden",
+      "funktion": "Garden bed",
+      "rolle": "action",
+      "dpt": "DPST-1-1"
+    },
+    "2560": {
+      "text": "1/2/0",
+      "name": "Living room Ceiling light dimming",
+      "raum": "Living room",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2561": {
+      "text": "1/2/1",
+      "name": "Living room Wall light dimming",
+      "raum": "Living room",
+      "funktion": "Wall light",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2562": {
+      "text": "1/2/2",
+      "name": "Living room Desk light dimming",
+      "raum": "Living room",
+      "funktion": "Desk light",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2568": {
+      "text": "1/2/8",
+      "name": "Kitchen Ceiling light dimming",
+      "raum": "Kitchen",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2574": {
+      "text": "1/2/14",
+      "name": "Dining room Ceiling light dimming",
+      "raum": "Dining room",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2575": {
+      "text": "1/2/15",
+      "name": "Dining room Dining table dimming",
+      "raum": "Dining room",
+      "funktion": "Dining table",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2581": {
+      "text": "1/2/21",
+      "name": "Guest toilet Ceiling light dimming",
+      "raum": "Guest toilet",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2587": {
+      "text": "1/2/27",
+      "name": "Hallway Ceiling light dimming",
+      "raum": "Hallway",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2593": {
+      "text": "1/2/33",
+      "name": "Staircase Stairs Ground/Upper dimming",
+      "raum": "Staircase",
+      "funktion": "Stairs Ground/Upper",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2594": {
+      "text": "1/2/34",
+      "name": "Staircase Wall Ground/Upper dimming",
+      "raum": "Staircase",
+      "funktion": "Wall Ground/Upper",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2595": {
+      "text": "1/2/35",
+      "name": "Staircase Stairs Upper/Attic dimming",
+      "raum": "Staircase",
+      "funktion": "Stairs Upper/Attic",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2596": {
+      "text": "1/2/36",
+      "name": "Staircase Wall Upper/Attic dimming",
+      "raum": "Staircase",
+      "funktion": "Wall Upper/Attic",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2602": {
+      "text": "1/2/42",
+      "name": "Bedroom Ceiling light dimming",
+      "raum": "Bedroom",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2608": {
+      "text": "1/2/48",
+      "name": "Bath room Ceiling light dimming",
+      "raum": "Bath room",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2614": {
+      "text": "1/2/54",
+      "name": "Nursery 1 Ceiling light dimming",
+      "raum": "Nursery 1",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2620": {
+      "text": "1/2/60",
+      "name": "Nursery 2 Ceiling light dimming",
+      "raum": "Nursery 2",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2626": {
+      "text": "1/2/66",
+      "name": "Office Ceiling light dimming",
+      "raum": "Office",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2632": {
+      "text": "1/2/72",
+      "name": "Garage Ceiling light dimming",
+      "raum": "Garage",
+      "funktion": "Ceiling light",
+      "rolle": "action",
+      "dpt": "DPST-3-7"
+    },
+    "2816": {
+      "text": "1/3/0",
+      "name": "Living room Ceiling light value",
+      "raum": "Living room",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "2817": {
+      "text": "1/3/1",
+      "name": "Living room Wall light value",
+      "raum": "Living room",
+      "funktion": "Wall light",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "2818": {
+      "text": "1/3/2",
+      "name": "Living room Desk light value",
+      "raum": "Living room",
+      "funktion": "Desk light",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "2824": {
+      "text": "1/3/8",
+      "name": "Kitchen Ceiling light value",
+      "raum": "Kitchen",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "2830": {
+      "text": "1/3/14",
+      "name": "Dining room Ceiling light value",
+      "raum": "Dining room",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "2831": {
+      "text": "1/3/15",
+      "name": "Dining room Dining table value",
+      "raum": "Dining room",
+      "funktion": "Dining table",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "2837": {
+      "text": "1/3/21",
+      "name": "Guest toilet Ceiling light value",
+      "raum": "Guest toilet",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "2843": {
+      "text": "1/3/27",
+      "name": "Hallway Ceiling light value",
+      "raum": "Hallway",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "2849": {
+      "text": "1/3/33",
+      "name": "Staircase Stairs Ground/Upper value",
+      "raum": "Staircase",
+      "funktion": "Stairs Ground/Upper",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "2850": {
+      "text": "1/3/34",
+      "name": "Staircase Wall Ground/Upper value",
+      "raum": "Staircase",
+      "funktion": "Wall Ground/Upper",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "2851": {
+      "text": "1/3/35",
+      "name": "Staircase Stairs Upper/Attic value",
+      "raum": "Staircase",
+      "funktion": "Stairs Upper/Attic",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "2852": {
+      "text": "1/3/36",
+      "name": "Staircase Wall Upper/Attic value",
+      "raum": "Staircase",
+      "funktion": "Wall Upper/Attic",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "2858": {
+      "text": "1/3/42",
+      "name": "Bedroom Ceiling light value",
+      "raum": "Bedroom",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "2864": {
+      "text": "1/3/48",
+      "name": "Bath room Ceiling light value",
+      "raum": "Bath room",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "2870": {
+      "text": "1/3/54",
+      "name": "Nursery 1 Ceiling light value",
+      "raum": "Nursery 1",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "2876": {
+      "text": "1/3/60",
+      "name": "Nursery 2 Ceiling light value",
+      "raum": "Nursery 2",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "2882": {
+      "text": "1/3/66",
+      "name": "Office Ceiling light value",
+      "raum": "Office",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "2888": {
+      "text": "1/3/72",
+      "name": "Garage Ceiling light value",
+      "raum": "Garage",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-5-1"
+    },
+    "3072": {
+      "text": "1/4/0",
+      "name": "Living room Ceiling light status",
+      "raum": "Living room",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3073": {
+      "text": "1/4/1",
+      "name": "Living room Wall light status",
+      "raum": "Living room",
+      "funktion": "Wall light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3074": {
+      "text": "1/4/2",
+      "name": "Living room Desk light status",
+      "raum": "Living room",
+      "funktion": "Desk light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3075": {
+      "text": "1/4/3",
+      "name": "Living room Effect light status",
+      "raum": "Living room",
+      "funktion": "Effect light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3076": {
+      "text": "1/4/4",
+      "name": "Living room Socket status",
+      "raum": "Living room",
+      "funktion": "Socket",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3082": {
+      "text": "1/4/10",
+      "name": "Kitchen Ceiling light status",
+      "raum": "Kitchen",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3083": {
+      "text": "1/4/11",
+      "name": "Kitchen Working light status",
+      "raum": "Kitchen",
+      "funktion": "Working light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3089": {
+      "text": "1/4/17",
+      "name": "Dining room Ceiling light status",
+      "raum": "Dining room",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3090": {
+      "text": "1/4/18",
+      "name": "Dining room Dining table status",
+      "raum": "Dining room",
+      "funktion": "Dining table",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3096": {
+      "text": "1/4/24",
+      "name": "Guest toilet Ceiling light status",
+      "raum": "Guest toilet",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3097": {
+      "text": "1/4/25",
+      "name": "Guest toilet Mirror status",
+      "raum": "Guest toilet",
+      "funktion": "Mirror",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3103": {
+      "text": "1/4/31",
+      "name": "Hallway Ceiling light status",
+      "raum": "Hallway",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3104": {
+      "text": "1/4/32",
+      "name": "Hallway Wardrobe status",
+      "raum": "Hallway",
+      "funktion": "Wardrobe",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3110": {
+      "text": "1/4/38",
+      "name": "Store room Ceiling light status",
+      "raum": "Store room",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3111": {
+      "text": "1/4/39",
+      "name": "Utility room Ceiling light status",
+      "raum": "Utility room",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3112": {
+      "text": "1/4/40",
+      "name": "Staircase Stairs Ground/Upper status",
+      "raum": "Staircase",
+      "funktion": "Stairs Ground/Upper",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3113": {
+      "text": "1/4/41",
+      "name": "Staircase Wall Ground/Upper status",
+      "raum": "Staircase",
+      "funktion": "Wall Ground/Upper",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3114": {
+      "text": "1/4/42",
+      "name": "Staircase Stairs Upper/Attic status",
+      "raum": "Staircase",
+      "funktion": "Stairs Upper/Attic",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3115": {
+      "text": "1/4/43",
+      "name": "Staircase Wall Upper/Attic status",
+      "raum": "Staircase",
+      "funktion": "Wall Upper/Attic",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3121": {
+      "text": "1/4/49",
+      "name": "Bedroom Ceiling light status",
+      "raum": "Bedroom",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3122": {
+      "text": "1/4/50",
+      "name": "Bedroom Closet light status",
+      "raum": "Bedroom",
+      "funktion": "Closet light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3123": {
+      "text": "1/4/51",
+      "name": "Bedroom Bed left status",
+      "raum": "Bedroom",
+      "funktion": "Bed left",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3124": {
+      "text": "1/4/52",
+      "name": "Bedroom Bed right status",
+      "raum": "Bedroom",
+      "funktion": "Bed right",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3130": {
+      "text": "1/4/58",
+      "name": "Bath room Ceiling light status",
+      "raum": "Bath room",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3131": {
+      "text": "1/4/59",
+      "name": "Bath room Mirror status",
+      "raum": "Bath room",
+      "funktion": "Mirror",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3137": {
+      "text": "1/4/65",
+      "name": "Nursery 1 Ceiling light status",
+      "raum": "Nursery 1",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3138": {
+      "text": "1/4/66",
+      "name": "Nursery 1 Bed status",
+      "raum": "Nursery 1",
+      "funktion": "Bed",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3139": {
+      "text": "1/4/67",
+      "name": "Nursery 1 Desk status",
+      "raum": "Nursery 1",
+      "funktion": "Desk",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3145": {
+      "text": "1/4/73",
+      "name": "Nursery 2 Ceiling light status",
+      "raum": "Nursery 2",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3146": {
+      "text": "1/4/74",
+      "name": "Nursery 2 Bed status",
+      "raum": "Nursery 2",
+      "funktion": "Bed",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3147": {
+      "text": "1/4/75",
+      "name": "Nursery 2 Desk status",
+      "raum": "Nursery 2",
+      "funktion": "Desk",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3153": {
+      "text": "1/4/81",
+      "name": "Office Ceiling light status",
+      "raum": "Office",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3154": {
+      "text": "1/4/82",
+      "name": "Office Working light status",
+      "raum": "Office",
+      "funktion": "Working light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3160": {
+      "text": "1/4/88",
+      "name": "Garage Ceiling light status",
+      "raum": "Garage",
+      "funktion": "Ceiling light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3161": {
+      "text": "1/4/89",
+      "name": "Terrace/Balcony Wall light status",
+      "raum": "Terrace/Balcony",
+      "funktion": "Wall light",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3162": {
+      "text": "1/4/90",
+      "name": "Garden Entrance area status",
+      "raum": "Garden",
+      "funktion": "Entrance area",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3163": {
+      "text": "1/4/91",
+      "name": "Garden Driveway status",
+      "raum": "Garden",
+      "funktion": "Driveway",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3164": {
+      "text": "1/4/92",
+      "name": "Garden Canopy status",
+      "raum": "Garden",
+      "funktion": "Canopy",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3165": {
+      "text": "1/4/93",
+      "name": "Garden Walkway status",
+      "raum": "Garden",
+      "funktion": "Walkway",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3166": {
+      "text": "1/4/94",
+      "name": "Garden Pond status",
+      "raum": "Garden",
+      "funktion": "Pond",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "3167": {
+      "text": "1/4/95",
+      "name": "Garden Garden bed status",
+      "raum": "Garden",
+      "funktion": "Garden bed",
+      "rolle": "property",
+      "dpt": "DPST-1-1"
+    },
+    "4096": {
+      "text": "2/0/0",
+      "name": "Central movement",
+      "raum": "One-family house",
+      "funktion": "Central movement",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4097": {
+      "text": "2/0/1",
+      "name": "Wind alert",
+      "raum": "Living room",
+      "funktion": "Window 1",
+      "rolle": "event",
+      "dpt": "DPST-1-5"
+    },
+    "4098": {
+      "text": "2/0/2",
+      "name": "Rain alert",
+      "raum": "Living room",
+      "funktion": "Window 1",
+      "rolle": "event",
+      "dpt": "DPST-1-5"
+    },
+    "4099": {
+      "text": "2/0/3",
+      "name": "Central step/stop",
+      "raum": "One-family house",
+      "funktion": "Central movement",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4106": {
+      "text": "2/0/10",
+      "name": "Living room Room movement",
+      "raum": "Living room",
+      "funktion": "Room movement",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4107": {
+      "text": "2/0/11",
+      "name": "Living room Room step/stop",
+      "raum": "Living room",
+      "funktion": "Room movement",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4108": {
+      "text": "2/0/12",
+      "name": "Kitchen Room movement",
+      "raum": "Kitchen",
+      "funktion": "Room movement",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4109": {
+      "text": "2/0/13",
+      "name": "Kitchen Room step/stop",
+      "raum": "Kitchen",
+      "funktion": "Room movement",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4110": {
+      "text": "2/0/14",
+      "name": "Dining room Room movement",
+      "raum": "Dining room",
+      "funktion": "Room movement",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4111": {
+      "text": "2/0/15",
+      "name": "Dining room Room step/stop",
+      "raum": "Dining room",
+      "funktion": "Room movement",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4112": {
+      "text": "2/0/16",
+      "name": "Bedroom Room movement",
+      "raum": "Bedroom",
+      "funktion": "Room movement",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4113": {
+      "text": "2/0/17",
+      "name": "Bedroom Room step/stop",
+      "raum": "Bedroom",
+      "funktion": "Room movement",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4352": {
+      "text": "2/1/0",
+      "name": "Living room Window 1 movement",
+      "raum": "Living room",
+      "funktion": "Window 1",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4353": {
+      "text": "2/1/1",
+      "name": "Living room Window 2 movement",
+      "raum": "Living room",
+      "funktion": "Window 2",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4354": {
+      "text": "2/1/2",
+      "name": "Living room Window 3 movement",
+      "raum": "Living room",
+      "funktion": "Window 3",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4360": {
+      "text": "2/1/8",
+      "name": "Kitchen Window 1 movement",
+      "raum": "Kitchen",
+      "funktion": "Window 1",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4361": {
+      "text": "2/1/9",
+      "name": "Kitchen Window 2 movement",
+      "raum": "Kitchen",
+      "funktion": "Window 2",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4367": {
+      "text": "2/1/15",
+      "name": "Dining room Window 1 movement",
+      "raum": "Dining room",
+      "funktion": "Window 1",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4368": {
+      "text": "2/1/16",
+      "name": "Dining room Window 2 movement",
+      "raum": "Dining room",
+      "funktion": "Window 2",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4374": {
+      "text": "2/1/22",
+      "name": "Guest toilet Window movement",
+      "raum": "Guest toilet",
+      "funktion": "Window",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4375": {
+      "text": "2/1/23",
+      "name": "Bedroom Window 1 movement",
+      "raum": "Bedroom",
+      "funktion": "Window 1",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4376": {
+      "text": "2/1/24",
+      "name": "Bedroom Window 2 movement",
+      "raum": "Bedroom",
+      "funktion": "Window 2",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4382": {
+      "text": "2/1/30",
+      "name": "Bath room Window movement",
+      "raum": "Bath room",
+      "funktion": "Window",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4383": {
+      "text": "2/1/31",
+      "name": "Nursery 1 Window movement",
+      "raum": "Nursery 1",
+      "funktion": "Window",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4384": {
+      "text": "2/1/32",
+      "name": "Nursery 2 Window movement",
+      "raum": "Nursery 2",
+      "funktion": "Window",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4385": {
+      "text": "2/1/33",
+      "name": "Office Window movement",
+      "raum": "Office",
+      "funktion": "Window",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4386": {
+      "text": "2/1/34",
+      "name": "Garage Garage door movement",
+      "raum": "Garage",
+      "funktion": "Garage door",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4387": {
+      "text": "2/1/35",
+      "name": "Terrace/Balcony Blind movement",
+      "raum": "Terrace/Balcony",
+      "funktion": "Blind",
+      "rolle": "action",
+      "dpt": "DPST-1-8"
+    },
+    "4608": {
+      "text": "2/2/0",
+      "name": "Living room Window 1 step/stop",
+      "raum": "Living room",
+      "funktion": "Window 1",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4609": {
+      "text": "2/2/1",
+      "name": "Living room Window 2 step/stop",
+      "raum": "Living room",
+      "funktion": "Window 2",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4610": {
+      "text": "2/2/2",
+      "name": "Living room Window 3 step/stop",
+      "raum": "Living room",
+      "funktion": "Window 3",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4616": {
+      "text": "2/2/8",
+      "name": "Kitchen Window 1 step/stop",
+      "raum": "Kitchen",
+      "funktion": "Window 1",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4617": {
+      "text": "2/2/9",
+      "name": "Kitchen Window 2 step/stop",
+      "raum": "Kitchen",
+      "funktion": "Window 2",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4623": {
+      "text": "2/2/15",
+      "name": "Dining room Window 1 step/stop",
+      "raum": "Dining room",
+      "funktion": "Window 1",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4624": {
+      "text": "2/2/16",
+      "name": "Dining room Window 2 step/stop",
+      "raum": "Dining room",
+      "funktion": "Window 2",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4630": {
+      "text": "2/2/22",
+      "name": "Guest toilet Window step/stop",
+      "raum": "Guest toilet",
+      "funktion": "Window",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4631": {
+      "text": "2/2/23",
+      "name": "Bedroom Window 1 step/stop",
+      "raum": "Bedroom",
+      "funktion": "Window 1",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4632": {
+      "text": "2/2/24",
+      "name": "Bedroom Window 2 step/stop",
+      "raum": "Bedroom",
+      "funktion": "Window 2",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4638": {
+      "text": "2/2/30",
+      "name": "Bath room Window step/stop",
+      "raum": "Bath room",
+      "funktion": "Window",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4639": {
+      "text": "2/2/31",
+      "name": "Nursery 1 Window step/stop",
+      "raum": "Nursery 1",
+      "funktion": "Window",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4640": {
+      "text": "2/2/32",
+      "name": "Nursery 2 Window step/stop",
+      "raum": "Nursery 2",
+      "funktion": "Window",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4641": {
+      "text": "2/2/33",
+      "name": "Office Window step/stop",
+      "raum": "Office",
+      "funktion": "Window",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4642": {
+      "text": "2/2/34",
+      "name": "Garage Garage door step/stop",
+      "raum": "Garage",
+      "funktion": "Garage door",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "4643": {
+      "text": "2/2/35",
+      "name": "Terrace/Balcony Blind step/stop",
+      "raum": "Terrace/Balcony",
+      "funktion": "Blind",
+      "rolle": "action",
+      "dpt": "DPST-1-7"
+    },
+    "6144": {
+      "text": "3/0/0",
+      "name": "Central operation mode switch",
+      "raum": "One-family house",
+      "funktion": "Central operation mode switch",
+      "rolle": "action",
+      "dpt": "DPST-20-102"
+    },
+    "6400": {
+      "text": "3/1/0",
+      "name": "Living room heating current temperature",
+      "raum": "Living room",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-9-1"
+    },
+    "6401": {
+      "text": "3/1/1",
+      "name": "Kitchen heating current temperature",
+      "raum": "Kitchen",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-9-1"
+    },
+    "6402": {
+      "text": "3/1/2",
+      "name": "Dining room heating current temperature",
+      "raum": "Dining room",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-9-1"
+    },
+    "6403": {
+      "text": "3/1/3",
+      "name": "Guest toilet heating current temperature",
+      "raum": "Guest toilet",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-9-1"
+    },
+    "6404": {
+      "text": "3/1/4",
+      "name": "Hallway heating current temperature",
+      "raum": "Hallway",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-9-1"
+    },
+    "6405": {
+      "text": "3/1/5",
+      "name": "Utility room heating current temperature",
+      "raum": "Utility room",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-9-1"
+    },
+    "6406": {
+      "text": "3/1/6",
+      "name": "Bedroom heating current temperature",
+      "raum": "Bedroom",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-9-1"
+    },
+    "6407": {
+      "text": "3/1/7",
+      "name": "Bath room heating current temperature",
+      "raum": "Bath room",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-9-1"
+    },
+    "6408": {
+      "text": "3/1/8",
+      "name": "Nursery 1 heating current temperature",
+      "raum": "Nursery 1",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-9-1"
+    },
+    "6409": {
+      "text": "3/1/9",
+      "name": "Nursery 2 heating current temperature",
+      "raum": "Nursery 2",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-9-1"
+    },
+    "6410": {
+      "text": "3/1/10",
+      "name": "Office heating current temperature",
+      "raum": "Office",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-9-1"
+    },
+    "6656": {
+      "text": "3/2/0",
+      "name": "Living room heating setpoint temperature",
+      "raum": "Living room",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-9-1"
+    },
+    "6657": {
+      "text": "3/2/1",
+      "name": "Kitchen heating setpoint temperature",
+      "raum": "Kitchen",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-9-1"
+    },
+    "6658": {
+      "text": "3/2/2",
+      "name": "Dining room heating setpoint temperature",
+      "raum": "Dining room",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-9-1"
+    },
+    "6659": {
+      "text": "3/2/3",
+      "name": "Guest toilet heating setpoint temperature",
+      "raum": "Guest toilet",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-9-1"
+    },
+    "6660": {
+      "text": "3/2/4",
+      "name": "Hallway heating setpoint temperature",
+      "raum": "Hallway",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-9-1"
+    },
+    "6661": {
+      "text": "3/2/5",
+      "name": "Utility room heating setpoint temperature",
+      "raum": "Utility room",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-9-1"
+    },
+    "6662": {
+      "text": "3/2/6",
+      "name": "Bedroom heating setpoint temperature",
+      "raum": "Bedroom",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-9-1"
+    },
+    "6663": {
+      "text": "3/2/7",
+      "name": "Bath room heating setpoint temperature",
+      "raum": "Bath room",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-9-1"
+    },
+    "6664": {
+      "text": "3/2/8",
+      "name": "Nursery 1 heating setpoint temperature",
+      "raum": "Nursery 1",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-9-1"
+    },
+    "6665": {
+      "text": "3/2/9",
+      "name": "Nursery 2 heating setpoint temperature",
+      "raum": "Nursery 2",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-9-1"
+    },
+    "6666": {
+      "text": "3/2/10",
+      "name": "Office heating setpoint temperature",
+      "raum": "Office",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-9-1"
+    },
+    "6912": {
+      "text": "3/3/0",
+      "name": "Living room Radiator variable",
+      "raum": "Living room",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6913": {
+      "text": "3/3/1",
+      "name": "Living room Floor variable",
+      "raum": "Living room",
+      "funktion": "Floor",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6919": {
+      "text": "3/3/7",
+      "name": "Kitchen Radiator variable",
+      "raum": "Kitchen",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6920": {
+      "text": "3/3/8",
+      "name": "Kitchen Floor variable",
+      "raum": "Kitchen",
+      "funktion": "Floor",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6926": {
+      "text": "3/3/14",
+      "name": "Dining room Radiator variable",
+      "raum": "Dining room",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6927": {
+      "text": "3/3/15",
+      "name": "Dining room Floor variable",
+      "raum": "Dining room",
+      "funktion": "Floor",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6933": {
+      "text": "3/3/21",
+      "name": "Guest toilet Radiator variable",
+      "raum": "Guest toilet",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6934": {
+      "text": "3/3/22",
+      "name": "Guest toilet Floor variable",
+      "raum": "Guest toilet",
+      "funktion": "Floor",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6940": {
+      "text": "3/3/28",
+      "name": "Hallway Radiator variable",
+      "raum": "Hallway",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6941": {
+      "text": "3/3/29",
+      "name": "Hallway Floor variable",
+      "raum": "Hallway",
+      "funktion": "Floor",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6947": {
+      "text": "3/3/35",
+      "name": "Utility room Radiator variable",
+      "raum": "Utility room",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6948": {
+      "text": "3/3/36",
+      "name": "Utility room Floor variable",
+      "raum": "Utility room",
+      "funktion": "Floor",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6954": {
+      "text": "3/3/42",
+      "name": "Bedroom Radiator variable",
+      "raum": "Bedroom",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6955": {
+      "text": "3/3/43",
+      "name": "Bedroom Floor variable",
+      "raum": "Bedroom",
+      "funktion": "Floor",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6961": {
+      "text": "3/3/49",
+      "name": "Bath room Radiator variable",
+      "raum": "Bath room",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6962": {
+      "text": "3/3/50",
+      "name": "Bath room Floor variable",
+      "raum": "Bath room",
+      "funktion": "Floor",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6968": {
+      "text": "3/3/56",
+      "name": "Nursery 1 Radiator variable",
+      "raum": "Nursery 1",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6969": {
+      "text": "3/3/57",
+      "name": "Nursery 1 Floor variable",
+      "raum": "Nursery 1",
+      "funktion": "Floor",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6975": {
+      "text": "3/3/63",
+      "name": "Nursery 2 Radiator variable",
+      "raum": "Nursery 2",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6976": {
+      "text": "3/3/64",
+      "name": "Nursery 2 Floor variable",
+      "raum": "Nursery 2",
+      "funktion": "Floor",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6982": {
+      "text": "3/3/70",
+      "name": "Office Radiator variable",
+      "raum": "Office",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "6983": {
+      "text": "3/3/71",
+      "name": "Office Floor variable",
+      "raum": "Office",
+      "funktion": "Floor",
+      "rolle": "property",
+      "dpt": ""
+    },
+    "7168": {
+      "text": "3/4/0",
+      "name": "Living room heating operation mode",
+      "raum": "Living room",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-20-102"
+    },
+    "7169": {
+      "text": "3/4/1",
+      "name": "Kitchen heating operation mode",
+      "raum": "Kitchen",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-20-102"
+    },
+    "7170": {
+      "text": "3/4/2",
+      "name": "Dining room heating operation mode",
+      "raum": "Dining room",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-20-102"
+    },
+    "7171": {
+      "text": "3/4/3",
+      "name": "Guest toilet heating operation mode",
+      "raum": "Guest toilet",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-20-102"
+    },
+    "7172": {
+      "text": "3/4/4",
+      "name": "Hallway heating operation mode",
+      "raum": "Hallway",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-20-102"
+    },
+    "7173": {
+      "text": "3/4/5",
+      "name": "Utility room heating operation mode",
+      "raum": "Utility room",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-20-102"
+    },
+    "7174": {
+      "text": "3/4/6",
+      "name": "Bedroom heating operation mode",
+      "raum": "Bedroom",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-20-102"
+    },
+    "7175": {
+      "text": "3/4/7",
+      "name": "Bath room heating operation mode",
+      "raum": "Bath room",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-20-102"
+    },
+    "7176": {
+      "text": "3/4/8",
+      "name": "Nursery 1 heating operation mode",
+      "raum": "Nursery 1",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-20-102"
+    },
+    "7177": {
+      "text": "3/4/9",
+      "name": "Nursery 2 heating operation mode",
+      "raum": "Nursery 2",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-20-102"
+    },
+    "7178": {
+      "text": "3/4/10",
+      "name": "Office heating operation mode",
+      "raum": "Office",
+      "funktion": "Radiator",
+      "rolle": "action",
+      "dpt": "DPST-20-102"
+    },
+    "7424": {
+      "text": "3/5/0",
+      "name": "Living room heating window contact",
+      "raum": "Living room",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-1-19"
+    },
+    "7425": {
+      "text": "3/5/1",
+      "name": "Kitchen heating window contact",
+      "raum": "Kitchen",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-1-19"
+    },
+    "7426": {
+      "text": "3/5/2",
+      "name": "Dining room heating window contact",
+      "raum": "Dining room",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-1-19"
+    },
+    "7427": {
+      "text": "3/5/3",
+      "name": "Guest toilet heating window contact",
+      "raum": "Guest toilet",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-1-19"
+    },
+    "7428": {
+      "text": "3/5/4",
+      "name": "Hallway heating window contact",
+      "raum": "Hallway",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-1-19"
+    },
+    "7429": {
+      "text": "3/5/5",
+      "name": "Utility room heating window contact",
+      "raum": "Utility room",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-1-19"
+    },
+    "7430": {
+      "text": "3/5/6",
+      "name": "Bedroom heating window contact",
+      "raum": "Bedroom",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-1-19"
+    },
+    "7431": {
+      "text": "3/5/7",
+      "name": "Bath room heating window contact",
+      "raum": "Bath room",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-1-19"
+    },
+    "7432": {
+      "text": "3/5/8",
+      "name": "Nursery 1 heating window contact",
+      "raum": "Nursery 1",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-1-19"
+    },
+    "7433": {
+      "text": "3/5/9",
+      "name": "Nursery 2 heating window contact",
+      "raum": "Nursery 2",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-1-19"
+    },
+    "7434": {
+      "text": "3/5/10",
+      "name": "Office heating window contact",
+      "raum": "Office",
+      "funktion": "Radiator",
+      "rolle": "property",
+      "dpt": "DPST-1-19"
+    }
+  }
+}

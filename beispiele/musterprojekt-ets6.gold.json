@@ -1,0 +1,1558 @@
+{
+ "projekt": "10000Musterprojekt",
+ "kommentar": "Manuell festgelegter Gold-Standard fuer dieses Projekt, erzeugt von werkzeuge/gold_musterprojekt.py. Leere Werte sind bewusst unbewertet. Vor belastbaren Aussagen vom Projektverantwortlichen pruefen lassen.",
+ "datenpunkte": {
+  "1": {
+   "text": "0/0/1",
+   "name": "Rolladen UG",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "2": {
+   "text": "0/0/2",
+   "name": "Rolladen Küche/ Wohnzimmer",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "3": {
+   "text": "0/0/3",
+   "name": "Rolladen Kinderzimmer",
+   "raum": "Kinderzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "4": {
+   "text": "0/0/4",
+   "name": "Rolladen Bad",
+   "raum": "Badezimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "5": {
+   "text": "0/0/5",
+   "name": "Rolladen Schlafzim.",
+   "raum": "Schlafzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "257": {
+   "text": "0/1/1",
+   "name": "Rolladen UG",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "258": {
+   "text": "0/1/2",
+   "name": "Rolladen Küche/ Wohnzimmer",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "259": {
+   "text": "0/1/3",
+   "name": "Rolladen Kinderzimmer",
+   "raum": "Kinderzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "260": {
+   "text": "0/1/4",
+   "name": "Rolladen Bad",
+   "raum": "Badezimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "261": {
+   "text": "0/1/5",
+   "name": "Rolladen Schlafzim.",
+   "raum": "Schlafzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "513": {
+   "text": "0/2/1",
+   "name": "heiz_Frost",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "514": {
+   "text": "0/2/2",
+   "name": "heiz_Nacht",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "515": {
+   "text": "0/2/3",
+   "name": "heiz_kompf",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "1280": {
+   "text": "0/5/0",
+   "name": "Szene",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "1281": {
+   "text": "0/5/1",
+   "name": "Szene RM",
+   "raum": "",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "1282": {
+   "text": "0/5/2",
+   "name": "Hintergrundbeleuchtung",
+   "raum": "",
+   "funktion": "Hintergrundbeleuchtung",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "1283": {
+   "text": "0/5/3",
+   "name": "Hintergrundbeleuchtung RM",
+   "raum": "",
+   "funktion": "Hintergrundbeleuchtung",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "2048": {
+   "text": "1/0/0",
+   "name": "Licht zentral",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "2304": {
+   "text": "1/1/0",
+   "name": "Licht Küche zentral",
+   "raum": "Küche",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "2305": {
+   "text": "1/1/1",
+   "name": "Licht A Küche",
+   "raum": "Küche",
+   "funktion": "Licht A",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "2306": {
+   "text": "1/1/2",
+   "name": "Licht A RM Küche",
+   "raum": "Küche",
+   "funktion": "Licht A",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "2307": {
+   "text": "1/1/3",
+   "name": "Licht B Küche ",
+   "raum": "Küche",
+   "funktion": "Licht B",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "2308": {
+   "text": "1/1/4",
+   "name": "Licht B RM Küche",
+   "raum": "Küche",
+   "funktion": "Licht B",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "2309": {
+   "text": "1/1/5",
+   "name": "Licht C Küche",
+   "raum": "Küche",
+   "funktion": "Licht C",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "2310": {
+   "text": "1/1/6",
+   "name": "Licht C RM Küche",
+   "raum": "Küche",
+   "funktion": "Licht C",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "2311": {
+   "text": "1/1/7",
+   "name": "Licht D Küche",
+   "raum": "Küche",
+   "funktion": "Licht D",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "2312": {
+   "text": "1/1/8",
+   "name": "Licht D RM Küche",
+   "raum": "Küche",
+   "funktion": "Licht D",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "2560": {
+   "text": "1/2/0",
+   "name": "Wohnzimmer zentral",
+   "raum": "Wohnzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "2561": {
+   "text": "1/2/1",
+   "name": "Licht G Wohnzimmer",
+   "raum": "Wohnzimmer",
+   "funktion": "Licht G",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "2562": {
+   "text": "1/2/2",
+   "name": "Licht G RM Wohnzimmer",
+   "raum": "Wohnzimmer",
+   "funktion": "Licht G",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "2563": {
+   "text": "1/2/3",
+   "name": "Licht H Wohnzimmer",
+   "raum": "Wohnzimmer",
+   "funktion": "Licht H",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "2564": {
+   "text": "1/2/4",
+   "name": "Licht H RM Wohnzimmer",
+   "raum": "Wohnzimmer",
+   "funktion": "Licht H",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "2817": {
+   "text": "1/3/1",
+   "name": "Licht S",
+   "raum": "Kinderzimmer",
+   "funktion": "Licht S",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "2818": {
+   "text": "1/3/2",
+   "name": "Licht S RM",
+   "raum": "Kinderzimmer",
+   "funktion": "Licht S",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "3073": {
+   "text": "1/4/1",
+   "name": "Bad Decke",
+   "raum": "Badezimmer",
+   "funktion": "Bad Decke",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "3074": {
+   "text": "1/4/2",
+   "name": "Bad Decke RM",
+   "raum": "Badezimmer",
+   "funktion": "Bad Decke",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "3075": {
+   "text": "1/4/3",
+   "name": "Bad Spiegelschrank",
+   "raum": "Badezimmer",
+   "funktion": "Bad Spiegelschrank",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "3076": {
+   "text": "1/4/4",
+   "name": "Bad Spiegelschrank RM",
+   "raum": "Badezimmer",
+   "funktion": "Bad Spiegelschrank",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "3077": {
+   "text": "1/4/5",
+   "name": "WC Decke",
+   "raum": "WC",
+   "funktion": "WC Decke",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "3078": {
+   "text": "1/4/6",
+   "name": "WC Decke RM",
+   "raum": "WC",
+   "funktion": "WC Decke",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "3079": {
+   "text": "1/4/7",
+   "name": "WC Spiegelschrank",
+   "raum": "WC",
+   "funktion": "WC Spiegelschrank",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "3080": {
+   "text": "1/4/8",
+   "name": "WC Spiegelschrank RM",
+   "raum": "WC",
+   "funktion": "WC Spiegelschrank",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "3329": {
+   "text": "1/5/1",
+   "name": "Licht K",
+   "raum": "Schlafzimmer",
+   "funktion": "Licht K",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "3330": {
+   "text": "1/5/2",
+   "name": "Licht K RM",
+   "raum": "Schlafzimmer",
+   "funktion": "Licht K",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "3584": {
+   "text": "1/6/0",
+   "name": "Flur zentral",
+   "raum": "Büro/ Flur",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "3585": {
+   "text": "1/6/1",
+   "name": "Licht M Flur",
+   "raum": "Büro/ Flur",
+   "funktion": "Licht M",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "3586": {
+   "text": "1/6/2",
+   "name": "Licht M RM Flur",
+   "raum": "Büro/ Flur",
+   "funktion": "Licht M",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "3587": {
+   "text": "1/6/3",
+   "name": "Licht L Flur",
+   "raum": "Büro/ Flur",
+   "funktion": "Licht L",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "3588": {
+   "text": "1/6/4",
+   "name": "Licht L RM Flur",
+   "raum": "Büro/ Flur",
+   "funktion": "Licht L",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "3589": {
+   "text": "1/6/5",
+   "name": "Licht P Flur",
+   "raum": "Büro/ Flur",
+   "funktion": "Licht P",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "3590": {
+   "text": "1/6/6",
+   "name": "Licht P RM Flur",
+   "raum": "Büro/ Flur",
+   "funktion": "Licht P",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "3840": {
+   "text": "1/7/0",
+   "name": "Aussen Zentral",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "3841": {
+   "text": "1/7/1",
+   "name": "Licht E (außen)",
+   "raum": "",
+   "funktion": "Licht E",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "3842": {
+   "text": "1/7/2",
+   "name": "Licht E RM (außen)",
+   "raum": "",
+   "funktion": "Licht E",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "3843": {
+   "text": "1/7/3",
+   "name": "Licht F (außen)",
+   "raum": "",
+   "funktion": "Licht F",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "3844": {
+   "text": "1/7/4",
+   "name": "Licht F RM (außen)",
+   "raum": "",
+   "funktion": "Licht F",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "3845": {
+   "text": "1/7/5",
+   "name": "Licht Q (außen)",
+   "raum": "",
+   "funktion": "Licht Q",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "3846": {
+   "text": "1/7/6",
+   "name": "Licht Q RM (außen)",
+   "raum": "",
+   "funktion": "Licht Q",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "3847": {
+   "text": "1/7/7",
+   "name": "Licht R (außen)",
+   "raum": "",
+   "funktion": "Licht R",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "3848": {
+   "text": "1/7/8",
+   "name": "Licht R RM (außen)",
+   "raum": "",
+   "funktion": "Licht R",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "3849": {
+   "text": "1/7/9",
+   "name": "Licht T (außen)",
+   "raum": "",
+   "funktion": "Licht T",
+   "rolle": "action",
+   "dpt": "DPST-1-1"
+  },
+  "3850": {
+   "text": "1/7/10",
+   "name": "Licht T RM (außen)",
+   "raum": "",
+   "funktion": "Licht T",
+   "rolle": "property",
+   "dpt": "DPST-1-1"
+  },
+  "4096": {
+   "text": "2/0/0",
+   "name": "Zentral lang",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-1-8"
+  },
+  "4097": {
+   "text": "2/0/1",
+   "name": "Zental kurz",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "4098": {
+   "text": "2/0/2",
+   "name": "Zental Position",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-5-1"
+  },
+  "4099": {
+   "text": "2/0/3",
+   "name": "Zental Position RM",
+   "raum": "",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-5-1"
+  },
+  "4106": {
+   "text": "2/0/10",
+   "name": "Küche zentral lang",
+   "raum": "Küche",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-1-8"
+  },
+  "4107": {
+   "text": "2/0/11",
+   "name": "Küche zentral kurz",
+   "raum": "Küche",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "4108": {
+   "text": "2/0/12",
+   "name": "Küche zentral Position",
+   "raum": "Küche",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-5-1"
+  },
+  "4109": {
+   "text": "2/0/13",
+   "name": "Küche zentral Position RM",
+   "raum": "Küche",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-5-1"
+  },
+  "4110": {
+   "text": "2/0/14",
+   "name": "Bad zentral lang",
+   "raum": "Badezimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-1-8"
+  },
+  "4111": {
+   "text": "2/0/15",
+   "name": "Bad zentral kurz",
+   "raum": "Badezimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "4112": {
+   "text": "2/0/16",
+   "name": "Bad zentral Position",
+   "raum": "Badezimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-5-1"
+  },
+  "4113": {
+   "text": "2/0/17",
+   "name": "Bad zentral Position RM",
+   "raum": "Badezimmer",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-5-1"
+  },
+  "4353": {
+   "text": "2/1/1",
+   "name": "Rolladen 1 lang",
+   "raum": "Küche",
+   "funktion": "Rolladen 1",
+   "rolle": "action",
+   "dpt": "DPST-1-8"
+  },
+  "4354": {
+   "text": "2/1/2",
+   "name": "Rolladen 1 kurz",
+   "raum": "Küche",
+   "funktion": "Rolladen 1",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "4355": {
+   "text": "2/1/3",
+   "name": "Rolladen 1 Position",
+   "raum": "Küche",
+   "funktion": "Rolladen 1",
+   "rolle": "action",
+   "dpt": "DPST-5-1"
+  },
+  "4356": {
+   "text": "2/1/4",
+   "name": "Rolladen 1 Position RM",
+   "raum": "Küche",
+   "funktion": "Rolladen 1",
+   "rolle": "property",
+   "dpt": "DPST-5-1"
+  },
+  "4357": {
+   "text": "2/1/5",
+   "name": "Rolladen 2 lang",
+   "raum": "Küche",
+   "funktion": "Rolladen 2",
+   "rolle": "action",
+   "dpt": "DPST-1-8"
+  },
+  "4358": {
+   "text": "2/1/6",
+   "name": "Rolladen 2 kurz",
+   "raum": "Küche",
+   "funktion": "Rolladen 2",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "4359": {
+   "text": "2/1/7",
+   "name": "Rolladen 2 Position",
+   "raum": "Küche",
+   "funktion": "Rolladen 2",
+   "rolle": "action",
+   "dpt": "DPST-5-1"
+  },
+  "4360": {
+   "text": "2/1/8",
+   "name": "Rolladen 2 Position RM",
+   "raum": "Küche",
+   "funktion": "Rolladen 2",
+   "rolle": "property",
+   "dpt": "DPST-5-1"
+  },
+  "4361": {
+   "text": "2/1/9",
+   "name": "Rolladen 3 lang",
+   "raum": "Küche",
+   "funktion": "Rolladen 3",
+   "rolle": "action",
+   "dpt": "DPST-1-8"
+  },
+  "4362": {
+   "text": "2/1/10",
+   "name": "Rolladen 3 kurz",
+   "raum": "Küche",
+   "funktion": "Rolladen 3",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "4363": {
+   "text": "2/1/11",
+   "name": "Rolladen 3 Position",
+   "raum": "Küche",
+   "funktion": "Rolladen 3",
+   "rolle": "action",
+   "dpt": "DPST-5-1"
+  },
+  "4364": {
+   "text": "2/1/12",
+   "name": "Rolladen 3 Position RM",
+   "raum": "Küche",
+   "funktion": "Rolladen 3",
+   "rolle": "property",
+   "dpt": "DPST-5-1"
+  },
+  "4609": {
+   "text": "2/2/1",
+   "name": "Rolladen 4 lang",
+   "raum": "Wohnzimmer",
+   "funktion": "Rolladen 4",
+   "rolle": "action",
+   "dpt": "DPST-1-8"
+  },
+  "4610": {
+   "text": "2/2/2",
+   "name": "Rolladen 4 kurz",
+   "raum": "Wohnzimmer",
+   "funktion": "Rolladen 4",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "4611": {
+   "text": "2/2/3",
+   "name": "Rolladen 4 Position",
+   "raum": "Wohnzimmer",
+   "funktion": "Rolladen 4",
+   "rolle": "action",
+   "dpt": "DPST-5-1"
+  },
+  "4612": {
+   "text": "2/2/4",
+   "name": "Rolladen 4 Position RM",
+   "raum": "Wohnzimmer",
+   "funktion": "Rolladen 4",
+   "rolle": "property",
+   "dpt": "DPST-5-1"
+  },
+  "4865": {
+   "text": "2/3/1",
+   "name": "Rolladen lang",
+   "raum": "Kinderzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-1-8"
+  },
+  "4866": {
+   "text": "2/3/2",
+   "name": "Rolladen kurz",
+   "raum": "Kinderzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "4867": {
+   "text": "2/3/3",
+   "name": "Rolladen Kind Position",
+   "raum": "Kinderzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-5-1"
+  },
+  "4868": {
+   "text": "2/3/4",
+   "name": "Rolladen Kind Position RM",
+   "raum": "Kinderzimmer",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-5-1"
+  },
+  "5121": {
+   "text": "2/4/1",
+   "name": "Rolladen 6 lang",
+   "raum": "Badezimmer",
+   "funktion": "Rolladen 6",
+   "rolle": "action",
+   "dpt": "DPST-1-8"
+  },
+  "5122": {
+   "text": "2/4/2",
+   "name": "Rolladen 6 kurz",
+   "raum": "Badezimmer",
+   "funktion": "Rolladen 6",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "5123": {
+   "text": "2/4/3",
+   "name": "Rolladen 6 Position",
+   "raum": "Badezimmer",
+   "funktion": "Rolladen 6",
+   "rolle": "action",
+   "dpt": "DPST-5-1"
+  },
+  "5124": {
+   "text": "2/4/4",
+   "name": "Rolladen 6 Position RM",
+   "raum": "Badezimmer",
+   "funktion": "Rolladen 6",
+   "rolle": "property",
+   "dpt": "DPST-5-1"
+  },
+  "5125": {
+   "text": "2/4/5",
+   "name": "Rolladen 7 lang",
+   "raum": "Badezimmer",
+   "funktion": "Rolladen 7",
+   "rolle": "action",
+   "dpt": "DPST-1-8"
+  },
+  "5126": {
+   "text": "2/4/6",
+   "name": "Rolladen 7 kurz",
+   "raum": "Badezimmer",
+   "funktion": "Rolladen 7",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "5127": {
+   "text": "2/4/7",
+   "name": "Rolladen 7 Position ",
+   "raum": "Badezimmer",
+   "funktion": "Rolladen 7",
+   "rolle": "action",
+   "dpt": "DPST-5-1"
+  },
+  "5128": {
+   "text": "2/4/8",
+   "name": "Rolladen 7 Position RM",
+   "raum": "Badezimmer",
+   "funktion": "Rolladen 7",
+   "rolle": "property",
+   "dpt": "DPST-5-1"
+  },
+  "5377": {
+   "text": "2/5/1",
+   "name": "Rolladen 8 lang",
+   "raum": "Schlafzimmer",
+   "funktion": "Rolladen 8",
+   "rolle": "action",
+   "dpt": "DPST-1-8"
+  },
+  "5378": {
+   "text": "2/5/2",
+   "name": "Rolladen 8 kurz",
+   "raum": "Schlafzimmer",
+   "funktion": "Rolladen 8",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "5379": {
+   "text": "2/5/3",
+   "name": "Rolladen 8 Position",
+   "raum": "Schlafzimmer",
+   "funktion": "Rolladen 8",
+   "rolle": "action",
+   "dpt": "DPST-5-1"
+  },
+  "5380": {
+   "text": "2/5/4",
+   "name": "Rolladen 8 Position RM",
+   "raum": "Schlafzimmer",
+   "funktion": "Rolladen 8",
+   "rolle": "property",
+   "dpt": "DPST-5-1"
+  },
+  "5381": {
+   "text": "2/5/5",
+   "name": "Markiese 9 lang",
+   "raum": "Schlafzimmer",
+   "funktion": "Markise 9",
+   "rolle": "action",
+   "dpt": "DPST-1-8"
+  },
+  "5382": {
+   "text": "2/5/6",
+   "name": "Markiese 9 kurz",
+   "raum": "Schlafzimmer",
+   "funktion": "Markise 9",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "5383": {
+   "text": "2/5/7",
+   "name": "Markise 9 Position",
+   "raum": "Schlafzimmer",
+   "funktion": "Markise 9",
+   "rolle": "action",
+   "dpt": "DPST-5-1"
+  },
+  "5384": {
+   "text": "2/5/8",
+   "name": "Markise 9 Position RM",
+   "raum": "Schlafzimmer",
+   "funktion": "Markise 9",
+   "rolle": "property",
+   "dpt": "DPST-5-1"
+  },
+  "6145": {
+   "text": "3/0/1",
+   "name": "Betriebsm. Kompf.Zentral",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "6146": {
+   "text": "3/0/2",
+   "name": "Betriebsm. Nacht.Zentral",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "6147": {
+   "text": "3/0/3",
+   "name": "Betriebsm. Frost.Zentral",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "6148": {
+   "text": "3/0/4",
+   "name": "Rück. Sollwert",
+   "raum": "",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-9-1"
+  },
+  "6149": {
+   "text": "3/0/5",
+   "name": "Ist-Temp",
+   "raum": "",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-9-1"
+  },
+  "6150": {
+   "text": "3/0/6",
+   "name": "Soll-Temp",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-9-1"
+  },
+  "6657": {
+   "text": "3/2/1",
+   "name": "heizen",
+   "raum": "Wohnzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "6658": {
+   "text": "3/2/2",
+   "name": "Status",
+   "raum": "Wohnzimmer",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "6659": {
+   "text": "3/2/3",
+   "name": "Betriebsm. Kompf.",
+   "raum": "Wohnzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "6661": {
+   "text": "3/2/5",
+   "name": "Betriebsm. Nacht",
+   "raum": "Wohnzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "6662": {
+   "text": "3/2/6",
+   "name": "Betriebsm. Frost",
+   "raum": "Wohnzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "6663": {
+   "text": "3/2/7",
+   "name": "Ist-Temp",
+   "raum": "Wohnzimmer",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-9-1"
+  },
+  "6664": {
+   "text": "3/2/8",
+   "name": "Soll-Temp",
+   "raum": "Wohnzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-9-1"
+  },
+  "6913": {
+   "text": "3/3/1",
+   "name": "heizen",
+   "raum": "Kinderzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "6914": {
+   "text": "3/3/2",
+   "name": "Status",
+   "raum": "Kinderzimmer",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "6915": {
+   "text": "3/3/3",
+   "name": "Betriebsm. Kompf.",
+   "raum": "Kinderzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "6916": {
+   "text": "3/3/4",
+   "name": "Betriebsm. Nacht",
+   "raum": "Kinderzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "6917": {
+   "text": "3/3/5",
+   "name": "Betriebsm. Frost",
+   "raum": "Kinderzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "6918": {
+   "text": "3/3/6",
+   "name": "Ist-Temp",
+   "raum": "Kinderzimmer",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-9-1"
+  },
+  "6919": {
+   "text": "3/3/7",
+   "name": "Soll-Temp",
+   "raum": "Kinderzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-9-1"
+  },
+  "7169": {
+   "text": "3/4/1",
+   "name": "Heizen",
+   "raum": "Badezimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7170": {
+   "text": "3/4/2",
+   "name": "Status",
+   "raum": "Badezimmer",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "7171": {
+   "text": "3/4/3",
+   "name": "Betriebsm. Kompf.",
+   "raum": "Badezimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7172": {
+   "text": "3/4/4",
+   "name": "Betriebsm. Nacht",
+   "raum": "Badezimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7173": {
+   "text": "3/4/5",
+   "name": "Betriebsm. Frost",
+   "raum": "Badezimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7174": {
+   "text": "3/4/6",
+   "name": "Ist-Temp",
+   "raum": "Badezimmer",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-9-1"
+  },
+  "7175": {
+   "text": "3/4/7",
+   "name": "Soll-Temp",
+   "raum": "Badezimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-9-1"
+  },
+  "7425": {
+   "text": "3/5/1",
+   "name": "heizen",
+   "raum": "Schlafzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7426": {
+   "text": "3/5/2",
+   "name": "heizen Ankleide",
+   "raum": "Ankleide",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7427": {
+   "text": "3/5/3",
+   "name": "Status",
+   "raum": "Schlafzimmer",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "7428": {
+   "text": "3/5/4",
+   "name": "Status Ankleide",
+   "raum": "Ankleide",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "7429": {
+   "text": "3/5/5",
+   "name": "Betriebsm. Kompf.",
+   "raum": "Schlafzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7430": {
+   "text": "3/5/6",
+   "name": "Betriebsm. Nacht",
+   "raum": "Schlafzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7431": {
+   "text": "3/5/7",
+   "name": "Betriebsm. Frost",
+   "raum": "Schlafzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7432": {
+   "text": "3/5/8",
+   "name": "Betriebsm. Kompf.",
+   "raum": "Ankleide",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7433": {
+   "text": "3/5/9",
+   "name": "Betriebsm. Nacht",
+   "raum": "Ankleide",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7434": {
+   "text": "3/5/10",
+   "name": "Betriebsm. Frost",
+   "raum": "Ankleide",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7435": {
+   "text": "3/5/11",
+   "name": "Ist-Temp",
+   "raum": "Schlafzimmer",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-9-1"
+  },
+  "7436": {
+   "text": "3/5/12",
+   "name": "Soll-Temp",
+   "raum": "Schlafzimmer",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-9-1"
+  },
+  "7437": {
+   "text": "3/5/13",
+   "name": "Ist-Temp Ankleide",
+   "raum": "Ankleide",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-9-1"
+  },
+  "7438": {
+   "text": "3/5/14",
+   "name": "Soll-Temp Ankleide",
+   "raum": "Ankleide",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-9-1"
+  },
+  "7681": {
+   "text": "3/6/1",
+   "name": "heizen Büro",
+   "raum": "Büro/ Flur",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7682": {
+   "text": "3/6/2",
+   "name": "Status Büro",
+   "raum": "Büro/ Flur",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "7683": {
+   "text": "3/6/3",
+   "name": "heizen Gang",
+   "raum": "Gang",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7684": {
+   "text": "3/6/4",
+   "name": "Status Gang",
+   "raum": "Gang",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "7685": {
+   "text": "3/6/5",
+   "name": "Betriebsm. Kompf.",
+   "raum": "Büro/ Flur",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7686": {
+   "text": "3/6/6",
+   "name": "Betriebsm. Nacht",
+   "raum": "Büro/ Flur",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7687": {
+   "text": "3/6/7",
+   "name": "Betriebsm. Frost",
+   "raum": "Büro/ Flur",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7688": {
+   "text": "3/6/8",
+   "name": "Betriebsm. Kompf. Gang",
+   "raum": "Gang",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7689": {
+   "text": "3/6/9",
+   "name": "Betriebsm. Nacht Gang",
+   "raum": "Gang",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7690": {
+   "text": "3/6/10",
+   "name": "Betriebsm. Frost Gang",
+   "raum": "Gang",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7691": {
+   "text": "3/6/11",
+   "name": "Ist-Temp Büro",
+   "raum": "Büro/ Flur",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-9-1"
+  },
+  "7692": {
+   "text": "3/6/12",
+   "name": "Soll-Temp Büro",
+   "raum": "Büro/ Flur",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-9-1"
+  },
+  "7693": {
+   "text": "3/6/13",
+   "name": "Ist-Temp Gang",
+   "raum": "Gang",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-9-1"
+  },
+  "7694": {
+   "text": "3/6/14",
+   "name": "Soll-Temp Gang",
+   "raum": "Gang",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-9-1"
+  },
+  "7937": {
+   "text": "3/7/1",
+   "name": "heizen",
+   "raum": "WC",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7938": {
+   "text": "3/7/2",
+   "name": "Status",
+   "raum": "WC",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "7939": {
+   "text": "3/7/3",
+   "name": "Betriebsm. Kompf.",
+   "raum": "WC",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7940": {
+   "text": "3/7/4",
+   "name": "Betriebsm. Nacht",
+   "raum": "WC",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7941": {
+   "text": "3/7/5",
+   "name": "Betriebsm. Frost",
+   "raum": "WC",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  },
+  "7942": {
+   "text": "3/7/6",
+   "name": "Ist-Temp",
+   "raum": "WC",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-9-1"
+  },
+  "7943": {
+   "text": "3/7/7",
+   "name": "Soll-Temp",
+   "raum": "WC",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": "DPST-9-1"
+  },
+  "8192": {
+   "text": "4/0/0",
+   "name": "Uhrzeit",
+   "raum": "",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-10-1"
+  },
+  "8193": {
+   "text": "4/0/1",
+   "name": "Datum",
+   "raum": "",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-11-1"
+  },
+  "8449": {
+   "text": "4/1/1",
+   "name": "Küchenfenster 1",
+   "raum": "Küche",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "8450": {
+   "text": "4/1/2",
+   "name": "Küchenfenster 2",
+   "raum": "Küche",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "8451": {
+   "text": "4/1/3",
+   "name": "Küchenfenster 3",
+   "raum": "Küche",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "8452": {
+   "text": "4/1/4",
+   "name": "Wohnzimmerfenster",
+   "raum": "Wohnzimmer",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "8453": {
+   "text": "4/1/5",
+   "name": "Kinderzimmerfenster",
+   "raum": "Kinderzimmer",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "8454": {
+   "text": "4/1/6",
+   "name": "Badezimmerfenster 1",
+   "raum": "Badezimmer",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "8455": {
+   "text": "4/1/7",
+   "name": "Badezimmerfenster 2",
+   "raum": "Badezimmer",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "8456": {
+   "text": "4/1/8",
+   "name": "Schlafzimmerfenster",
+   "raum": "Schlafzimmer",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": ""
+  },
+  "8705": {
+   "text": "4/2/1",
+   "name": "ALARM",
+   "raum": "",
+   "funktion": "",
+   "rolle": "event",
+   "dpt": ""
+  },
+  "8960": {
+   "text": "4/3/0",
+   "name": "Überspannungsschutz ausgelöst",
+   "raum": "",
+   "funktion": "",
+   "rolle": "event",
+   "dpt": ""
+  },
+  "8961": {
+   "text": "4/3/1",
+   "name": "Feuer",
+   "raum": "",
+   "funktion": "",
+   "rolle": "event",
+   "dpt": ""
+  },
+  "8962": {
+   "text": "4/3/2",
+   "name": "Störung Rauchwarnmelder",
+   "raum": "",
+   "funktion": "",
+   "rolle": "event",
+   "dpt": ""
+  },
+  "8963": {
+   "text": "4/3/3",
+   "name": "KNX Spannung Überlast I > Imax",
+   "raum": "",
+   "funktion": "",
+   "rolle": "event",
+   "dpt": ""
+  },
+  "9217": {
+   "text": "4/4/1",
+   "name": "KNX SV in Betrieb",
+   "raum": "",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-1-2"
+  },
+  "9218": {
+   "text": "4/4/2",
+   "name": "SA/S 1.1.14 in Betrieb",
+   "raum": "",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-1-2"
+  },
+  "9219": {
+   "text": "4/4/3",
+   "name": "SA/S 1.1.16 in Betrieb",
+   "raum": "",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-1-2"
+  },
+  "9220": {
+   "text": "4/4/4",
+   "name": "SA/S 1.1.17 in Betrieb",
+   "raum": "",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-1-2"
+  },
+  "9221": {
+   "text": "4/4/5",
+   "name": "SA/S 1.1.18 in Betrieb",
+   "raum": "",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-1-2"
+  },
+  "9222": {
+   "text": "4/4/6",
+   "name": "SA/S 1.1.19 in Betrieb",
+   "raum": "",
+   "funktion": "",
+   "rolle": "property",
+   "dpt": "DPST-1-2"
+  },
+  "10241": {
+   "text": "5/0/1",
+   "name": "Bus-Reset auslösen",
+   "raum": "",
+   "funktion": "",
+   "rolle": "action",
+   "dpt": ""
+  }
+ }
+}

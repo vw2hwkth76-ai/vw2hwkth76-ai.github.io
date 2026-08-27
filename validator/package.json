@@ -1,0 +1,8 @@
+{
+  "name": "ets2td-validator",
+  "private": true,
+  "description": "Validierung der erzeugten Thing Descriptions ueber das Eclipse Thingweb Playground CLI",
+  "devDependencies": {
+    "@thing-description-playground/cli": "1.6.0"
+  }
+}

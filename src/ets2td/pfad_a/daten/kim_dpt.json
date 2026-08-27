@@ -1,0 +1,1558 @@
+{
+ "knx:absoluteColourTemperature": {
+  "dpst": "DPST-7-600",
+  "titel": "Absolute Colour Temperature"
+ },
+ "knx:accessData": {
+  "dpst": "DPST-15-0",
+  "titel": "Access Data"
+ },
+ "knx:ack": {
+  "dpst": "DPST-1-16",
+  "titel": "Ack"
+ },
+ "knx:actPosDemAbs": {
+  "dpst": "DPST-207-104",
+  "titel": "ActPosDemAbs"
+ },
+ "knx:activeEnergy": {
+  "dpst": "DPST-13-10",
+  "titel": "Active Energy"
+ },
+ "knx:activeEnergyMWh": {
+  "dpst": "DPST-13-16",
+  "titel": "ActiveEnergy MWh"
+ },
+ "knx:activeEnergyV64": {
+  "dpst": "DPST-29-10",
+  "titel": "ActiveEnergy V64"
+ },
+ "knx:activeEnergykWh": {
+  "dpst": "DPST-13-13",
+  "titel": "Active Energy kWh"
+ },
+ "knx:actuatorConnectType": {
+  "dpst": "DPST-20-20",
+  "titel": "ActuatorConnectType"
+ },
+ "knx:adaType": {
+  "dpst": "DPST-20-120",
+  "titel": "ADAType"
+ },
+ "knx:addInfoTypes": {
+  "dpst": "DPST-20-1001",
+  "titel": "AddInfoTypes"
+ },
+ "knx:alarm": {
+  "dpst": "DPST-1-5",
+  "titel": "Alarm"
+ },
+ "knx:alarmClassType": {
+  "dpst": "DPST-20-7",
+  "titel": "AlarmClassType"
+ },
+ "knx:alarmControl": {
+  "dpst": "DPST-2-5",
+  "titel": "Alarm Control"
+ },
+ "knx:alarmInfo": {
+  "dpst": "DPST-219-1",
+  "titel": "AlarmInfo"
+ },
+ "knx:alarmReaction": {
+  "dpst": "DPST-23-2",
+  "titel": "Alarm Reaction"
+ },
+ "knx:angle": {
+  "dpst": "DPST-5-3",
+  "titel": "Angle"
+ },
+ "knx:apparentEnergy": {
+  "dpst": "DPST-13-11",
+  "titel": "ApparentEnergy"
+ },
+ "knx:apparentEnergyV64": {
+  "dpst": "DPST-29-11",
+  "titel": "ApparentEnergy V64"
+ },
+ "knx:apparentEnergykVAh": {
+  "dpst": "DPST-13-14",
+  "titel": "ApparentEnergy kVAh"
+ },
+ "knx:applicationArea": {
+  "dpst": "DPST-20-6",
+  "titel": "ApplicationArea"
+ },
+ "knx:backupMode": {
+  "dpst": "DPST-20-121",
+  "titel": "BackupMode"
+ },
+ "knx:batteryInfo": {
+  "dpst": "DPST-246-600",
+  "titel": "Battery Info"
+ },
+ "knx:beaufortWindForceScale": {
+  "dpst": "DPST-20-14",
+  "titel": "Beaufort Wind Force Scale"
+ },
+ "knx:behaviourBusPowerUpDown": {
+  "dpst": "DPST-20-601",
+  "titel": "Behaviour Bus Power Up Down"
+ },
+ "knx:behaviourLockUnlock": {
+  "dpst": "DPST-20-600",
+  "titel": "Behaviour Lock Unlock"
+ },
+ "knx:binaryValue": {
+  "dpst": "DPST-1-6",
+  "titel": "Binary Value"
+ },
+ "knx:binaryValueControl": {
+  "dpst": "DPST-2-6",
+  "titel": "Binary Value Control"
+ },
+ "knx:binaryValueZ": {
+  "dpst": "DPST-200-101",
+  "titel": "Binary Value Z"
+ },
+ "knx:blindsControlMode": {
+  "dpst": "DPST-20-804",
+  "titel": "BlindsControlMode"
+ },
+ "knx:blinkingMode": {
+  "dpst": "DPST-20-603",
+  "titel": "BlinkingMode"
+ },
+ "knx:bool": {
+  "dpst": "DPST-1-2",
+  "titel": "Bool"
+ },
+ "knx:boolControl": {
+  "dpst": "DPST-2-2",
+  "titel": "Bool Control"
+ },
+ "knx:breakerStatus": {
+  "dpst": "DPST-20-1203",
+  "titel": "Breaker Status"
+ },
+ "knx:brightness": {
+  "dpst": "DPST-7-13",
+  "titel": "Brightness"
+ },
+ "knx:brightnessColourTemperatureTransition": {
+  "dpst": "DPST-249-600",
+  "titel": "Brightness Colour Temperature Transition"
+ },
+ "knx:buildingMode": {
+  "dpst": "DPST-20-2",
+  "titel": "BuildingMode"
+ },
+ "knx:buildingModeNext": {
+  "dpst": "DPST-206-105",
+  "titel": "BuildingModeNext"
+ },
+ "knx:buildingModeZ": {
+  "dpst": "DPST-201-107",
+  "titel": "Building Mode Z"
+ },
+ "knx:burnerType": {
+  "dpst": "DPST-20-101",
+  "titel": "BurnerType"
+ },
+ "knx:changeoverMode": {
+  "dpst": "DPST-20-107",
+  "titel": "ChangeoverMode"
+ },
+ "knx:channelActivation16": {
+  "dpst": "DPST-22-1010",
+  "titel": "Channel Activation 16"
+ },
+ "knx:channelActivation24": {
+  "dpst": "DPST-30-1010",
+  "titel": "Channel Activation 24"
+ },
+ "knx:channelActivation8": {
+  "dpst": "DPST-21-1010",
+  "titel": "Channel Activation 8"
+ },
+ "knx:char88591": {
+  "dpst": "DPST-4-2",
+  "titel": "Char 8859-1"
+ },
+ "knx:charascii": {
+  "dpst": "DPST-4-1",
+  "titel": "Char ASCII"
+ },
+ "knx:cloudCover": {
+  "dpst": "DPST-20-21",
+  "titel": "Cloud Cover"
+ },
+ "knx:colourRGB": {
+  "dpst": "DPST-232-600",
+  "titel": "Colour RGB"
+ },
+ "knx:colourTransitionxyY": {
+  "dpst": "DPST-243-600",
+  "titel": "Colour Transition"
+ },
+ "knx:colourxyY": {
+  "dpst": "DPST-242-600",
+  "titel": "Colour xyY"
+ },
+ "knx:combinedInfoOnOff": {
+  "dpst": "DPST-27-1",
+  "titel": "CombinedInfoOnOff"
+ },
+ "knx:combinedPosition": {
+  "dpst": "DPST-240-800",
+  "titel": "CombinedPosition"
+ },
+ "knx:combinedStatusHVA": {
+  "dpst": "DPST-22-102",
+  "titel": "Combined Status HVA"
+ },
+ "knx:combinedStatusRTC": {
+  "dpst": "DPST-22-103",
+  "titel": "Combined Status RTC"
+ },
+ "knx:combinedStatusRTSM": {
+  "dpst": "DPST-21-107",
+  "titel": "Combined Status RTSM"
+ },
+ "knx:commMode": {
+  "dpst": "DPST-20-1000",
+  "titel": "CommMode"
+ },
+ "knx:concentrationmugpm3": {
+  "dpst": "DPST-9-30",
+  "titel": "Concentration µg/m3"
+ },
+ "knx:consumerProducer": {
+  "dpst": "DPST-1-1200",
+  "titel": "ConsumerProducer"
+ },
+ "knx:controlBlinds": {
+  "dpst": "DPST-3-8",
+  "titel": "Control Blinds"
+ },
+ "knx:controlDimming": {
+  "dpst": "DPST-3-7",
+  "titel": "Control Dimming"
+ },
+ "knx:converterControl": {
+  "dpst": "DPST-20-612",
+  "titel": "Converter Control"
+ },
+ "knx:converterDataRequest": {
+  "dpst": "DPST-20-613",
+  "titel": "Converter Data Request"
+ },
+ "knx:converterInfo": {
+  "dpst": "DPST-251-600",
+  "titel": "Converter Info"
+ },
+ "knx:converterInfoFix": {
+  "dpst": "DPST-250-600",
+  "titel": "Converter Info Fix"
+ },
+ "knx:converterStatus": {
+  "dpst": "DPST-244-600",
+  "titel": "Converter Status"
+ },
+ "knx:converterTestControl": {
+  "dpst": "DPST-20-611",
+  "titel": "Converter Test Control"
+ },
+ "knx:converterTestInfo": {
+  "dpst": "DPST-247-600",
+  "titel": "Converter Test Info"
+ },
+ "knx:converterTestResult": {
+  "dpst": "DPST-245-600",
+  "titel": "Converter Test Result"
+ },
+ "knx:daliControlGearDiagnostic": {
+  "dpst": "DPST-237-600",
+  "titel": "DALI Control Gear Diagnostic"
+ },
+ "knx:daliDiagnostics": {
+  "dpst": "DPST-238-600",
+  "titel": "DALI Diagnostics"
+ },
+ "knx:daliFadeTime": {
+  "dpst": "DPST-20-602",
+  "titel": "DALI Fade Time"
+ },
+ "knx:damperMode": {
+  "dpst": "DPST-20-109",
+  "titel": "DamperMode"
+ },
+ "knx:date": {
+  "dpst": "DPST-11-1",
+  "titel": "Date"
+ },
+ "knx:dateTime": {
+  "dpst": "DPST-19-1",
+  "titel": "DateTime"
+ },
+ "knx:dateTimeAlarm": {
+  "dpst": "DPST-265-5",
+  "titel": "DateTime Alarm"
+ },
+ "knx:dateTimeInvert": {
+  "dpst": "DPST-265-12",
+  "titel": "DateTime Invert"
+ },
+ "knx:dateTimeOpenClose": {
+  "dpst": "DPST-265-9",
+  "titel": "DateTime OpenClose"
+ },
+ "knx:dateTimePeriod": {
+  "dpst": "DPST-256-1",
+  "titel": "DateTime Period"
+ },
+ "knx:dateTimeState": {
+  "dpst": "DPST-265-11",
+  "titel": "DateTime State"
+ },
+ "knx:dateTimeSwitch": {
+  "dpst": "DPST-265-1",
+  "titel": "DateTime Switch"
+ },
+ "knx:dayNight": {
+  "dpst": "DPST-1-24",
+  "titel": "DayNight"
+ },
+ "knx:decimalFactor": {
+  "dpst": "DPST-5-5",
+  "titel": "DecimalFactor"
+ },
+ "knx:deltaTime100MSec": {
+  "dpst": "DPST-8-4",
+  "titel": "DeltaTime100MSec"
+ },
+ "knx:deltaTime10MSec": {
+  "dpst": "DPST-8-3",
+  "titel": "DeltaTime10MSec"
+ },
+ "knx:deltaTimeHrs": {
+  "dpst": "DPST-8-7",
+  "titel": "DeltaTimeHrs"
+ },
+ "knx:deltaTimeMin": {
+  "dpst": "DPST-8-6",
+  "titel": "DeltaTimeMin"
+ },
+ "knx:deltaTimeMsec": {
+  "dpst": "DPST-8-2",
+  "titel": "DeltaTimeMsec"
+ },
+ "knx:deltaTimeSec": {
+  "dpst": "DPST-8-5",
+  "titel": "DeltaTimeSec"
+ },
+ "knx:deltaVolumeCubicMetre": {
+  "dpst": "DPST-13-1201",
+  "titel": "Delta Volume Cubic Metre"
+ },
+ "knx:deltaVolumeLiquidLitre": {
+  "dpst": "DPST-13-1200",
+  "titel": "Delta Volume Liquid Litre"
+ },
+ "knx:deviceControl": {
+  "dpst": "DPST-21-2",
+  "titel": "Device Control"
+ },
+ "knx:dhwMode": {
+  "dpst": "DPST-20-103",
+  "titel": "DHWMode"
+ },
+ "knx:dhwModeNext": {
+  "dpst": "DPST-206-102",
+  "titel": "DHWModeNext"
+ },
+ "knx:dhwModeZ": {
+  "dpst": "DPST-201-102",
+  "titel": "DHW Mode Z"
+ },
+ "knx:dimSendStyle": {
+  "dpst": "DPST-1-13",
+  "titel": "Dim Send Style"
+ },
+ "knx:dimmPBModel": {
+  "dpst": "DPST-20-607",
+  "titel": "DimmPBModel"
+ },
+ "knx:direction1Control": {
+  "dpst": "DPST-2-8",
+  "titel": "Direction 1 Control"
+ },
+ "knx:direction2Control": {
+  "dpst": "DPST-2-9",
+  "titel": "Direction 2 Control"
+ },
+ "knx:doubleNibble": {
+  "dpst": "DPST-25-1000",
+  "titel": "DoubleNibble"
+ },
+ "knx:enable": {
+  "dpst": "DPST-1-3",
+  "titel": "Enable"
+ },
+ "knx:enableControl": {
+  "dpst": "DPST-2-3",
+  "titel": "Enable Control"
+ },
+ "knx:enableHCStageZ": {
+  "dpst": "DPST-201-105",
+  "titel": "EnableHCStage Z"
+ },
+ "knx:enableHCstage": {
+  "dpst": "DPST-20-116",
+  "titel": "Enable HC Stage"
+ },
+ "knx:energyDirection": {
+  "dpst": "DPST-1-1201",
+  "titel": "EnergyDirection"
+ },
+ "knx:errorClassHVAC": {
+  "dpst": "DPST-20-12",
+  "titel": "ErrorClass HVAC"
+ },
+ "knx:errorClassSystem": {
+  "dpst": "DPST-20-11",
+  "titel": "ErrorClass System"
+ },
+ "knx:euridisCommunicationInterfaceStatus": {
+  "dpst": "DPST-20-1204",
+  "titel": "Euridis Communication Interface Status"
+ },
+ "knx:fanMode": {
+  "dpst": "DPST-20-111",
+  "titel": "FanMode"
+ },
+ "knx:fanStage": {
+  "dpst": "DPST-5-100",
+  "titel": "Fan Stage"
+ },
+ "knx:flowRatem3ph": {
+  "dpst": "DPST-13-2",
+  "titel": "FlowRate m3/h"
+ },
+ "knx:flowRatem3phZ": {
+  "dpst": "DPST-218-2",
+  "titel": "FlowRate m3/h Z"
+ },
+ "knx:forceSign": {
+  "dpst": "DPST-21-100",
+  "titel": "ForceSign"
+ },
+ "knx:forceSignCool": {
+  "dpst": "DPST-21-101",
+  "titel": "ForceSignCool"
+ },
+ "knx:fuelType": {
+  "dpst": "DPST-20-100",
+  "titel": "FuelType"
+ },
+ "knx:fuelTypeSet": {
+  "dpst": "DPST-21-104",
+  "titel": "FuelTypeSet"
+ },
+ "knx:gasMeasurementCondition": {
+  "dpst": "DPST-20-1202",
+  "titel": "Gas Measurement Condition"
+ },
+ "knx:geographicalLocation": {
+  "dpst": "DPST-255-1",
+  "titel": "Geographical Location"
+ },
+ "knx:heaterMode": {
+  "dpst": "DPST-20-110",
+  "titel": "HeaterMode"
+ },
+ "knx:heatpCool": {
+  "dpst": "DPST-1-100",
+  "titel": "Heat/Cool"
+ },
+ "knx:heatpCoolZ": {
+  "dpst": "DPST-200-100",
+  "titel": "Heat/Cool Z"
+ },
+ "knx:humDehumMode": {
+  "dpst": "DPST-20-115",
+  "titel": "HumDehumMode"
+ },
+ "knx:humidity": {
+  "dpst": "DPST-9-29",
+  "titel": "Humidity"
+ },
+ "knx:hvacAirFlowAbsoluteZ": {
+  "dpst": "DPST-203-104",
+  "titel": "HVAC Air Flow Absolute Z"
+ },
+ "knx:hvacAirFlowRelZ": {
+  "dpst": "DPST-205-102",
+  "titel": "HVAC Air Flow Relative Value"
+ },
+ "knx:hvacAirQualRelZ": {
+  "dpst": "DPST-205-103",
+  "titel": "HVAC Air Quality Relative Value"
+ },
+ "knx:hvacAirQualZ": {
+  "dpst": "DPST-203-100",
+  "titel": "HVAC Air Qual Z"
+ },
+ "knx:hvacContrMode": {
+  "dpst": "DPST-20-105",
+  "titel": "HVACContrMode"
+ },
+ "knx:hvacContrModeZ": {
+  "dpst": "DPST-201-104",
+  "titel": "HVAC Contr Mode Z"
+ },
+ "knx:hvacEmergMode": {
+  "dpst": "DPST-20-106",
+  "titel": "HVACEmergMode"
+ },
+ "knx:hvacEmergModeZ": {
+  "dpst": "DPST-201-109",
+  "titel": "HVAC Emerg Mode Z"
+ },
+ "knx:hvacMode": {
+  "dpst": "DPST-20-102",
+  "titel": "HVACMode"
+ },
+ "knx:hvacModeNext": {
+  "dpst": "DPST-206-100",
+  "titel": "HVACModeNext"
+ },
+ "knx:hvacModeZ": {
+  "dpst": "DPST-201-100",
+  "titel": "HVAC Mode Z"
+ },
+ "knx:hvacpbAction": {
+  "dpst": "DPST-23-102",
+  "titel": "HVAC PB Action"
+ },
+ "knx:inputSource": {
+  "dpst": "DPST-1-14",
+  "titel": "Input Source"
+ },
+ "knx:invert": {
+  "dpst": "DPST-1-12",
+  "titel": "Invert"
+ },
+ "knx:invertControl": {
+  "dpst": "DPST-2-12",
+  "titel": "Invert Control"
+ },
+ "knx:ipv6": {
+  "dpst": "DPST-285-1",
+  "titel": "IPv6"
+ },
+ "knx:kelvinPerPercent": {
+  "dpst": "DPST-9-23",
+  "titel": "KelvinPerPercent"
+ },
+ "knx:languageCodeAlpha2ascii": {
+  "dpst": "DPST-234-1",
+  "titel": "LanguageCodeAlpha2 ASCII"
+ },
+ "knx:lengthm": {
+  "dpst": "DPST-8-12",
+  "titel": "Length m"
+ },
+ "knx:lengthmm": {
+  "dpst": "DPST-7-11",
+  "titel": "Length mm"
+ },
+ "knx:lightActuatorErrorInfo": {
+  "dpst": "DPST-21-601",
+  "titel": "LightActuatorErrorInfo"
+ },
+ "knx:lightApplicationMode": {
+  "dpst": "DPST-20-5",
+  "titel": "LightApplicationMode"
+ },
+ "knx:lightControlMode": {
+  "dpst": "DPST-20-604",
+  "titel": "LightControlMode"
+ },
+ "knx:loadPriority": {
+  "dpst": "DPST-20-104",
+  "titel": "LoadPriority"
+ },
+ "knx:loadTypeDetected": {
+  "dpst": "DPST-20-610",
+  "titel": "LoadTypeDetected"
+ },
+ "knx:loadTypeSet": {
+  "dpst": "DPST-20-609",
+  "titel": "LoadTypeSet"
+ },
+ "knx:localeASCII": {
+  "dpst": "DPST-231-1",
+  "titel": "Locale ASCII"
+ },
+ "knx:lockSign": {
+  "dpst": "DPST-207-101",
+  "titel": "LockSign"
+ },
+ "knx:logicalFunction": {
+  "dpst": "DPST-1-21",
+  "titel": "Logical Function"
+ },
+ "knx:longDeltaTimeSec": {
+  "dpst": "DPST-13-100",
+  "titel": "LongDeltaTimeSec"
+ },
+ "knx:longTimePeriodHrs": {
+  "dpst": "DPST-12-102",
+  "titel": "LongTimePeriod Hrs"
+ },
+ "knx:longTimePeriodMin": {
+  "dpst": "DPST-12-101",
+  "titel": "LongTimePeriod Min"
+ },
+ "knx:longTimePeriodSec": {
+  "dpst": "DPST-12-100",
+  "titel": "LongTimePeriod Sec"
+ },
+ "knx:mBusAddress": {
+  "dpst": "DPST-230-1000",
+  "titel": "MBus Address"
+ },
+ "knx:mBusBreakerValveState": {
+  "dpst": "DPST-20-1200",
+  "titel": "MBus BreakerValve State"
+ },
+ "knx:masterSlaveMode": {
+  "dpst": "DPST-20-112",
+  "titel": "MasterSlaveMode"
+ },
+ "knx:media": {
+  "dpst": "DPST-22-1000",
+  "titel": "Media"
+ },
+ "knx:meteringDeviceType": {
+  "dpst": "DPST-20-114",
+  "titel": "Metering DeviceType"
+ },
+ "knx:meteringValue": {
+  "dpst": "DPST-229-1",
+  "titel": "MeteringValue"
+ },
+ "knx:occMode": {
+  "dpst": "DPST-20-3",
+  "titel": "OccMode"
+ },
+ "knx:occModeNext": {
+  "dpst": "DPST-206-104",
+  "titel": "OccModeNext"
+ },
+ "knx:occModeZ": {
+  "dpst": "DPST-201-108",
+  "titel": "Occ Mode Z"
+ },
+ "knx:occupancy": {
+  "dpst": "DPST-1-18",
+  "titel": "Occupancy"
+ },
+ "knx:onOffAction": {
+  "dpst": "DPST-23-1",
+  "titel": "OnOff Action"
+ },
+ "knx:openClose": {
+  "dpst": "DPST-1-9",
+  "titel": "Open Close"
+ },
+ "knx:pbAction": {
+  "dpst": "DPST-20-606",
+  "titel": "PBAction"
+ },
+ "knx:peakEvent": {
+  "dpst": "DPST-20-1207",
+  "titel": "Peak Event"
+ },
+ "knx:peakEventNotice": {
+  "dpst": "DPST-20-1206",
+  "titel": "Peak Event Notice"
+ },
+ "knx:percentU8": {
+  "dpst": "DPST-5-4",
+  "titel": "Percent U8"
+ },
+ "knx:percentV16": {
+  "dpst": "DPST-8-10",
+  "titel": "Percent V16"
+ },
+ "knx:percentV16Z": {
+  "dpst": "DPST-205-17",
+  "titel": "Percent V16 Z"
+ },
+ "knx:percentV8": {
+  "dpst": "DPST-6-1",
+  "titel": "Percent V8"
+ },
+ "knx:plcStatus": {
+  "dpst": "DPST-20-1205",
+  "titel": "PLC Status"
+ },
+ "knx:power": {
+  "dpst": "DPST-9-24",
+  "titel": "Power"
+ },
+ "knx:powerDensity": {
+  "dpst": "DPST-9-22",
+  "titel": "PowerDensity"
+ },
+ "knx:powerReturnMode": {
+  "dpst": "DPST-20-22",
+  "titel": "PowerReturnMode"
+ },
+ "knx:pressure": {
+  "dpst": "DPST-9-6",
+  "titel": "Pressure"
+ },
+ "knx:prioritisedModeControl": {
+  "dpst": "DPST-236-1",
+  "titel": "Prioritised Mode Control"
+ },
+ "knx:priority": {
+  "dpst": "DPST-20-4",
+  "titel": "Priority"
+ },
+ "knx:propDataType": {
+  "dpst": "DPST-7-10",
+  "titel": "PropDataType"
+ },
+ "knx:psuMode": {
+  "dpst": "DPST-20-8",
+  "titel": "PSUMode"
+ },
+ "knx:rainAmount": {
+  "dpst": "DPST-9-26",
+  "titel": "Rain Amount"
+ },
+ "knx:ramp": {
+  "dpst": "DPST-1-4",
+  "titel": "Ramp"
+ },
+ "knx:rampControl": {
+  "dpst": "DPST-2-4",
+  "titel": "Ramp Control"
+ },
+ "knx:reactiveEnergy": {
+  "dpst": "DPST-13-12",
+  "titel": "ReactiveEnergy"
+ },
+ "knx:reactiveEnergyV64": {
+  "dpst": "DPST-29-12",
+  "titel": "ReactiveEnergy V64"
+ },
+ "knx:reactiveEnergykVARh": {
+  "dpst": "DPST-13-15",
+  "titel": "ReactiveEnergy kVARh"
+ },
+ "knx:regionCodeAlpha2ascii": {
+  "dpst": "DPST-234-2",
+  "titel": "RegionCodeAlpha2 ASCII"
+ },
+ "knx:relValueZ": {
+  "dpst": "DPST-202-1",
+  "titel": "RelValue Z"
+ },
+ "knx:relativeControlRGB": {
+  "dpst": "DPST-254-600",
+  "titel": "Relative Control RGB"
+ },
+ "knx:relativeControlRGBW": {
+  "dpst": "DPST-252-600",
+  "titel": "Relative Control RGBW"
+ },
+ "knx:relativeControlxyY": {
+  "dpst": "DPST-253-600",
+  "titel": "Relative Control xyY"
+ },
+ "knx:reset": {
+  "dpst": "DPST-1-15",
+  "titel": "Reset"
+ },
+ "knx:rfFilterInfo": {
+  "dpst": "DPST-21-1001",
+  "titel": "RF FilterInfo"
+ },
+ "knx:rfFilterSelect": {
+  "dpst": "DPST-20-1003",
+  "titel": "RF FilterSelect"
+ },
+ "knx:rfModeInfo": {
+  "dpst": "DPST-21-1000",
+  "titel": "RF ModeInfo"
+ },
+ "knx:rfModeSelect": {
+  "dpst": "DPST-20-1002",
+  "titel": "RF ModeSelect"
+ },
+ "knx:rotationAngle": {
+  "dpst": "DPST-8-11",
+  "titel": "Rotation Angle"
+ },
+ "knx:sabBehaviourLockUnlock": {
+  "dpst": "DPST-20-802",
+  "titel": "SABBehaviour Lock Unlock"
+ },
+ "knx:sabExceptBehaviour": {
+  "dpst": "DPST-20-801",
+  "titel": "SABExceptBehaviour"
+ },
+ "knx:scaling": {
+  "dpst": "DPST-5-1",
+  "titel": "Scaling"
+ },
+ "knx:scalingSpeed": {
+  "dpst": "DPST-225-1",
+  "titel": "ScalingSpeed"
+ },
+ "knx:scalingStepTime": {
+  "dpst": "DPST-225-2",
+  "titel": "Scaling Step Time"
+ },
+ "knx:sceneAB": {
+  "dpst": "DPST-1-22",
+  "titel": "Scene AB"
+ },
+ "knx:sceneConfig": {
+  "dpst": "DPST-238-1",
+  "titel": "SceneConfig"
+ },
+ "knx:sceneControl": {
+  "dpst": "DPST-18-1",
+  "titel": "SceneControl"
+ },
+ "knx:sceneInfo": {
+  "dpst": "DPST-26-1",
+  "titel": "SceneInfo"
+ },
+ "knx:sceneNumber": {
+  "dpst": "DPST-17-1",
+  "titel": "SceneNumber"
+ },
+ "knx:scloMode": {
+  "dpst": "DPST-20-1",
+  "titel": "SCLOMode"
+ },
+ "knx:sensorSelect": {
+  "dpst": "DPST-20-17",
+  "titel": "SensorSelect"
+ },
+ "knx:shutterBlindsMode": {
+  "dpst": "DPST-1-23",
+  "titel": "ShutterBlinds Mode"
+ },
+ "knx:sssbMode": {
+  "dpst": "DPST-20-803",
+  "titel": "SSSBMode"
+ },
+ "knx:start": {
+  "dpst": "DPST-1-10",
+  "titel": "Start"
+ },
+ "knx:startControl": {
+  "dpst": "DPST-2-10",
+  "titel": "Start Control"
+ },
+ "knx:startSynchronization": {
+  "dpst": "DPST-20-122",
+  "titel": "StartSynchronization"
+ },
+ "knx:state": {
+  "dpst": "DPST-1-11",
+  "titel": "State"
+ },
+ "knx:stateControl": {
+  "dpst": "DPST-2-11",
+  "titel": "State Control"
+ },
+ "knx:statusAct": {
+  "dpst": "DPST-207-105",
+  "titel": "StatusAct"
+ },
+ "knx:statusBUC": {
+  "dpst": "DPST-207-100",
+  "titel": "StatusBUC"
+ },
+ "knx:statusCPM": {
+  "dpst": "DPST-209-102",
+  "titel": "StatusCPM"
+ },
+ "knx:statusDHWC": {
+  "dpst": "DPST-22-100",
+  "titel": "StatusDHWC"
+ },
+ "knx:statusGen": {
+  "dpst": "DPST-21-1",
+  "titel": "StatusGen"
+ },
+ "knx:statusHPM": {
+  "dpst": "DPST-209-100",
+  "titel": "StatusHPM"
+ },
+ "knx:statusLightingActuator": {
+  "dpst": "DPST-207-600",
+  "titel": "Status Lighting Actuator"
+ },
+ "knx:statusMode3": {
+  "dpst": "DPST-6-20",
+  "titel": "Status Mode 3"
+ },
+ "knx:statusRHCC": {
+  "dpst": "DPST-22-101",
+  "titel": "StatusRHCC"
+ },
+ "knx:statusRoomSetp": {
+  "dpst": "DPST-20-113",
+  "titel": "StatusRoomSetp"
+ },
+ "knx:statusWTC": {
+  "dpst": "DPST-209-103",
+  "titel": "StatusWTC"
+ },
+ "knx:statusahu": {
+  "dpst": "DPST-21-106",
+  "titel": "StatusAHU"
+ },
+ "knx:statusrcc": {
+  "dpst": "DPST-21-105",
+  "titel": "StatusRCC"
+ },
+ "knx:statusrhc": {
+  "dpst": "DPST-21-102",
+  "titel": "StatusRHC"
+ },
+ "knx:statussab": {
+  "dpst": "DPST-241-800",
+  "titel": "StatusSAB"
+ },
+ "knx:statussdhwc": {
+  "dpst": "DPST-21-103",
+  "titel": "StatusSDHWC"
+ },
+ "knx:step": {
+  "dpst": "DPST-1-7",
+  "titel": "Step"
+ },
+ "knx:stepControl": {
+  "dpst": "DPST-2-7",
+  "titel": "Step Control"
+ },
+ "knx:string88591": {
+  "dpst": "DPST-16-1",
+  "titel": "String 8859 1"
+ },
+ "knx:stringascii": {
+  "dpst": "DPST-16-0",
+  "titel": "String ASCII"
+ },
+ "knx:sunIntensityZ": {
+  "dpst": "DPST-203-102",
+  "titel": "Sun Intensity Z"
+ },
+ "knx:switch": {
+  "dpst": "DPST-1-1",
+  "titel": "Switch"
+ },
+ "knx:switchControl": {
+  "dpst": "DPST-2-1",
+  "titel": "Switch Control"
+ },
+ "knx:switchOnMode": {
+  "dpst": "DPST-20-608",
+  "titel": "SwitchOnMode"
+ },
+ "knx:switchPBModel": {
+  "dpst": "DPST-20-605",
+  "titel": "SwitchPBModel"
+ },
+ "knx:tariff": {
+  "dpst": "DPST-5-6",
+  "titel": "Tariff"
+ },
+ "knx:tariffActiveEnergy": {
+  "dpst": "DPST-235-1",
+  "titel": "Tariff ActiveEnergy"
+ },
+ "knx:tariffNext": {
+  "dpst": "DPST-225-3",
+  "titel": "TariffNext"
+ },
+ "knx:tempDHWSetpSet_a4a_": {
+  "dpst": "DPST-213-101",
+  "titel": "TempDHWSetpSet[4]"
+ },
+ "knx:tempRoomDemAbs": {
+  "dpst": "DPST-209-101",
+  "titel": "TempRoomDemAbs"
+ },
+ "knx:tempRoomSetpSetF16_a3a_": {
+  "dpst": "DPST-222-100",
+  "titel": "TempRoomSetpSetF16[3]"
+ },
+ "knx:tempRoomSetpSetF16_a4a_": {
+  "dpst": "DPST-275-100",
+  "titel": "Room Temperature Setpoint"
+ },
+ "knx:tempRoomSetpSetShiftF16_a3a_": {
+  "dpst": "DPST-222-101",
+  "titel": "TempRoomSetpSetShiftF16[3]"
+ },
+ "knx:tempRoomSetpSetShiftF16_a4a_": {
+  "dpst": "DPST-275-101",
+  "titel": "Room Temperature Setpoint Shift"
+ },
+ "knx:tempRoomSetpSetShift_a3a_": {
+  "dpst": "DPST-212-101",
+  "titel": "TempRoomSetpSet[3]"
+ },
+ "knx:tempRoomSetpSetShift_a4a_": {
+  "dpst": "DPST-213-102",
+  "titel": "TempRoomSetpSetShift[4]"
+ },
+ "knx:tempRoomSetpSet_a3a_": {
+  "dpst": "DPST-212-100",
+  "titel": "TempRoomSetpSetShift[3]"
+ },
+ "knx:tempRoomSetpSet_a4a_": {
+  "dpst": "DPST-213-100",
+  "titel": "TempRoomSetpSet[4]"
+ },
+ "knx:tempSupplyAirSetpSet": {
+  "dpst": "DPST-224-100",
+  "titel": "TempSupplyAirSetpSet"
+ },
+ "knx:temphvacAbsNext": {
+  "dpst": "DPST-220-100",
+  "titel": "TempHVACAbsNext"
+ },
+ "knx:temphvacAbsZ": {
+  "dpst": "DPST-205-100",
+  "titel": "HVAC absolute Temperature"
+ },
+ "knx:temphvacRelZ": {
+  "dpst": "DPST-205-101",
+  "titel": "HVAC relative Temperature"
+ },
+ "knx:ticType": {
+  "dpst": "DPST-20-1208",
+  "titel": "TIC Type"
+ },
+ "knx:timeDelay": {
+  "dpst": "DPST-20-13",
+  "titel": "Time Delay"
+ },
+ "knx:timeOfDay": {
+  "dpst": "DPST-10-1",
+  "titel": "TimeOfDay"
+ },
+ "knx:timePeriod100MSec": {
+  "dpst": "DPST-7-4",
+  "titel": "TimePeriod100MSec"
+ },
+ "knx:timePeriod10MSec": {
+  "dpst": "DPST-7-3",
+  "titel": "TimePeriod10MSec"
+ },
+ "knx:timePeriodHrs": {
+  "dpst": "DPST-7-7",
+  "titel": "TimePeriodHrs"
+ },
+ "knx:timePeriodMin": {
+  "dpst": "DPST-7-6",
+  "titel": "TimePeriodMin"
+ },
+ "knx:timePeriodMsec": {
+  "dpst": "DPST-7-2",
+  "titel": "TimePeriodMsec"
+ },
+ "knx:timePeriodSec": {
+  "dpst": "DPST-7-5",
+  "titel": "TimePeriodSec"
+ },
+ "knx:trigger": {
+  "dpst": "DPST-1-17",
+  "titel": "Trigger"
+ },
+ "knx:typeTICChannel": {
+  "dpst": "DPST-20-1209",
+  "titel": "Type TIC Channel"
+ },
+ "knx:uCountValue8Z": {
+  "dpst": "DPST-202-2",
+  "titel": "UCount Value 8 Z"
+ },
+ "knx:ueiCurrentmA": {
+  "dpst": "DPST-7-12",
+  "titel": "UElCurrentmA"
+ },
+ "knx:upDown": {
+  "dpst": "DPST-1-8",
+  "titel": "Up Down"
+ },
+ "knx:upDownAction": {
+  "dpst": "DPST-23-3",
+  "titel": "UpDown Action"
+ },
+ "knx:utf8": {
+  "dpst": "DPST-28-1",
+  "titel": "UTF-8"
+ },
+ "knx:value1Count": {
+  "dpst": "DPST-6-10",
+  "titel": "Value 1 Count"
+ },
+ "knx:value1Ucount": {
+  "dpst": "DPST-5-10",
+  "titel": "Value 1 Ucount"
+ },
+ "knx:value2Count": {
+  "dpst": "DPST-8-1",
+  "titel": "Value 2 Count"
+ },
+ "knx:value2Ucount": {
+  "dpst": "DPST-7-1",
+  "titel": "Value 2 Ucount"
+ },
+ "knx:value4Count": {
+  "dpst": "DPST-13-1",
+  "titel": "Value 4 Count"
+ },
+ "knx:value4Ucount": {
+  "dpst": "DPST-12-1",
+  "titel": "Value 4 Ucount"
+ },
+ "knx:valueAbsoluteTemperature": {
+  "dpst": "DPST-14-69",
+  "titel": "Value Absolute Temperature"
+ },
+ "knx:valueAcceleration": {
+  "dpst": "DPST-14-0",
+  "titel": "Value Acceleration"
+ },
+ "knx:valueAccelerationAngular": {
+  "dpst": "DPST-14-1",
+  "titel": "Value Acceleration Angular"
+ },
+ "knx:valueActivationEnergy": {
+  "dpst": "DPST-14-2",
+  "titel": "Value Activation Energy"
+ },
+ "knx:valueActivity": {
+  "dpst": "DPST-14-3",
+  "titel": "Value Activity"
+ },
+ "knx:valueAirFlow": {
+  "dpst": "DPST-9-9",
+  "titel": "Value AirFlow"
+ },
+ "knx:valueAirQuality": {
+  "dpst": "DPST-9-8",
+  "titel": "Value AirQuality"
+ },
+ "knx:valueAmplitude": {
+  "dpst": "DPST-14-5",
+  "titel": "Value Amplitude"
+ },
+ "knx:valueAngleDeg": {
+  "dpst": "DPST-14-7",
+  "titel": "Value AngleDeg"
+ },
+ "knx:valueAngleRad": {
+  "dpst": "DPST-14-6",
+  "titel": "Value AngleRad"
+ },
+ "knx:valueAngularFrequency": {
+  "dpst": "DPST-14-34",
+  "titel": "Value Angular Frequency"
+ },
+ "knx:valueAngularMomentum": {
+  "dpst": "DPST-14-8",
+  "titel": "Value Angular Momentum"
+ },
+ "knx:valueAngularVelocity": {
+  "dpst": "DPST-14-9",
+  "titel": "Value Angular Velocity"
+ },
+ "knx:valueArea": {
+  "dpst": "DPST-14-10",
+  "titel": "Value Area"
+ },
+ "knx:valueCapacitance": {
+  "dpst": "DPST-14-11",
+  "titel": "Value Capacitance"
+ },
+ "knx:valueChargeDensitySurface": {
+  "dpst": "DPST-14-12",
+  "titel": "Value Charge DensitySurface"
+ },
+ "knx:valueChargeDensityVolume": {
+  "dpst": "DPST-14-13",
+  "titel": "Value Charge DensityVolume"
+ },
+ "knx:valueCommonTemperature": {
+  "dpst": "DPST-14-68",
+  "titel": "Value Common Temperature"
+ },
+ "knx:valueCompressibility": {
+  "dpst": "DPST-14-14",
+  "titel": "Value Compressibility"
+ },
+ "knx:valueConductance": {
+  "dpst": "DPST-14-15",
+  "titel": "Value Conductance"
+ },
+ "knx:valueCurr": {
+  "dpst": "DPST-9-21",
+  "titel": "Value Curr"
+ },
+ "knx:valueDemBoc": {
+  "dpst": "DPST-207-102",
+  "titel": "ValueDemBoc"
+ },
+ "knx:valueDensity": {
+  "dpst": "DPST-14-17",
+  "titel": "Value Density"
+ },
+ "knx:valueElectricCharge": {
+  "dpst": "DPST-14-18",
+  "titel": "Value Electric Charge"
+ },
+ "knx:valueElectricCurrent": {
+  "dpst": "DPST-14-19",
+  "titel": "Value Electric Current"
+ },
+ "knx:valueElectricCurrentDensity": {
+  "dpst": "DPST-14-20",
+  "titel": "Value Electric CurrentDensity"
+ },
+ "knx:valueElectricDipoleMoment": {
+  "dpst": "DPST-14-21",
+  "titel": "Value Electric DipoleMoment"
+ },
+ "knx:valueElectricDisplacement": {
+  "dpst": "DPST-14-22",
+  "titel": "Value Electric Displacement"
+ },
+ "knx:valueElectricFieldStrength": {
+  "dpst": "DPST-14-23",
+  "titel": "Value Electric FieldStrength"
+ },
+ "knx:valueElectricFlux": {
+  "dpst": "DPST-14-24",
+  "titel": "Value Electric Flux"
+ },
+ "knx:valueElectricFluxDensity": {
+  "dpst": "DPST-14-25",
+  "titel": "Value Electric FluxDensity"
+ },
+ "knx:valueElectricPolarization": {
+  "dpst": "DPST-14-26",
+  "titel": "Value Electric Polarization"
+ },
+ "knx:valueElectricPotential": {
+  "dpst": "DPST-14-27",
+  "titel": "Value Electric Potential"
+ },
+ "knx:valueElectricPotentialDifference": {
+  "dpst": "DPST-14-28",
+  "titel": "Value Electric PotentialDifference"
+ },
+ "knx:valueElectricalConductivity": {
+  "dpst": "DPST-14-16",
+  "titel": "Value Electrical Conductivity"
+ },
+ "knx:valueElectromagneticMoment": {
+  "dpst": "DPST-14-29",
+  "titel": "Value ElectromagneticMoment"
+ },
+ "knx:valueElectromotiveForce": {
+  "dpst": "DPST-14-30",
+  "titel": "Value Electromotive Force"
+ },
+ "knx:valueEnergy": {
+  "dpst": "DPST-14-31",
+  "titel": "Value Energy"
+ },
+ "knx:valueForce": {
+  "dpst": "DPST-14-32",
+  "titel": "Value Force"
+ },
+ "knx:valueFrequency": {
+  "dpst": "DPST-14-33",
+  "titel": "Value Frequency"
+ },
+ "knx:valueHeatCapacity": {
+  "dpst": "DPST-14-35",
+  "titel": "Value Heat Capacity"
+ },
+ "knx:valueHeatFlowRate": {
+  "dpst": "DPST-14-36",
+  "titel": "Value Heat FlowRate"
+ },
+ "knx:valueHeatQuantity": {
+  "dpst": "DPST-14-37",
+  "titel": "Value Heat Quantity"
+ },
+ "knx:valueHumidity": {
+  "dpst": "DPST-9-7",
+  "titel": "Value Humidity"
+ },
+ "knx:valueImpedance": {
+  "dpst": "DPST-14-38",
+  "titel": "Value Impedance"
+ },
+ "knx:valueLength": {
+  "dpst": "DPST-14-39",
+  "titel": "Value Length"
+ },
+ "knx:valueLightQuantity": {
+  "dpst": "DPST-14-40",
+  "titel": "Value Light Quantity"
+ },
+ "knx:valueLuminance": {
+  "dpst": "DPST-14-41",
+  "titel": "Value Luminance"
+ },
+ "knx:valueLuminousFlux": {
+  "dpst": "DPST-14-42",
+  "titel": "Value Luminous Flux"
+ },
+ "knx:valueLuminousIntensity": {
+  "dpst": "DPST-14-43",
+  "titel": "Value Luminous Intensity"
+ },
+ "knx:valueLux": {
+  "dpst": "DPST-9-4",
+  "titel": "Value Lux"
+ },
+ "knx:valueMagneticFieldStrength": {
+  "dpst": "DPST-14-44",
+  "titel": "Value Magnetic FieldStrength"
+ },
+ "knx:valueMagneticFlux": {
+  "dpst": "DPST-14-45",
+  "titel": "Value Magnetic Flux"
+ },
+ "knx:valueMagneticFluxDensity": {
+  "dpst": "DPST-14-46",
+  "titel": "Value Magnetic FluxDensity"
+ },
+ "knx:valueMagneticMoment": {
+  "dpst": "DPST-14-47",
+  "titel": "Value Magnetic Moment"
+ },
+ "knx:valueMagneticPolarization": {
+  "dpst": "DPST-14-48",
+  "titel": "Value Magnetic Polarization"
+ },
+ "knx:valueMagnetization": {
+  "dpst": "DPST-14-49",
+  "titel": "Value Magnetization"
+ },
+ "knx:valueMagnetomotiveForce": {
+  "dpst": "DPST-14-50",
+  "titel": "Value MagnetomotiveForce"
+ },
+ "knx:valueMass": {
+  "dpst": "DPST-14-51",
+  "titel": "Value Mass"
+ },
+ "knx:valueMassFlux": {
+  "dpst": "DPST-14-52",
+  "titel": "Value MassFlux"
+ },
+ "knx:valueMol": {
+  "dpst": "DPST-14-4",
+  "titel": "Value Mol"
+ },
+ "knx:valueMomentum": {
+  "dpst": "DPST-14-53",
+  "titel": "Value Momentum"
+ },
+ "knx:valuePhaseAngleDeg": {
+  "dpst": "DPST-14-55",
+  "titel": "Value Phase AngleDeg"
+ },
+ "knx:valuePhaseAngleRad": {
+  "dpst": "DPST-14-54",
+  "titel": "Value Phase AngleRad"
+ },
+ "knx:valuePower": {
+  "dpst": "DPST-14-56",
+  "titel": "Value Power"
+ },
+ "knx:valuePowerFactor": {
+  "dpst": "DPST-14-57",
+  "titel": "Value Power Factor"
+ },
+ "knx:valuePressure": {
+  "dpst": "DPST-14-58",
+  "titel": "Value Pressure"
+ },
+ "knx:valueReactance": {
+  "dpst": "DPST-14-59",
+  "titel": "Value Reactance"
+ },
+ "knx:valueResistance": {
+  "dpst": "DPST-14-60",
+  "titel": "Value Resistance"
+ },
+ "knx:valueResistivity": {
+  "dpst": "DPST-14-61",
+  "titel": "Value Resistivity"
+ },
+ "knx:valueSelfInductance": {
+  "dpst": "DPST-14-62",
+  "titel": "Value SelfInductance"
+ },
+ "knx:valueSolidAngle": {
+  "dpst": "DPST-14-63",
+  "titel": "Value SolidAngle"
+ },
+ "knx:valueSoundIntensity": {
+  "dpst": "DPST-14-64",
+  "titel": "Value Sound Intensity"
+ },
+ "knx:valueSpeed": {
+  "dpst": "DPST-14-65",
+  "titel": "Value Speed"
+ },
+ "knx:valueStress": {
+  "dpst": "DPST-14-66",
+  "titel": "Value Stress"
+ },
+ "knx:valueSurfaceTension": {
+  "dpst": "DPST-14-67",
+  "titel": "Value Surface Tension"
+ },
+ "knx:valueTemp": {
+  "dpst": "DPST-9-1",
+  "titel": "Value Temp"
+ },
+ "knx:valueTempA": {
+  "dpst": "DPST-9-3",
+  "titel": "Value Temp A"
+ },
+ "knx:valueTempD": {
+  "dpst": "DPST-9-2",
+  "titel": "Value Temp D"
+ },
+ "knx:valueTempF": {
+  "dpst": "DPST-9-27",
+  "titel": "Value Temp F"
+ },
+ "knx:valueTemperatureDifference": {
+  "dpst": "DPST-14-70",
+  "titel": "Value TemperatureDifference"
+ },
+ "knx:valueThermalCapacity": {
+  "dpst": "DPST-14-71",
+  "titel": "Value Thermal Capacity"
+ },
+ "knx:valueThermalConductivity": {
+  "dpst": "DPST-14-72",
+  "titel": "Value Thermal Conductivity"
+ },
+ "knx:valueThermoelectricPower": {
+  "dpst": "DPST-14-73",
+  "titel": "Value ThermoelectricPower"
+ },
+ "knx:valueTime": {
+  "dpst": "DPST-14-74",
+  "titel": "Value Time"
+ },
+ "knx:valueTime1": {
+  "dpst": "DPST-9-10",
+  "titel": "Value Time 1"
+ },
+ "knx:valueTime2": {
+  "dpst": "DPST-9-11",
+  "titel": "Value Time 2"
+ },
+ "knx:valueTorque": {
+  "dpst": "DPST-14-75",
+  "titel": "Value Torque"
+ },
+ "knx:valueVolt": {
+  "dpst": "DPST-9-20",
+  "titel": "Value Volt"
+ },
+ "knx:valueVolume": {
+  "dpst": "DPST-14-76",
+  "titel": "Value Volume"
+ },
+ "knx:valueVolumeFlow": {
+  "dpst": "DPST-9-25",
+  "titel": "Value Volume Flow"
+ },
+ "knx:valueVolumeFlux": {
+  "dpst": "DPST-14-77",
+  "titel": "Value Volume Flux"
+ },
+ "knx:valueWeight": {
+  "dpst": "DPST-14-78",
+  "titel": "Value Weight"
+ },
+ "knx:valueWork": {
+  "dpst": "DPST-14-79",
+  "titel": "Value Work"
+ },
+ "knx:valueWsp": {
+  "dpst": "DPST-9-5",
+  "titel": "Value Wsp"
+ },
+ "knx:valueWspkmh": {
+  "dpst": "DPST-9-28",
+  "titel": "Value Wsp kmh"
+ },
+ "knx:valveMode": {
+  "dpst": "DPST-20-108",
+  "titel": "ValveMode"
+ },
+ "knx:varString88591": {
+  "dpst": "DPST-24-1",
+  "titel": "VarString 8859-1"
+ },
+ "knx:version": {
+  "dpst": "DPST-217-1",
+  "titel": "Version"
+ },
+ "knx:volumeFluxMeter": {
+  "dpst": "DPST-14-1200",
+  "titel": "Volume Flux for Meters"
+ },
+ "knx:volumeFluxls": {
+  "dpst": "DPST-14-1201",
+  "titel": "Volume Flux ls"
+ },
+ "knx:volumeLiquidLitre": {
+  "dpst": "DPST-12-1200",
+  "titel": "VolumeLiquid Litre"
+ },
+ "knx:volumeLiterZ": {
+  "dpst": "DPST-218-1",
+  "titel": "VolumeLiter Z"
+ },
+ "knx:volumeM3": {
+  "dpst": "DPST-12-1201",
+  "titel": "Volume m3"
+ },
+ "knx:windSpeedZ": {
+  "dpst": "DPST-203-101",
+  "titel": "Wind Speed Z"
+ },
+ "knx:windowDoor": {
+  "dpst": "DPST-1-19",
+  "titel": "Window Door"
+ }
+}
