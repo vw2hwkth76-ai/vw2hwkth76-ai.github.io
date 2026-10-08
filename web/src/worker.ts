@@ -16,6 +16,8 @@ declare const self: DedicatedWorkerGlobalScope;
 let graph: ProjectGraph | undefined;
 let analysis: ProjectAnalysis | undefined;
 let last: { snapshot: Snapshot; check: ReviewCheck | undefined; profile: NamingProfile | undefined; reviewCount: number } | undefined;
+/** Erkennung ohne Antworten; haengt nur von Profil und ETS-Schalter ab, nicht von den Antworten. */
+let baseline: { key: string; analysis: ProjectAnalysis } | undefined;
 
 async function handle(request: Request): Promise<unknown> {
   switch (request.type) {
@@ -24,6 +26,7 @@ async function handle(request: Request): Promise<unknown> {
       graph = undefined;
       analysis = undefined;
       last = undefined;
+      baseline = undefined;
       const loaded = await loadKnxProject(new Uint8Array(request.data), request.password === undefined ? {} : { password: request.password });
       graph = buildGraph(loaded);
       const result: OpenResult = {
@@ -52,7 +55,12 @@ async function handle(request: Request): Promise<unknown> {
       const reviews = new Map<string, Partial<Record<ClaimDimension, string>>>(Object.entries(request.reviews));
       const base = { useEtsFunctions: request.useEtsFunctions, ...(profile ? { profile } : {}) };
       analysis = analyzeProject(graph, { ...base, reviews });
-      const check = reviews.size > 0 ? checkReviews(analyzeProject(graph, base), reviews) : undefined;
+      let check: ReviewCheck | undefined;
+      if (reviews.size > 0) {
+        const key = JSON.stringify([request.useEtsFunctions, parsedProfile ?? null]);
+        if (baseline?.key !== key) baseline = { key, analysis: analyzeProject(graph, base) };
+        check = checkReviews(baseline.analysis, reviews);
+      }
       const snapshot = buildSnapshot(analysis, profile?.warnings ?? []);
       last = { snapshot, check, profile: parsedProfile, reviewCount: reviews.size };
       const result: AnalyzeResult = { snapshot, profileErrors, reviewCheck: check, milliseconds: Math.round(performance.now() - started) };

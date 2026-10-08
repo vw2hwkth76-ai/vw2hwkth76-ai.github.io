@@ -37,6 +37,6 @@ export default defineConfig({
   build: { outDir: "../dist", emptyOutDir: true, target: "es2023", chunkSizeWarningLimit: 2000, assetsInlineLimit: 0 },
   worker: { format: "es" },
   oxc: { jsx: { runtime: "automatic" } },
-  css: { preprocessorOptions: { scss: { quietDeps: true, silenceDeprecations: ["mixed-decls"] } } },
+  css: { preprocessorOptions: { scss: { quietDeps: true } } },
   server: { fs: { allow: [".."] } },
 });

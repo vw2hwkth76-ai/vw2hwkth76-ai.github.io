@@ -74,3 +74,35 @@ werden müssen. Formulierungen bleiben herstellerneutral.
   nicht das Schlafzimmer, "Bad/ WC" nennt zwei Räume.
 - **Kurzcodes brauchen das Namensschema.** "L LR Switching" ist ohne
   projektspezifische Tabelle (L = Licht, LD = dimmbar) nicht lösbar.
+
+## Oberfläche (Schritt 3)
+
+- **Carbon** (g10 hell, g100 dunkel, IBM Plex) als nüchternes Werkzeug mit
+  hoher Dichte. Eigene Tabelle auf Carbon-Klassen mit virtuellem Rendern
+  statt der Carbon-DataTable, damit auch Projekte mit mehreren tausend GAs
+  flüssig bleiben.
+- **Analyse im Web Worker**, die Oberfläche bekommt nur reine Daten
+  (Snapshot). Jede Antwort löst eine neue Analyse aus; veraltete Ergebnisse
+  werden verworfen.
+- **Jede Bestätigung ist ein Prüfwert.** Die Werkstatt rechnet zusätzlich
+  ohne Antworten und vergleicht: Das ergibt die Trefferquote an echten
+  Projekten und eine Abweichungsliste mit Quelle und Begründung im
+  Analysebericht. Aus den Bestätigungen entsteht auf Wunsch ein Gold-Standard
+  im Benchmark-Format.
+- **Belegstärke sichtbar, nicht nur farbig:** drei Balken (fest, mittel,
+  schwach) plus Häkchen für bestätigt und Warnzeichen für Widerspruch.
+- **Nichts verlässt den Browser.** Schriften aus den npm-Paketen statt CDN,
+  Content-Security-Policy im Build (nur eigene Quellen), Prüfskript in der CI
+  gegen Abrufe fremder Server. Antworten liegen je Projekt im
+  `localStorage`, Passwörter nirgends.
+- **Keine Installationsskripte** (`.npmrc`): Carbon und IBM Plex senden sonst
+  beim Installieren Nutzungsdaten an IBM.
+- **Veröffentlichung über GitHub Pages** aus `main` per Actions-Workflow.
+  Bis die Pages-Quelle umgestellt ist, bleibt die bisherige Seite online.
+
+## Befunde aus Schritt 3
+
+- **Falsche Antworten zeigen sich als Strukturfrage.** Wer im Demoprojekt
+  "LD LR Dimming value" als Rückmeldung bestätigt, bekommt sofort die Frage,
+  warum zwei GAs dieselbe Rolle im Thing haben. Die Bündelung prüft damit die
+  Antworten mit.

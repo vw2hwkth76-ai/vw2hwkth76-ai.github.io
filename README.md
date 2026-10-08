@@ -4,17 +4,19 @@ Proof of Concept: KNX-ETS-Projekte (`.knxproj`) werden zu W3C WoT Thing
 Descriptions. Grundsatz: belegte Semantik zuerst, Heuristik und KI nur für den
 Rest, jede Zuordnung mit Quelle und Beleg.
 
-Stand: **Schritt 2 von 6 (Erkennung)**. Projektimport, Evidenz-Graph,
-Erkennung mit Things und Rückfragen sowie der Benchmark sind fertig;
-Oberfläche, TD-Ausgabe, KI-Schritt und Simulator folgen.
+Stand: **Schritt 3 von 6 (Oberfläche)**. Projektimport, Evidenz-Graph,
+Erkennung mit Things und Rückfragen, Benchmark und die Web-Oberfläche sind
+fertig; TD-Ausgabe, KI-Schritt und Simulator folgen.
 
 ## Schnellstart
 
 ```
 npm ci
+npm run dev          # Werkstatt im Browser, http://localhost:5173
 npm run check        # Typprüfung (strict) und Tests
 npm run bench        # Benchmark gegen die Gold-Standards
 npm run bench -- --fehler
+npm run build && npm run pruefe-build   # Build ohne Abrufe fremder Server
 ```
 
 Node.js 22 oder neuer. Abhängigkeiten bitte mit npm 11 ändern: npm 10.9 bricht
@@ -71,6 +73,34 @@ stillen Entscheidung.
   doppelte Rollen. Mehrdeutige Begriffe ("Wert", "Position") ohne Kennwort
   werden bewusst nicht geraten.
 
+## Oberfläche (Schritt 3)
+
+- **Import** per Datei oder Beispielprojekt, geschützte ETS5- und
+  ETS6-Projekte mit Passwortdialog. Die Analyse läuft in einem Web Worker.
+- **Übersicht:** Kennzahlen, Anteil entschiedener Werte je Dimension nach
+  Belegstärke, Trefferquote gegen die eigenen Bestätigungen, Hinweise aus
+  dem Projekt. Schalter, ob ETS-Funktionen als Beleg zählen.
+- **Gruppenadressen:** virtuelle Tabelle mit Suche, Filtern (Rückfrage,
+  Widerspruch, schwach belegt, bestätigt), Sortierung, Tastatursteuerung und
+  Sammelaktionen. Der Inspektor zeigt je GA alle Belege mit Quelle und
+  Begründung, die verknüpften Kommunikationsobjekte mit Flags und Kanal, und
+  nimmt Bestätigungen und Korrekturen an.
+- **Things, Rückfragen, Namensschema** (Kürzeltabelle bearbeiten, unbekannte
+  Kürzel übernehmen, laden und speichern) und **Export** (Analysebericht,
+  Kurzfassung, Projektstand, Gold-Standard).
+
+### Eigene Projekte durchlaufen lassen
+
+1. Kundenprojekt lokal anonymisieren (siehe unten).
+2. In der Werkstatt öffnen, Rückfragen beantworten und in den
+   Gruppenadressen eine Stichprobe über alle Gewerke bestätigen oder
+   korrigieren. Jede Bestätigung wird zum Prüfwert.
+3. Unter Export den **Analysebericht** herunterladen und die **Kurzfassung**
+   kopieren. Der Bericht enthält die Trefferquote und jede Abweichung mit
+   der Quelle und Begründung, auf der die Erkennung lag.
+4. Optional anonymisiertes Projekt plus **Gold-Standard**: daraus wird ein
+   fester Testfall in `fixtures/privat/` für den Benchmark.
+
 ## Benchmark
 
 `npm run bench` misst jedes Verfahren gegen die Gold-Standards aus dem
@@ -106,6 +136,9 @@ src/graph/     Evidenz-Graph, Richtung aus Verdrahtung, Diagnosen
 src/recognize/ Vokabular, Raumabgleich, Belege, Things, Rückfragen
 src/bench/     Gold-Standards, Verfahren, Bewertung
 src/tools/     Anonymisierer
+src/app/       Snapshot, Bericht, Abgleich mit Bestätigungen (für die Oberfläche)
+web/           Oberfläche: React, Carbon, Worker
+scripts/       Benchmark, Anonymisierer, Build-Prüfung
 fixtures/      frei lizenzierte Testprojekte; privat/ bleibt lokal
 ```
 
@@ -118,6 +151,16 @@ Dokumentation deutsch.
 Projektdateien werden nur lokal gelesen. Kundenprojekte gehören nach
 `fixtures/privat/`, das per `.gitignore` nie ins Repository gelangt.
 Projektpasswörter werden nur zum Entschlüsseln verwendet und nicht gespeichert.
+
+- Die Oberfläche lädt nichts von fremden Servern: IBM Plex kommt aus den
+  npm-Paketen, der Build setzt eine Content-Security-Policy, die nur eigene
+  Quellen erlaubt, und `npm run pruefe-build` prüft das in der CI.
+- Bestätigungen und Namensschema liegen je Projekt im `localStorage` dieses
+  Browsers und lassen sich unter Export löschen.
+- `.npmrc` schaltet Installationsskripte ab; Carbon und IBM Plex würden
+  sonst beim `npm install` Nutzungsdaten an IBM senden.
+- Der Analysebericht enthält keinen Projektnamen und keine GUID, aber GA-,
+  Raum- und Gerätenamen. Deshalb vorher anonymisieren.
 
 ### Kundenprojekte als Testdaten weitergeben
 
