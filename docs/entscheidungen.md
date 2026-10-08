@@ -55,3 +55,22 @@ werden müssen. Formulierungen bleiben herstellerneutral.
   Kommunikationsobjekte, ETS5 gruppiert über kanalbezogene Textparameter.
 - **ETS6-Passwortableitung** ist gegen eine unabhängige Referenz geprüft,
   aber noch nicht gegen ein echtes, in der ETS6 geschütztes Projekt.
+
+## Befunde aus Schritt 2
+
+- **Konventionen unterscheiden sich grundlegend.** Im Musterprojekt ist die
+  Mittelgruppe der Raum, im Style-Projekt die Funktion ("Switching",
+  "Status"), der Raum steht dort im Namen. Die Erkennung legt deshalb kein
+  Schema fest, sondern wertet jeden Namen und jeden Gruppenbereich
+  gleichartig aus.
+- **Paare sind die stärkste Namensquelle.** "X" und "X RM" im selben Bereich
+  ergeben Befehl und Rückmeldung, dazu gemeinsamen DPT und Raum. So wird ein
+  unmarkierter Name nur dann zum Befehl, wenn das Projekt selbst die
+  Rückmeldung kennzeichnet.
+- **Sensorstandort nach Gewerk gewichten.** Raumregler sitzen im geregelten
+  Raum (stark), Taster oft nebenan (schwach). Das trennt im Musterprojekt
+  die zwei gleichnamigen Heizungssätze in Schlafzimmer und Ankleide.
+- **Abkürzungen nur vor einem voll genannten Raum.** "Nursery 1 Bed" meint
+  nicht das Schlafzimmer, "Bad/ WC" nennt zwei Räume.
+- **Kurzcodes brauchen das Namensschema.** "L LR Switching" ist ohne
+  projektspezifische Tabelle (L = Licht, LD = dimmbar) nicht lösbar.

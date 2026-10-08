@@ -4,8 +4,9 @@ Proof of Concept: KNX-ETS-Projekte (`.knxproj`) werden zu W3C WoT Thing
 Descriptions. Grundsatz: belegte Semantik zuerst, Heuristik und KI nur für den
 Rest, jede Zuordnung mit Quelle und Beleg.
 
-Stand: **Schritt 1 von 6 (Fundament)**. Projektimport, Evidenz-Graph und
-Benchmark sind fertig; Erkennung, Oberfläche und TD-Ausgabe folgen.
+Stand: **Schritt 2 von 6 (Erkennung)**. Projektimport, Evidenz-Graph,
+Erkennung mit Things und Rückfragen sowie der Benchmark sind fertig;
+Oberfläche, TD-Ausgabe, KI-Schritt und Simulator folgen.
 
 ## Schnellstart
 
@@ -42,23 +43,51 @@ beiden Versionen.
   fehlende Sender, Mehrfachfunktionen und Widersprüche zwischen ETS-Rolle und
   Verdrahtung.
 
+## Erkennung (Schritt 2)
+
+Je GA werden Belege gesammelt und nach Rangfolge entschieden: ETS-Funktion
+und ETS-DPT, Verdrahtung und Herstellerdaten, Namenspaare ("X" / "X RM"),
+Name, Einbauort der Bediengeräte, Gruppenhierarchie, Familie. Liegen zwei
+Belege zu dicht beieinander, wird daraus eine Rückfrage statt einer
+stillen Entscheidung.
+
+- **Vokabular** deutsch und englisch mit Komposita ("Küchenfenster" ergibt
+  Raum Küche und Fensterkontakt), Kennwörtern für Rückmeldung, Befehl,
+  Alarm, Zentral und stillgelegt.
+- **Raumabgleich** gegen die ETS-Räume: exakt, Abkürzung ("Bad",
+  "Schlafzim."), Kompositum, Initialen ("LR", "WZ"), Mehrwort ("Living
+  room"); mehrere Räume ergeben eine Rückfrage.
+- **Things** aus ETS-Funktion, Aktorkanal und Namensfamilie, getypt nach den
+  KNX-Funktionstypen (FT-1, FT-6, FT-7, FT-9, FT-10) mit den KNX-Rollen
+  (SwitchOnOff, InfoOnOff, DimmingControl, ...), ergänzt um Rollen ohne Norm
+  (ComfortMode, HeatingStatus, ...).
+- **Rückfragen** für Widersprüche, Mehrdeutigkeiten, fehlende Werte und
+  doppelte Rollen. Mehrdeutige Begriffe ("Wert", "Position") ohne Kennwort
+  werden bewusst nicht geraten.
+
 ## Benchmark
 
 `npm run bench` misst jedes Verfahren gegen die Gold-Standards aus dem
-Vorgänger. Stand Schritt 1, ohne jede Namensheuristik:
+Vorgänger, in Klammern die Werte von `ets2td`.
 
 | Projekt | Raum | Funktion | Richtung | DPT |
 |---|---|---|---|---|
-| Style (ETS5, Funktionen gepflegt) | 100 % | 100 % | 100 % | 100 % |
-| Demoprojekt (ETS5, Herstellerdaten) | 100 % | 100 % | 100 % | 100 % |
-| Musterprojekt (ETS6, ohne Funktionen, lokal) | 0 % | 0 % | 0 % | 28,7 % |
+| Style, ohne ETS-Funktionen | 99,2 % (97,6) | 76,4 % (72,8) | 92,6 % (74,0) | 100 % (100) |
+| Demoprojekt, ohne ETS-Funktionen | 100 % (100) | 0 % (89,5) | 88,2 % (52,9) | 100 % (100) |
+| Demoprojekt, mit allem | 100 % | 100 % | 100 % | 100 % |
+| Musterprojekt (ETS6, lokal) | 100 % (85,0) | 86,5 % (91,9) | 100 % (71,1) | 100 % (67,6) |
 
-Die 100 % sind konstruktionsbedingt, weil diese Gold-Standards aus den
-ETS-Funktionen abgeleitet sind; sie belegen nur, dass nichts verloren geht.
-Im Demoprojekt widersprechen bei zwei GAs die ETS-Funktionsrollen der
-Verdrahtung; der Gold-Standard ist dort nach der Verdrahtung korrigiert und
-begründet (`korrekturen` in der Gold-Datei). Mit den Rollen allein wären es
-88,2 %. Das Musterprojekt ist der eigentliche Prüfstein für Schritt 2.
+Einordnung:
+
+- Das **Musterprojekt ist Trainingsmaterial**, kein Test: Das Vokabular ist
+  beim Blick auf genau dieses Projekt entstanden. Belastbar wird die Zahl
+  erst an ungesehenen Projekten.
+- Die fehlenden Richtungen sind ausschließlich mehrdeutige Fälle ohne
+  Kennwort, falsche Richtungen gibt es in keinem Projekt.
+- Die Funktionsnamen im Demoprojekt sind Kurzcodes ("L LR", "LD LR"); die
+  löst kein Vokabular, sondern das Namensschema bzw. der KI-Schritt.
+- Mit ETS-Funktionen gewinnt die Verdrahtung gegen vertauschte ETS-Rollen
+  und meldet den Widerspruch.
 
 ## Aufbau
 
@@ -67,7 +96,9 @@ src/archive/   ZIP, Verschlüsselung, ETS-Archivstruktur
 src/xml/       Streaming-XML ohne DTD
 src/ets/       Projekt, Stammdaten, Herstellerdaten, Auflösung
 src/graph/     Evidenz-Graph, Richtung aus Verdrahtung, Diagnosen
+src/recognize/ Vokabular, Raumabgleich, Belege, Things, Rückfragen
 src/bench/     Gold-Standards, Verfahren, Bewertung
+src/tools/     Anonymisierer
 fixtures/      frei lizenzierte Testprojekte; privat/ bleibt lokal
 ```
 
