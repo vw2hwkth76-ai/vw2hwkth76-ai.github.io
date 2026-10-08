@@ -49,8 +49,8 @@ werden müssen. Formulierungen bleiben herstellerneutral.
 - **Verdrahtung schlägt Funktionsrolle.** Im Demoprojekt hängt "LD LR Dimming
   value" (Rolle InfoDimmingValue) am Eingang "Dim absolutely" des Aktors und
   "LD LR Value" (Rolle DimmingValue) an dessen Rückmeldeobjekt. Die
-  ETS-Rollen sind vertauscht, der daraus abgeleitete Gold-Standard
-  vermutlich auch. Offen: Bestätigung durch eine fachkundige Person.
+  ETS-Rollen sind vertauscht. Der Gold-Standard ist nach der Verdrahtung
+  korrigiert, die Begründung steht in der Gold-Datei.
 - **Aktorkanal ist im Projekt belegt.** ETS6 schreibt `ChannelId` an die
   Kommunikationsobjekte, ETS5 gruppiert über kanalbezogene Textparameter.
 - **ETS6-Passwortableitung** ist gegen eine unabhängige Referenz geprüft,

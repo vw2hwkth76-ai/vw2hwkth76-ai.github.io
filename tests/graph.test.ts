@@ -75,9 +75,11 @@ describe("Benchmark", () => {
     }
   });
 
-  it("weicht am Demoprojekt nur bei den zwei Verdrahtungswiderspruechen ab", () => {
-    const result = score(demo, gold("oeffentlich/demoprojekt.gold.json"), BASELINE_PREDICTORS[1]!);
-    expect(result.errors.map((error) => error.address)).toEqual(["0/0/6", "0/0/7"]);
+  it("trifft am korrigierten Demoprojekt jede Richtung, die ETS-Rolle allein verfehlt zwei", () => {
+    const corrected = gold("oeffentlich/demoprojekt.gold.json");
+    expect(score(demo, corrected, BASELINE_PREDICTORS[1]!).errors).toEqual([]);
+    const roleOnly = score(demo, corrected, BASELINE_PREDICTORS[0]!);
+    expect(roleOnly.errors.map((error) => error.address)).toEqual(["0/0/6", "0/0/7"]);
   });
 
   it.skipIf(!hasFixture("privat/musterprojekt-ets6.knxproj"))("haelt die explizite Basislinie am Musterprojekt fest", async () => {

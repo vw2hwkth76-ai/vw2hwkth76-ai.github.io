@@ -1,6 +1,6 @@
 {
   "projekt": "DemoProject",
-  "kommentar": "Abgeleitet aus ETS-Funktionen, Gebaeudestruktur und gepflegten DPT-Attributen. Leere Werte sind unbewertet und warten auf manuelle Korrektur. Rollenkonvention: Kommandos = action, Zustaende und Rueckmeldungen = property, Alarme = event.",
+  "kommentar": "Abgeleitet aus ETS-Funktionen, Gebaeudestruktur und gepflegten DPT-Attributen. Leere Werte sind unbewertet und warten auf manuelle Korrektur. Rollenkonvention: Kommandos = action, Zustaende und Rueckmeldungen = property, Alarme = event. Korrekturen gegen die Verdrahtung siehe 'korrekturen' (2026-10-08, vom Nutzer freigegeben).",
   "datenpunkte": {
     "1": {
       "text": "0/0/1",
@@ -47,7 +47,7 @@
       "name": "LD LR Dimming value",
       "raum": "Living room",
       "funktion": "Dimmable light",
-      "rolle": "property",
+      "rolle": "action",
       "dpt": "DPST-5-1"
     },
     "7": {
@@ -55,7 +55,7 @@
       "name": "LD LR Value",
       "raum": "Living room",
       "funktion": "Dimmable light",
-      "rolle": "action",
+      "rolle": "property",
       "dpt": "DPST-5-1"
     },
     "8": {
@@ -154,5 +154,21 @@
       "rolle": "",
       "dpt": "DPST-1-11"
     }
-  }
+  },
+  "korrekturen": [
+    {
+      "ga": "0/0/6",
+      "dimension": "rolle",
+      "vorher": "property",
+      "nachher": "action",
+      "begruendung": "Verknuepft mit dem Eingang 'Dim absolutely' (Schreiben-Flag, nicht sendend) des Dimmaktors 0.0.2; die ETS-Rolle InfoDimmingValue widerspricht der Verdrahtung."
+    },
+    {
+      "ga": "0/0/7",
+      "dimension": "rolle",
+      "vorher": "action",
+      "nachher": "property",
+      "begruendung": "Gesendet vom Rueckmeldeobjekt 'State of dimming value' (Lesen und Uebertragen) des Dimmaktors 0.0.2; die ETS-Rolle DimmingValue widerspricht der Verdrahtung."
+    }
+  ]
 }

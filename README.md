@@ -50,15 +50,15 @@ Vorgänger. Stand Schritt 1, ohne jede Namensheuristik:
 | Projekt | Raum | Funktion | Richtung | DPT |
 |---|---|---|---|---|
 | Style (ETS5, Funktionen gepflegt) | 100 % | 100 % | 100 % | 100 % |
-| Demoprojekt (ETS5, Herstellerdaten) | 100 % | 100 % | 88,2 % | 100 % |
+| Demoprojekt (ETS5, Herstellerdaten) | 100 % | 100 % | 100 % | 100 % |
 | Musterprojekt (ETS6, ohne Funktionen, lokal) | 0 % | 0 % | 0 % | 28,7 % |
 
 Die 100 % sind konstruktionsbedingt, weil diese Gold-Standards aus den
 ETS-Funktionen abgeleitet sind; sie belegen nur, dass nichts verloren geht.
-Die zwei Richtungsabweichungen im Demoprojekt sind Widersprüche zwischen
-ETS-Funktionsrolle und Verdrahtung, bei denen vermutlich der Gold-Standard
-irrt (siehe `docs/entscheidungen.md`). Das Musterprojekt ist der eigentliche
-Prüfstein für Schritt 2.
+Im Demoprojekt widersprechen bei zwei GAs die ETS-Funktionsrollen der
+Verdrahtung; der Gold-Standard ist dort nach der Verdrahtung korrigiert und
+begründet (`korrekturen` in der Gold-Datei). Mit den Rollen allein wären es
+88,2 %. Das Musterprojekt ist der eigentliche Prüfstein für Schritt 2.
 
 ## Aufbau
 
