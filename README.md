@@ -1,9 +1,8 @@
-# ets2td · KNX Thing Description Konfigurator
+# KNX ETS zu W3C WoT Thing Descriptions
 
-Erzeugt aus KNX-ETS-Projekten maschinenlesbare Geraetebeschreibungen nach
-W3C Web of Things (Thing Description 1.1) und laesst sie im Browser
-parametrieren wie einen Aktor in der ETS.
+Proof of Concept, Neuaufbau in Arbeit.
 
-Live: https://vw2hwkth76-ai.github.io
-
-Der Quellcode liegt auf dem Branch `claude/knx-ets-wot-prototype-oj8yvz`.
+Der Vorgänger `ets2td` (Python, Konfigurator, CoAP-Gateway) ist hier entfernt,
+bleibt aber vollständig erhalten: Quellcode auf dem Branch
+`claude/knx-ets-wot-prototype-oj8yvz`, die veröffentlichte Seite in der
+Git-Historie (`git show 1519871:index.html`).
