@@ -1,5 +1,6 @@
 import type { ReviewCheck } from "../../src/app/review-check.ts";
 import type { GaDetail, Snapshot } from "../../src/app/snapshot.ts";
+import type { TdBundle, TdOptions } from "../../src/td/render.ts";
 import type { ClaimDimension } from "../../src/recognize/claims.ts";
 
 /** Nachrichten zwischen Oberflaeche und Analyse-Worker. */
@@ -31,7 +32,19 @@ export interface ReportRequest {
   readonly date: string;
 }
 
-export type Request = OpenRequest | AnalyzeRequest | DetailRequest | ReportRequest;
+export interface TdRequest {
+  readonly type: "td";
+  readonly options: TdOptions;
+  readonly toolVersion: string;
+}
+
+export interface TdZipRequest {
+  readonly type: "td-zip";
+  readonly options: TdOptions;
+  readonly toolVersion: string;
+}
+
+export type Request = OpenRequest | AnalyzeRequest | DetailRequest | ReportRequest | TdRequest | TdZipRequest;
 
 export interface OpenResult {
   readonly key: string;
@@ -54,11 +67,19 @@ export interface ReportResult {
   readonly gold: string;
 }
 
+export interface TdResult extends Omit<TdBundle, "files"> {
+  /** Pfad und formatiertes JSON je Datei, fuer die Vorschau. */
+  readonly files: readonly { readonly path: string; readonly text: string }[];
+  readonly milliseconds: number;
+}
+
 export interface ResultOf {
   readonly open: OpenResult;
   readonly analyze: AnalyzeResult;
   readonly detail: GaDetail;
   readonly report: ReportResult;
+  readonly td: TdResult;
+  readonly "td-zip": ArrayBuffer;
 }
 
 export interface WorkerError {

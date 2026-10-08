@@ -30,6 +30,24 @@ export const PREFIXES: Readonly<Record<string, string>> = {
 /** TD 2.0 hat das HTTP-Binding aus dem Kern genommen; sein Vokabular muss dort mit in den Kontext. */
 export const HTTP_PREFIX = { htv: "http://www.w3.org/2011/http#" } as const;
 
+/** Begriffe des KNX-Bindings; daraus entstehen Kontextdatei und Begriffsseite. */
+export const BINDING_TERMS: readonly { readonly name: string; readonly type: string; readonly de: string }[] = [
+  { name: "groupAddress", type: "xsd:string", de: "Gruppenadresse der Form, wie in der ETS geschrieben (\"1/2/3\")." },
+  { name: "dpt", type: "xsd:string", de: "Datenpunkttyp der Gruppenadresse, gepunktet (\"9.001\")." },
+  { name: "functionType", type: "xsd:string", de: "KNX-Funktionstyp aus knx_master.xml (\"FT-6\"), Grundlage des Thing Models." },
+  { name: "readVerified", type: "xsd:boolean", de: "false, wenn gelesen wird, ohne dass Herstellerdaten das Lese-Flag belegen." },
+  { name: "evidence", type: "@set", de: "Belege der Erkennung für diese Form, je Dimension." },
+  { name: "dimension", type: "xsd:string", de: "Dimension eines Belegs: direction oder dpt." },
+  { name: "source", type: "xsd:string", de: "Quelle des Belegs, etwa ets-wiring, ets-function, name, review." },
+  { name: "confidence", type: "xsd:decimal", de: "Konfidenz des Belegs; ordnet Belege, ist keine Wahrscheinlichkeit." },
+  { name: "reviewed", type: "xsd:boolean", de: "true, wenn der Wert von Hand bestätigt ist." },
+  { name: "conflict", type: "xsd:string", de: "Gegenwert, der zu nah am gewählten Wert liegt und eine Rückfrage auslöst." },
+  { name: "openQuestion", type: "xsd:boolean", de: "true, wenn zu dieser Gruppenadresse eine Rückfrage offen ist." },
+  { name: "openQuestions", type: "xsd:integer", de: "Anzahl offener Rückfragen eines Things." },
+  { name: "bundling", type: "xsd:string", de: "Wie die Gruppenadressen gebündelt wurden: ets-function, channel, family, single." },
+  { name: "tool", type: "xsd:string", de: "Erzeugendes Werkzeug mit Version." },
+];
+
 /**
  * JSON-LD-Kontext des KNX-Bindings, als eigene Datei veroeffentlicht. Die TDs
  * tragen die Praefixe zusaetzlich inline, damit sie ohne Netz expandieren.
@@ -39,20 +57,9 @@ export const BINDING_CONTEXT: JsonObject = {
     "@version": 1.1,
     kb: BINDING_NAMESPACE,
     xsd: "http://www.w3.org/2001/XMLSchema#",
-    groupAddress: { "@id": "kb:groupAddress", "@type": "xsd:string" },
-    dpt: { "@id": "kb:dpt", "@type": "xsd:string" },
-    functionType: { "@id": "kb:functionType", "@type": "xsd:string" },
-    readVerified: { "@id": "kb:readVerified", "@type": "xsd:boolean" },
-    evidence: { "@id": "kb:evidence", "@container": "@set" },
-    dimension: { "@id": "kb:dimension", "@type": "xsd:string" },
-    source: { "@id": "kb:source", "@type": "xsd:string" },
-    confidence: { "@id": "kb:confidence", "@type": "xsd:decimal" },
-    reviewed: { "@id": "kb:reviewed", "@type": "xsd:boolean" },
-    conflict: { "@id": "kb:conflict", "@type": "xsd:string" },
-    openQuestions: { "@id": "kb:openQuestions", "@type": "xsd:integer" },
-    openQuestion: { "@id": "kb:openQuestion", "@type": "xsd:boolean" },
-    bundling: { "@id": "kb:bundling", "@type": "xsd:string" },
-    tool: { "@id": "kb:tool", "@type": "xsd:string" },
+    ...Object.fromEntries(
+      BINDING_TERMS.map((term) => [term.name, term.type === "@set" ? { "@id": `kb:${term.name}`, "@container": "@set" } : { "@id": `kb:${term.name}`, "@type": term.type }]),
+    ),
   },
 };
 

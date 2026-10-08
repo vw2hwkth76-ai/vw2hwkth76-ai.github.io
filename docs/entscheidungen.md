@@ -106,3 +106,34 @@ werden müssen. Formulierungen bleiben herstellerneutral.
   "LD LR Dimming value" als Rückmeldung bestätigt, bekommt sofort die Frage,
   warum zwei GAs dieselbe Rolle im Thing haben. Die Bündelung prüft damit die
   Antworten mit.
+
+## Thing Descriptions (Schritt 4)
+
+- **@type aus Brick 1.4 plus KNX-IRIs.** Brick deckt Geräte- und
+  Datenpunktklassen ab (`Luminaire`, `On_Off_Command`,
+  `Zone_Air_Temperature_Setpoint`); wo Brick nichts Passendes hat (Szene,
+  Fensterstatus), stehen die allgemeinen Klassen `Command` und `Status`.
+- **Plattform-TD nur mit HTTP.** Beobachten per Server-Sent Events. MQTT
+  bleibt möglich, ist aber nicht Teil der Ausgabe.
+- **Alles mit Herkunft.** Jede KNX-Form trägt Quelle, Konfidenz und
+  Widerspruch für Richtung und DPT. Der strenge Modus filtert für den
+  Produktivexport.
+- **Eigener Binding-Namensraum.** W3C hat kein KNX-Binding; die Begriffe
+  stehen herstellerneutral unter `kb:`, mit Kontextdatei und Begriffsseite.
+- **TD 2.0** nach dem Changelog des Entwurfs: Kontext `wot-next`, HTTP-Binding
+  nicht mehr im Kern (deshalb `htv:methodName` explizit), `contentType` ohne
+  Default (deshalb an jeder Form).
+
+## Befunde aus Schritt 4
+
+- **Nur gleiche Größen paaren.** Im Demoprojekt steht "Setpoint value offset"
+  (1.007, Schritt) neben dem Ist-Sollwert (9.001). Gepaart würde der
+  Sollwert ein boolean; jetzt wird der Schrittbefehl eine eigene Action.
+- **Das TM-Schema auf main ist schon 2.0.** Es akzeptiert nur den
+  `wot-next`-Kontext. Für TD 1.1 gelten die bei W3C veröffentlichten
+  Schemas unter `/2022/wot/td-schema/v1.1` und `/tm-schema/v1.1`.
+- **FT-10 (Steckdose) fehlt in den Stammdaten** der Testprojekte;
+  Steckdosen bekommen deshalb kein normiertes Thing Model.
+- **Strenger Modus ist streng.** Im Musterprojekt kommen die Richtungen aus
+  Namen (Konfidenz unter 0,85); übrig bleiben 20 von 70 Things. Bestätigen
+  in der Werkstatt hebt das an.

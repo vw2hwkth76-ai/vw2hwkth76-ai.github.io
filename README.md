@@ -4,9 +4,9 @@ Proof of Concept: KNX-ETS-Projekte (`.knxproj`) werden zu W3C WoT Thing
 Descriptions. Grundsatz: belegte Semantik zuerst, Heuristik und KI nur für den
 Rest, jede Zuordnung mit Quelle und Beleg.
 
-Stand: **Schritt 3 von 6 (Oberfläche)**. Projektimport, Evidenz-Graph,
-Erkennung mit Things und Rückfragen, Benchmark und die Web-Oberfläche sind
-fertig; TD-Ausgabe, KI-Schritt und Simulator folgen.
+Stand: **Schritt 4 von 6 (Thing Descriptions)**. Projektimport,
+Evidenz-Graph, Erkennung mit Things und Rückfragen, Benchmark, Web-Oberfläche
+und TD-Ausgabe sind fertig; KI-Schritt und Simulator folgen.
 
 ## Schnellstart
 
@@ -101,6 +101,42 @@ stillen Entscheidung.
 4. Optional anonymisiertes Projekt plus **Gold-Standard**: daraus wird ein
    fester Testfall in `fixtures/privat/` für den Benchmark.
 
+## Thing Descriptions (Schritt 4)
+
+Ansicht **Thing Descriptions** in der Werkstatt, Download als ZIP:
+
+| Datei | Inhalt |
+|---|---|
+| `things/*.td.json` | Feld-TD: KNX-Forms, `href` ist die Gruppenadresse relativ zur Gateway-Basis, Herkunft je Form in `kb:evidence` |
+| `things/*.platform.td.json` | Plattform-TD: HTTP-Forms, Beobachten per Server-Sent Events (`subprotocol: "sse"`) |
+| `models/ft-*.tm.json` | Thing Models je KNX-Funktionstyp aus `knx_master.xml` (FT-1, FT-6, FT-7, FT-8, FT-9) |
+| `collection.td.json` | Sammel-TD mit `item`-Links auf alle Feld-TDs |
+| `knx-binding.jsonld` | JSON-LD-Kontext der Begriffe mit Präfix `kb:` |
+
+- **TD 1.1** als Hauptausgabe, **TD 2.0** nach dem Working Draft vom
+  4.11.2025 (vorläufiger Kontext, HTTP-Methoden und `contentType` explizit).
+- **Schalten:** Befehl und Rückmeldung derselben Größe werden eine Property
+  mit Schreib-Form auf die Befehls-GA und Lese-/Beobachten-Form auf die
+  Rückmelde-GA. Variante: Befehl als Action, Rückmeldung als lesbare
+  Property. Gepaart wird nur bei gleichem DPT-Haupttyp.
+- **Lesen** nur, wo ein Objekt Lesetelegramme beantwortet; ohne
+  Herstellerdaten mit `kb:readVerified: false`.
+- **Feld- und Plattform-TD** sind über `proxy-to` verbunden (TD 1.1,
+  Tabelle 25), die Feld-TD verweist per `type` auf ihr Thing Model.
+- **Semantik:** `@type` aus Brick 1.4 (Klassen gegen Brick.ttl 1.4.2
+  geprüft), Einheiten aus QUDT (gegen das Einheitenvokabular geprüft),
+  Datenschemata aus den DPT-Feldern mit Koeffizient, Grenzen und
+  benannten Zuständen (`oneOf` mit `const` und `title`).
+- **Stabile IDs:** UUID v5 aus Projekt-GUID und ETS-Funktion, Aktorkanal
+  oder GA-ID, nie aus der Gruppenadresse.
+- **Unsicheres** bleibt sichtbar: Belege, Widersprüche und offene Fragen
+  stehen an der Form. Der Schalter "nur fest belegte oder bestätigte GAs"
+  lässt alles weg, was nicht bestätigt oder mit mindestens 0,85 belegt ist.
+- **Geprüft** gegen die W3C-Schemas für TD und TM 1.1 sowie den
+  2.0-Entwurf (`tests/schemas/`).
+- Der Namensraum `kb:` ist auf der Pages-Seite unter `/ns/knx-binding`
+  (Begriffsseite) und `/ns/knx-binding.jsonld` (Kontext) abrufbar.
+
 ## Benchmark
 
 `npm run bench` misst jedes Verfahren gegen die Gold-Standards aus dem
@@ -137,6 +173,7 @@ src/recognize/ Vokabular, Raumabgleich, Belege, Things, Rückfragen
 src/bench/     Gold-Standards, Verfahren, Bewertung
 src/tools/     Anonymisierer
 src/app/       Snapshot, Bericht, Abgleich mit Bestätigungen (für die Oberfläche)
+src/td/        Datenschemata, Affordances, Feld- und Plattform-TD, Thing Models
 web/           Oberfläche: React, Carbon, Worker
 scripts/       Benchmark, Anonymisierer, Build-Prüfung
 fixtures/      frei lizenzierte Testprojekte; privat/ bleibt lokal

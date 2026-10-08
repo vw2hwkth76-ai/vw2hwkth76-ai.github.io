@@ -5,6 +5,7 @@ import { checkAccuracy } from "../../../src/app/review-check.ts";
 import { DIMENSIONS } from "../../../src/app/snapshot.ts";
 import { isClaimSource } from "../../../src/recognize/claims.ts";
 import { count, ratio, share, STRENGTH_LABEL, type Strength, strengthOf } from "../format.ts";
+import { Figure } from "../components/Figure.tsx";
 import { useWorkspace } from "../workspace.ts";
 
 const STRENGTHS: readonly Strength[] = [4, 3, 2, 1];
@@ -244,16 +245,6 @@ export function OverviewView(): ReactNode {
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-function Figure({ label, value, note }: { readonly label: string; readonly value: string; readonly note?: string | undefined }): ReactNode {
-  return (
-    <div className="ws-figure">
-      <dt>{label}</dt>
-      <dd>{value}</dd>
-      {note ? <dd className="ws-figure__note">{note}</dd> : null}
     </div>
   );
 }

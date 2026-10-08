@@ -500,8 +500,11 @@ body {
     position: sticky;
     top: 0;
     z-index: 1;
-    padding-inline: $spacing-05;
     overflow: hidden;
+  }
+
+  .cds--data-table thead th {
+    padding-inline: $spacing-05;
   }
 
   th .ws-sort span {
@@ -871,6 +874,70 @@ body {
     grid-column: 1 / -1;
     color: $text-secondary;
   }
+}
+
+// Thing Descriptions
+
+.ws-td-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: $spacing-05;
+  align-items: end;
+  padding: $spacing-05;
+  background: $layer-01;
+  border: 1px solid $border-subtle;
+}
+
+.ws-td-grid {
+  display: grid;
+  gap: $spacing-05;
+  margin-top: $spacing-06;
+
+  @media (min-width: 82rem) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.ws-td-list,
+.ws-td-preview {
+  height: 36rem;
+}
+
+.ws-td-list {
+  display: flex;
+  min-width: 0;
+
+  .ws-vt table {
+    min-width: 32rem;
+  }
+}
+
+.ws-td-preview {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ws-td-preview__bar {
+  display: flex;
+  align-items: center;
+  gap: $spacing-02;
+
+  .cds--content-switcher {
+    flex: 1;
+  }
+}
+
+.ws-td-preview__path {
+  margin: $spacing-03 0;
+  overflow-wrap: anywhere;
+}
+
+.ws-summary.ws-td-code {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  white-space: pre;
 }
 
 // Export

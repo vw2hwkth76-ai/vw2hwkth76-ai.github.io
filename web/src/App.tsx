@@ -1,4 +1,4 @@
-import { Asleep, Close, Cube, Dashboard, DataTable, DocumentExport, Help, Light, Rule } from "@carbon/icons-react";
+import { Asleep, Close, Code, Cube, Dashboard, DataTable, DocumentExport, Help, Light, Rule } from "@carbon/icons-react";
 import {
   GlobalTheme,
   Header,
@@ -26,6 +26,7 @@ import { PasswordModal } from "./views/PasswordModal.tsx";
 import { QuestionsView } from "./views/QuestionsView.tsx";
 import { SchemaView } from "./views/SchemaView.tsx";
 import { type ProjectSource, StartView } from "./views/StartView.tsx";
+import { TdView } from "./views/TdView.tsx";
 import { ThingsView } from "./views/ThingsView.tsx";
 import { isView, type Lookups, type ViewId, type Workspace, WorkspaceContext } from "./workspace.ts";
 
@@ -43,6 +44,7 @@ const NAV: readonly { readonly view: ViewId; readonly label: string; readonly ic
   { view: "things", label: "Things", icon: Cube },
   { view: "rueckfragen", label: "Rückfragen", icon: Help },
   { view: "namensschema", label: "Namensschema", icon: Rule },
+  { view: "thing-descriptions", label: "Thing Descriptions", icon: Code },
   { view: "export", label: "Export", icon: DocumentExport },
 ];
 
@@ -149,13 +151,17 @@ export function App(): ReactNode {
     window.location.hash = "";
   }, []);
 
-  // Jede Aenderung am Projektstand loest eine neue Analyse aus; veraltete Antworten werden verworfen.
+  useEffect(() => {
+    if (project) saveState(project.key, state);
+  }, [project, state]);
+
+  // Antworten, Namensschema und ETS-Schalter loesen eine neue Analyse aus; veraltete Antworten werden verworfen.
+  const { reviews, profile, useEtsFunctions } = state;
   useEffect(() => {
     if (!project) return;
-    saveState(project.key, state);
     const id = ++sequence.current;
     setBusy(true);
-    client.call({ type: "analyze", reviews: state.reviews, profile: state.profile, useEtsFunctions: state.useEtsFunctions }).then(
+    client.call({ type: "analyze", reviews, profile, useEtsFunctions }).then(
       (next) => {
         if (id !== sequence.current) return;
         setResult(next);
@@ -168,7 +174,7 @@ export function App(): ReactNode {
         setPhase({ kind: "start", error: toFailure(error) });
       },
     );
-  }, [client, project, state]);
+  }, [client, project, reviews, profile, useEtsFunctions]);
 
   const lookups = useMemo<Lookups | undefined>(() => {
     if (!result) return undefined;
@@ -223,6 +229,7 @@ export function App(): ReactNode {
         })),
       setProfile: (profile) => setState((current) => ({ ...current, profile })),
       setUseEtsFunctions: (value) => setState((current) => ({ ...current, useEtsFunctions: value })),
+      setTdOptions: (options) => setState((current) => ({ ...current, td: options })),
       replaceState: (next) => setState(next),
       openGa: (gaId) => {
         setFocusGa(gaId);
@@ -345,6 +352,8 @@ function CurrentView({ view }: { readonly view: ViewId }): ReactNode {
       return <QuestionsView />;
     case "namensschema":
       return <SchemaView />;
+    case "thing-descriptions":
+      return <TdView />;
     case "export":
       return <ExportView />;
   }

@@ -136,10 +136,10 @@ export function ExportView(): ReactNode {
 
         <section className="ws-tile" aria-labelledby="export-td">
           <h2 id="export-td">Thing Descriptions</h2>
-          <p>Feld- und Plattform-TD nach W3C WoT TD 1.1, Thing Models je KNX-Funktionstyp. Folgt im nächsten Schritt.</p>
+          <p>Feld- und Plattform-TD je Thing, Thing Models je KNX-Funktionstyp, Sammel-TD und Binding-Kontext als ZIP.</p>
           <div className="ws-tile__actions">
-            <Button kind="tertiary" size="md" disabled>
-              Noch nicht verfügbar
+            <Button kind="primary" size="md" onClick={() => workspace.navigate("thing-descriptions")}>
+              Zu den Thing Descriptions
             </Button>
           </div>
         </section>

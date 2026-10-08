@@ -4,7 +4,7 @@ import demoProfile from "../../../fixtures/oeffentlich/demoprojekt.namensschema.
 import demoUrl from "../../../fixtures/oeffentlich/demoprojekt.knxproj?url";
 import styleUrl from "../../../fixtures/oeffentlich/style3.knxproj?url";
 import type { WorkerError } from "../protocol.ts";
-import type { ProjectState } from "../storage.ts";
+import { EMPTY_STATE, type ProjectState } from "../storage.ts";
 
 export interface ProjectSource {
   readonly name: string;
@@ -27,7 +27,7 @@ const EXAMPLES: readonly Example[] = [
     label: "Demoprojekt mit Geräten",
     url: demoUrl,
     fileName: "demoprojekt.knxproj",
-    preset: { reviews: {}, profile: demoProfile, useEtsFunctions: true },
+    preset: { ...EMPTY_STATE, profile: demoProfile },
   },
   { id: "style", label: "Einfamilienhaus ohne Geräte", url: styleUrl, fileName: "style3.knxproj" },
 ];

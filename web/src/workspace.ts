@@ -2,11 +2,12 @@ import { createContext, useContext } from "react";
 import type { ReviewCheck } from "../../src/app/review-check.ts";
 import type { GaView, QuestionView, Snapshot, ThingView } from "../../src/app/snapshot.ts";
 import type { ClaimDimension } from "../../src/recognize/claims.ts";
+import type { TdOptions } from "../../src/td/render.ts";
 import type { AnalysisClient } from "./client.ts";
 import type { OpenResult } from "./protocol.ts";
 import type { ProjectState } from "./storage.ts";
 
-export const VIEWS = ["uebersicht", "gruppenadressen", "things", "rueckfragen", "namensschema", "export"] as const;
+export const VIEWS = ["uebersicht", "gruppenadressen", "things", "rueckfragen", "namensschema", "thing-descriptions", "export"] as const;
 export type ViewId = (typeof VIEWS)[number];
 
 export function isView(value: string): value is ViewId {
@@ -39,6 +40,7 @@ export interface Workspace {
   clearReviews(gaIds: readonly string[]): void;
   setProfile(profile: unknown): void;
   setUseEtsFunctions(value: boolean): void;
+  setTdOptions(options: TdOptions): void;
   replaceState(state: ProjectState): void;
   openGa(gaId: string | undefined): void;
   openThing(thingKey: string | undefined): void;

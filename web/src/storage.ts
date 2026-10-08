@@ -1,3 +1,4 @@
+import { DEFAULT_TD_OPTIONS, type TdOptions } from "../../src/td/render.ts";
 import { isRecord } from "../../src/util/guards.ts";
 import type { ReviewRecord } from "./protocol.ts";
 
@@ -15,9 +16,23 @@ export interface ProjectState {
   readonly reviews: ReviewRecord;
   readonly profile: unknown;
   readonly useEtsFunctions: boolean;
+  /** Ausgabeoptionen der Thing Descriptions; aendern nichts an der Erkennung. */
+  readonly td: TdOptions;
 }
 
-export const EMPTY_STATE: ProjectState = { reviews: {}, profile: undefined, useEtsFunctions: true };
+export const EMPTY_STATE: ProjectState = { reviews: {}, profile: undefined, useEtsFunctions: true, td: DEFAULT_TD_OPTIONS };
+
+function parseTdOptions(json: unknown): TdOptions {
+  if (!isRecord(json)) return DEFAULT_TD_OPTIONS;
+  const text = (value: unknown, fallback: string): string => (typeof value === "string" && value.length > 0 && value.length <= 200 ? value : fallback);
+  return {
+    version: json["version"] === "2.0" ? "2.0" : "1.1",
+    commands: json["commands"] === "action" ? "action" : "property",
+    strict: json["strict"] === true,
+    gateway: text(json["gateway"], DEFAULT_TD_OPTIONS.gateway),
+    platform: text(json["platform"], DEFAULT_TD_OPTIONS.platform),
+  };
+}
 
 export function parseState(json: unknown): ProjectState | undefined {
   if (!isRecord(json) || !isRecord(json["reviews"])) return undefined;
@@ -30,7 +45,7 @@ export function parseState(json: unknown): ProjectState | undefined {
     }
     if (Object.keys(clean).length > 0) reviews[gaId] = clean;
   }
-  return { reviews, profile: json["profile"] ?? undefined, useEtsFunctions: json["useEtsFunctions"] !== false };
+  return { reviews, profile: json["profile"] ?? undefined, useEtsFunctions: json["useEtsFunctions"] !== false, td: parseTdOptions(json["td"]) };
 }
 
 export function loadState(key: string): ProjectState {
@@ -75,7 +90,11 @@ export function savePreference(name: string, value: string): void {
 }
 
 export function download(fileName: string, content: string, type = "application/json"): void {
-  const url = URL.createObjectURL(new Blob([content], { type }));
+  downloadBlob(fileName, new Blob([content], { type }));
+}
+
+export function downloadBlob(fileName: string, blob: Blob): void {
+  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
   link.download = fileName;
