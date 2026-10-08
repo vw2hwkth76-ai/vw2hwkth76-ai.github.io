@@ -3,8 +3,9 @@ import { directionEvidence } from "../graph/direction.ts";
 import type { GaLink, GaNode, ProjectGraph } from "../graph/evidence-graph.ts";
 import type { Claim, ClaimSource } from "./claims.ts";
 import { type Aspect, ASPECTS, findWords, type Marker, type Trade, type WordHit } from "./lexicon.ts";
+import type { CompiledProfile } from "./profile.ts";
 import { type RoomFinding, type RoomMatchKind, RoomMatcher } from "./rooms.ts";
-import { textOf, type Token, tokenize } from "./text.ts";
+import { labelOf, type Token, tokenize } from "./text.ts";
 
 export interface NameAnalysis {
   readonly text: string;
@@ -16,6 +17,16 @@ export interface NameAnalysis {
   readonly trades: readonly Trade[];
   /** Woerter ohne Raum, Marker und Aspekt: der eigentliche Funktionsname. */
   readonly labelTokens: readonly Token[];
+  /** Anzeigename aus den verbleibenden Woertern, Profilkuerzel durch ihren Namen ersetzt. */
+  readonly label: string;
+  /** Treffer aus dem Namensschema des Integrators. */
+  readonly profile: {
+    readonly trades: readonly Trade[];
+    readonly aspects: readonly Aspect[];
+    readonly markers: readonly Marker[];
+    readonly roomIds: readonly string[];
+    readonly tokens: readonly number[];
+  };
 }
 
 export interface GaAnalysis {
@@ -35,6 +46,8 @@ export interface GaAnalysis {
 export interface AnalyzeOptions {
   /** false misst die Heuristik so, als gaebe es keine ETS-Funktionen. */
   readonly useEtsFunctions: boolean;
+  /** Bestaetigtes Namensschema; seine Kuerzel gehen dem allgemeinen Vokabular vor. */
+  readonly profile?: CompiledProfile;
 }
 
 const ROOM_CONFIDENCE: Readonly<Record<RoomMatchKind, number>> = { full: 0.85, abbreviation: 0.75, compound: 0.75, initials: 0.7, partial: 0.65 };
@@ -72,14 +85,23 @@ const DIRECTION_MARKERS: readonly Marker[] = ["alarm", "status", "command"];
 const WEAK_ASPECTS = new Set<Aspect>(["window", "heat", "mode"]);
 const LABEL_MARKERS = new Set<Marker>(["status", "command", "alarm", "central", "outOfUse", "outdoor"]);
 
-export function analyzeName(text: string, matcher: RoomMatcher): NameAnalysis {
+export function analyzeName(text: string, matcher: RoomMatcher, profile?: CompiledProfile): NameAnalysis {
   const tokens = tokenize(text);
-  const hits = findWords(tokens);
-  const rooms = matcher.findRooms(tokens);
+  const profileHits = new Map(
+    tokens.flatMap((token) => {
+      const entry = profile?.tokens.get(token.norm);
+      return entry ? [[token.index, entry] as const] : [];
+    }),
+  );
+  const fromProfile = (indices: readonly number[]): boolean => indices.some((index) => profileHits.has(index));
+  const hits = findWords(tokens).filter((hit) => !fromProfile(hit.tokens));
+  const found = matcher.findRooms(tokens);
+  const rooms: RoomFinding = { ...found, matches: found.matches.filter((match) => !fromProfile(match.tokens)) };
   const markers = new Set<Marker>();
   const aspects: Aspect[] = [];
   const trades: Trade[] = [];
   const consumed = new Set<number>();
+  const replacements = new Map<number, string>();
   for (const match of rooms.matches) for (const index of match.tokens) consumed.add(index);
   for (const hit of hits) {
     const { marker, aspect, trade } = hit.info;
@@ -90,7 +112,20 @@ export function analyzeName(text: string, matcher: RoomMatcher): NameAnalysis {
     const labelRelevant = (marker !== undefined && LABEL_MARKERS.has(marker)) || aspect !== undefined;
     if (labelRelevant) for (const index of hit.tokens) consumed.add(index);
   }
+  const fromSchema = { trades: [] as Trade[], aspects: [] as Aspect[], markers: [] as Marker[], roomIds: [] as string[], tokens: [...profileHits.keys()] };
+  for (const [index, { entry, roomId }] of profileHits) {
+    if (entry.trade) fromSchema.trades.push(entry.trade);
+    if (entry.aspect) fromSchema.aspects.push(entry.aspect);
+    if (entry.marker) fromSchema.markers.push(entry.marker);
+    if (roomId) fromSchema.roomIds.push(roomId);
+    if (entry.label !== undefined) replacements.set(index, entry.label);
+    else if (roomId || entry.aspect || (entry.marker && LABEL_MARKERS.has(entry.marker))) consumed.add(index);
+  }
+  for (const marker of fromSchema.markers) markers.add(marker);
+  aspects.unshift(...fromSchema.aspects);
+  trades.unshift(...fromSchema.trades);
   const controlAspects = aspects.filter((aspect) => !WEAK_ASPECTS.has(aspect));
+  const labelTokens = tokens.filter((token) => !consumed.has(token.index));
   return {
     text,
     tokens,
@@ -99,7 +134,9 @@ export function analyzeName(text: string, matcher: RoomMatcher): NameAnalysis {
     markers,
     aspects: controlAspects.length > 0 ? controlAspects : aspects,
     trades,
-    labelTokens: tokens.filter((token) => !consumed.has(token.index)),
+    labelTokens,
+    label: labelOf(text, labelTokens, replacements),
+    profile: fromSchema,
   };
 }
 
@@ -110,14 +147,31 @@ export function analyzeGroupAddress(
   matcher: RoomMatcher,
   options: AnalyzeOptions,
 ): GaAnalysis {
-  const name = analyzeName(node.ga.name, matcher);
-  const ranges = node.ranges.map((range) => analyzeName(range.name, matcher));
+  const name = analyzeName(node.ga.name, matcher, options.profile);
+  const ranges = node.ranges.map((range) => analyzeName(range.name, matcher, options.profile));
   const anyMarker = (marker: Marker) => name.markers.has(marker) || ranges.some((range) => range.markers.has(marker));
   const claims: Claim[] = [];
   const claim = (dimension: Claim["dimension"], value: string, source: ClaimSource, confidence: number, evidence: string): void => {
     claims.push({ dimension, value, source, confidence, evidence });
   };
   const functions = options.useEtsFunctions ? node.functions : [];
+
+  // Namensschema des Integrators
+  const schemaName = options.profile?.name ?? "Namensschema";
+  for (const source of [name, ...ranges]) {
+    const where = source === name ? "im Namen" : `im Gruppenbereich "${source.text}"`;
+    const weight = source === name ? 0 : 0.05;
+    for (const trade of source.profile.trades) claim("trade", trade, "profile", 0.88 - weight, `${schemaName}: Kuerzel ${where}`);
+    const rooms = [...new Set(source.profile.roomIds)];
+    if (rooms.length === 1 && rooms[0]) claim("room", rooms[0], "profile", 0.88 - weight, `${schemaName}: Raumkuerzel ${where}`);
+    const marker = DIRECTION_MARKERS.find((entry) => source.profile.markers.includes(entry));
+    if (marker) claim("direction", marker, "profile", 0.88 - weight, `${schemaName}: Kennwort ${where}`);
+    for (const aspect of source.profile.aspects) {
+      const info = ASPECTS[aspect];
+      if (info.direction && !marker) claim("direction", info.direction, "profile", 0.8 - weight, `${schemaName}: Aspekt "${aspect}" ${where}`);
+      if (info.dpt) claim("dpt", info.dpt, "profile", 0.75 - weight, `${schemaName}: Aspekt "${aspect}" ${where}`);
+    }
+  }
 
   // Gewerk
   for (const membership of functions) {
@@ -249,7 +303,7 @@ export function analyzeGroupAddress(
     outdoor,
     multiRoomName,
     multiRoomRange,
-    label: textOf(node.ga.name, name.labelTokens),
+    label: name.label,
     claims,
   };
 }

@@ -1,21 +1,22 @@
 import type { GaNode, ProjectGraph } from "../graph/evidence-graph.ts";
+import type { AnalyzeOptions } from "../recognize/analyze.ts";
 import { type Recognition, recognize } from "../recognize/recognize.ts";
 import type { Prediction, Predictions, Predictor } from "./baseline.ts";
 
-function cached(useEtsFunctions: boolean): (graph: ProjectGraph) => Recognition {
+function cached(options: (graph: ProjectGraph) => AnalyzeOptions): (graph: ProjectGraph) => Recognition {
   const cache = new WeakMap<ProjectGraph, Recognition>();
   return (graph) => {
     let result = cache.get(graph);
     if (!result) {
-      result = recognize(graph, { useEtsFunctions });
+      result = recognize(graph, options(graph));
       cache.set(graph, result);
     }
     return result;
   };
 }
 
-function predictor(id: string, label: string, useEtsFunctions: boolean): Predictor {
-  const get = cached(useEtsFunctions);
+export function recognitionPredictor(id: string, label: string, options: (graph: ProjectGraph) => AnalyzeOptions): Predictor {
+  const get = cached(options);
   return {
     id,
     label,
@@ -39,6 +40,6 @@ function predictor(id: string, label: string, useEtsFunctions: boolean): Predict
 }
 
 export const RECOGNITION_PREDICTORS: readonly Predictor[] = [
-  predictor("erkennung", "Erkennung mit allen Belegen", true),
-  predictor("erkennung-ohne-ets", "Erkennung ohne ETS-Funktionen (wie b-pur)", false),
+  recognitionPredictor("erkennung", "Erkennung mit allen Belegen", () => ({ useEtsFunctions: true })),
+  recognitionPredictor("erkennung-ohne-ets", "Erkennung ohne ETS-Funktionen (wie b-pur)", () => ({ useEtsFunctions: false })),
 ];

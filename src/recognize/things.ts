@@ -1,6 +1,6 @@
 import { dptMainNumber } from "../ets/dpt-id.ts";
 import type { Direction } from "../graph/direction.ts";
-import { type Aspect, ASPECTS, type Trade } from "./lexicon.ts";
+import { type Aspect, ASPECTS, isTrade, type Trade } from "./lexicon.ts";
 import type { GaRecognition, Recognition, ThingDraft } from "./recognize.ts";
 
 /**
@@ -121,8 +121,6 @@ export function aspectOf(entry: GaRecognition): Aspect | undefined {
   return fitting(name.aspects) ?? (fromRange ? fitting(fromRange) : undefined) ?? (dpt ? DPT_ASPECT[dpt] : undefined);
 }
 
-const TRADES = new Set<string>(["lighting", "shading", "hvac", "monitoring", "metering", "system", "scene", "socket"]);
-const isTrade = (value: string | undefined): value is Trade => value !== undefined && TRADES.has(value);
 
 export function directionOf(entry: GaRecognition): Direction | undefined {
   const value = entry.decisions.direction.winner?.value;

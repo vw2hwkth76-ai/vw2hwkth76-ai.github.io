@@ -42,6 +42,17 @@ export type Aspect =
 
 export type Marker = "status" | "command" | "alarm" | "central" | "outOfUse" | "outdoor";
 
+export const TRADES: readonly Trade[] = ["lighting", "shading", "hvac", "monitoring", "metering", "system", "scene", "socket"];
+export const MARKERS: readonly Marker[] = ["status", "command", "alarm", "central", "outOfUse", "outdoor"];
+
+export function isTrade(value: unknown): value is Trade {
+  return typeof value === "string" && (TRADES as readonly string[]).includes(value);
+}
+
+export function isMarker(value: unknown): value is Marker {
+  return typeof value === "string" && (MARKERS as readonly string[]).includes(value);
+}
+
 export interface WordInfo {
   readonly trade?: Trade;
   readonly aspect?: Aspect;
@@ -86,6 +97,10 @@ export const ASPECTS: Readonly<Record<Aspect, AspectInfo>> = {
   energy: { direction: "status", dpt: undefined, trade: "metering" },
   power: { direction: "status", dpt: undefined, trade: "metering" },
 };
+
+export function isAspect(value: unknown): value is Aspect {
+  return typeof value === "string" && Object.hasOwn(ASPECTS, value);
+}
 
 const words = new Map<string, WordInfo>();
 /** Stammformen, die auch als Wortanfang in Komposita zaehlen ("Rollladensteuerung"). */

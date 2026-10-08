@@ -10,6 +10,7 @@ export type ClaimSource =
   | "ets-ga"
   | "ets-wiring"
   | "manufacturer"
+  | "profile"
   | "name"
   | "hierarchy"
   | "device-location"
@@ -32,6 +33,7 @@ const SOURCE_RANK: Readonly<Record<ClaimSource, number>> = {
   "ets-ga": 9,
   "ets-wiring": 8,
   manufacturer: 8,
+  profile: 8,
   pairing: 7,
   name: 6,
   "device-location": 5,

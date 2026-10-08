@@ -48,3 +48,26 @@ export function textOf(text: string, tokens: readonly Token[]): string {
   if (runStart && previous) segments.push(source.slice(runStart.start, previous.end));
   return segments.join(" ").replace(/\s+/g, " ").trim();
 }
+
+/** Wie textOf, ersetzt aber einzelne Woerter durch einen Anzeigenamen ("L" wird "Licht"). */
+export function labelOf(text: string, tokens: readonly Token[], replacements: ReadonlyMap<number, string>): string {
+  const segments: string[] = [];
+  let run: Token[] = [];
+  const flush = (): void => {
+    if (run.length > 0) segments.push(textOf(text, run));
+    run = [];
+  };
+  for (const token of tokens) {
+    const replacement = replacements.get(token.index);
+    if (replacement !== undefined) {
+      flush();
+      segments.push(replacement);
+      continue;
+    }
+    const last = run[run.length - 1];
+    if (last && token.index !== last.index + 1) flush();
+    run.push(token);
+  }
+  flush();
+  return segments.join(" ").replace(/\s+/g, " ").trim();
+}

@@ -1,0 +1,11 @@
+{
+  "format": "knx-td-namensschema-1",
+  "name": "Demoprojekt-Kuerzel",
+  "entries": [
+    { "token": "L", "trade": "lighting", "label": "Light" },
+    { "token": "LD", "trade": "lighting", "label": "Dimmable light" },
+    { "token": "R", "trade": "shading", "label": "Rollershutter" },
+    { "token": "H", "trade": "hvac", "label": "Heating" },
+    { "token": "LR", "room": "Living room" }
+  ]
+}

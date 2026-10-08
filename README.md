@@ -61,6 +61,12 @@ stillen Entscheidung.
   KNX-Funktionstypen (FT-1, FT-6, FT-7, FT-9, FT-10) mit den KNX-Rollen
   (SwitchOnOff, InfoOnOff, DimmingControl, ...), ergänzt um Rollen ohne Norm
   (ComfortMode, HeatingStatus, ...).
+- **Namensschema** je Integrator als Kürzeltabelle
+  (`knx-td-namensschema-1`, Beispiel `fixtures/oeffentlich/demoprojekt.namensschema.json`):
+  "L" bedeutet Licht, "LR" den Raum Living room, "RM" eine Rückmeldung. Es gilt als bestätigte Regel,
+  unter ETS-Angaben und Verdrahtung, über jeder Namensheuristik. Häufige
+  Kürzel ohne Bedeutung werden mit Beispielen und DPT-Hinweisen gelistet,
+  als Vorlage für das Profil und später für den KI-Vorschlag.
 - **Rückfragen** für Widersprüche, Mehrdeutigkeiten, fehlende Werte und
   doppelte Rollen. Mehrdeutige Begriffe ("Wert", "Position") ohne Kennwort
   werden bewusst nicht geraten.
@@ -74,6 +80,7 @@ Vorgänger, in Klammern die Werte von `ets2td`.
 |---|---|---|---|---|
 | Style, ohne ETS-Funktionen | 99,2 % (97,6) | 76,4 % (72,8) | 92,6 % (74,0) | 100 % (100) |
 | Demoprojekt, ohne ETS-Funktionen | 100 % (100) | 0 % (89,5) | 88,2 % (52,9) | 100 % (100) |
+| Demoprojekt, mit Namensschema (5 Kürzel) | 100 % | 63,2 % + 7 teils | 88,2 % | 100 % |
 | Demoprojekt, mit allem | 100 % | 100 % | 100 % | 100 % |
 | Musterprojekt (ETS6, lokal) | 100 % (85,0) | 86,5 % (91,9) | 100 % (71,1) | 100 % (67,6) |
 

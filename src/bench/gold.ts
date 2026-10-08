@@ -1,5 +1,6 @@
 import { normalizeDpt } from "../ets/dpt-id.ts";
 import type { Direction } from "../graph/direction.ts";
+import { isRecord } from "../util/guards.ts";
 
 export const DIMENSIONS = ["room", "function", "direction", "dpt"] as const;
 export type Dimension = (typeof DIMENSIONS)[number];
@@ -51,6 +52,3 @@ function text(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() !== "" ? value : undefined;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
