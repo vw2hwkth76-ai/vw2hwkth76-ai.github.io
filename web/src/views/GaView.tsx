@@ -21,6 +21,8 @@ const STATE_FILTERS: readonly { readonly value: StateFilter; readonly label: str
   { value: "unbestaetigt", label: "Nicht bestätigt" },
 ];
 
+const BATCH_LABEL = { room: "Raum setzen", trade: "Gewerk setzen", direction: "Richtung setzen" } as const;
+
 const NO_ROOM: Option = { value: "", label: "Ohne Raum" };
 
 function sortValue(ga: GaRow, dimension: (typeof DIMENSIONS)[number]): string {
@@ -84,6 +86,14 @@ const COLUMNS: readonly Column<GaRow>[] = [
     cell: (ga) => (ga.questionIds.length > 0 ? count(ga.questionIds.length) : ""),
   },
 ];
+
+/** Mit offenem Inspektor genuegen die Spalten, die man beim Pruefen vergleicht; DPT und Thing stehen im Inspektor. */
+const COMPACT_WIDTH: Readonly<Record<string, string | undefined>> = { ga: "5.5rem", name: "28%", room: "20%", trade: "16%", direction: undefined };
+const COMPACT_COLUMNS: readonly Column<GaRow>[] = COLUMNS.filter((column) => Object.hasOwn(COMPACT_WIDTH, column.id)).map((column) => {
+  const width = COMPACT_WIDTH[column.id];
+  const { width: _ignored, ...rest } = column;
+  return width === undefined ? rest : { ...rest, width };
+});
 
 export function GaView(): ReactNode {
   const workspace = useWorkspace();
@@ -196,7 +206,8 @@ export function GaView(): ReactNode {
                 key={dimension}
                 id={`batch-${dimension}`}
                 dimension={dimension}
-                label={dimension === "room" ? "Raum setzen" : dimension === "trade" ? "Gewerk setzen" : "Richtung setzen"}
+                label={BATCH_LABEL[dimension]}
+                placeholder={BATCH_LABEL[dimension]}
                 hideLabel
                 value={undefined}
                 onChange={(value) => workspace.setReview(selectedIds, dimension, value)}
@@ -217,7 +228,7 @@ export function GaView(): ReactNode {
         <VirtualTable<GaRow>
           label="Gruppenadressen"
           rows={rows}
-          columns={COLUMNS}
+          columns={active ? COMPACT_COLUMNS : COLUMNS}
           rowId={(ga) => ga.id}
           activeId={active?.id}
           onActivate={(ga) => workspace.openGa(ga.id)}

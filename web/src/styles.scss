@@ -411,13 +411,14 @@ body {
 
 .ws-split__aside {
   flex: none;
-  width: 30rem;
+  width: 26rem;
   max-width: 100%;
   overflow-y: auto;
   background: $layer-01;
   border-left: 1px solid $border-subtle;
 
-  @media (max-width: 100rem) {
+  // Unter 88rem reicht die Breite nicht fuer Tabelle und Inspektor nebeneinander.
+  @media (max-width: 87.99rem) {
     position: fixed;
     top: 3rem;
     right: 0;
@@ -491,7 +492,7 @@ body {
 
   table {
     width: 100%;
-    min-width: 56rem;
+    min-width: 44rem;
     table-layout: fixed;
   }
 
@@ -500,6 +501,13 @@ body {
     top: 0;
     z-index: 1;
     padding-inline: $spacing-05;
+    overflow: hidden;
+  }
+
+  th .ws-sort span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   th .ws-sort {

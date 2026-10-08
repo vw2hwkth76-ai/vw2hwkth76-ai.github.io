@@ -40,6 +40,8 @@ interface Props {
   readonly value: string | undefined;
   readonly onChange: (value: string) => void;
   readonly hideLabel?: boolean;
+  /** Text im leeren Feld; ohne Angabe "Wählen" bzw. "suchen". */
+  readonly placeholder?: string;
 }
 
 /** Auswahl eines Werts fuer eine Antwort; Raum und DPT mit Suche, der Rest als Liste. */
@@ -53,7 +55,7 @@ export function ValuePicker(props: Props): ReactNode {
         size="sm"
         titleText={props.hideLabel ? undefined : props.label}
         aria-label={props.label}
-        placeholder={props.dimension === "room" ? "Raum suchen" : "DPT suchen"}
+        placeholder={props.placeholder ?? (props.dimension === "room" ? "Raum suchen" : "DPT suchen")}
         items={[...options]}
         itemToString={(item) => item?.label ?? ""}
         selectedItem={selected}
@@ -75,7 +77,7 @@ export function ValuePicker(props: Props): ReactNode {
         if (event.target.value !== "") props.onChange(event.target.value);
       }}
     >
-      <SelectItem value="" text="Wählen" disabled />
+      <SelectItem value="" text={props.placeholder ?? "Wählen"} disabled />
       {options.map((option) => (
         <SelectItem key={option.value} value={option.value} text={option.label} />
       ))}
