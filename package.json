@@ -12,7 +12,8 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
     "test": "vitest run",
     "check": "npm run typecheck && npm run test",
-    "bench": "node --experimental-strip-types scripts/bench.ts"
+    "bench": "node --experimental-strip-types --no-warnings scripts/bench.ts",
+    "anonymisieren": "node --experimental-strip-types --no-warnings scripts/anonymisieren.ts"
   },
   "dependencies": {
     "@noble/ciphers": "2.4.0",

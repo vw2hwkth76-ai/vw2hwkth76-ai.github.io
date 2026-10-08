@@ -81,6 +81,27 @@ Projektdateien werden nur lokal gelesen. Kundenprojekte gehören nach
 `fixtures/privat/`, das per `.gitignore` nie ins Repository gelangt.
 Projektpasswörter werden nur zum Entschlüsseln verwendet und nicht gespeichert.
 
+### Kundenprojekte als Testdaten weitergeben
+
+Vor jeder Weitergabe, auch an eine KI-Sitzung, **auf dem eigenen Rechner**
+anonymisieren:
+
+```
+git clone <dieses Repository> && cd <Ordner> && npm ci
+KNX_PROJEKTPASSWORT='...' npm run anonymisieren -- kunde.knxproj kunde-anonym.knxproj --ersetzen ersetzungen.json
+```
+
+- Entfernt KNX-Secure-Schlüssel und Passwörter, Seriennummern, geladene
+  Geräteabbilder, IP-Konfiguration, Kommentare, Projektverlauf,
+  Benutzerdateien, Signaturen und Zertifikate.
+- Ersetzt Projektname, -nummer, -GUID und die Namen von Gebäuden und
+  Liegenschaften. Herstellerdaten, Struktur und Verknüpfungen bleiben.
+- Gibt seltene, großgeschriebene Wörter aus Namen aus. Personennamen daraus
+  in `ersetzungen.json` aufnehmen (`{ "Müller": "Person 1" }`) und erneut
+  laufen lassen.
+- Das Passwort per Umgebungsvariable, damit es nicht in der Shell-Historie
+  landet. Die Ausgabe ist ohne Passwort.
+
 ## Vorgänger
 
 `ets2td` (Python, Konfigurator, CoAP-Gateway) liegt auf dem Branch
