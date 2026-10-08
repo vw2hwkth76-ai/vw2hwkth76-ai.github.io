@@ -6,6 +6,7 @@
 export type ClaimDimension = "room" | "trade" | "direction" | "dpt";
 
 export type ClaimSource =
+  | "review"
   | "ets-function"
   | "ets-ga"
   | "ets-wiring"
@@ -29,6 +30,7 @@ export interface Claim {
 
 /** Bei gleicher Konfidenz entscheidet die Quelle: explizit vor abgeleitet. */
 const SOURCE_RANK: Readonly<Record<ClaimSource, number>> = {
+  review: 10,
   "ets-function": 9,
   "ets-ga": 9,
   "ets-wiring": 8,
@@ -60,6 +62,8 @@ export function decide(claims: readonly Claim[], dimension: ClaimDimension): Dec
   const relevant = claims.filter((claim) => claim.dimension === dimension).sort(compareClaims);
   const winner = relevant[0];
   if (!winner) return { winner: undefined, conflict: undefined };
+  // Eine bestaetigte Antwort ist eine Entscheidung, kein weiterer Beleg; sie loest den Widerspruch auf.
+  if (winner.source === "review") return { winner, conflict: undefined };
   const conflict = relevant.find(
     (claim) =>
       !sameValue(dimension, claim.value, winner.value) &&

@@ -1,7 +1,7 @@
 import { dptMainNumber } from "../ets/dpt-id.ts";
 import { directionEvidence } from "../graph/direction.ts";
 import type { GaLink, GaNode, ProjectGraph } from "../graph/evidence-graph.ts";
-import type { Claim, ClaimSource } from "./claims.ts";
+import type { Claim, ClaimDimension, ClaimSource } from "./claims.ts";
 import { type Aspect, ASPECTS, findWords, type Marker, type Trade, type WordHit } from "./lexicon.ts";
 import type { CompiledProfile } from "./profile.ts";
 import { type RoomFinding, type RoomMatchKind, RoomMatcher } from "./rooms.ts";
@@ -43,13 +43,18 @@ export interface GaAnalysis {
   readonly claims: Claim[];
 }
 
+/** Von Hand bestaetigte Werte je GA und Dimension. */
+export type Reviews = ReadonlyMap<string, Readonly<Partial<Record<ClaimDimension, string>>>>;
+
 export interface AnalyzeOptions {
   /** false misst die Heuristik so, als gaebe es keine ETS-Funktionen. */
   readonly useEtsFunctions: boolean;
+  readonly reviews?: Reviews;
   /** Bestaetigtes Namensschema; seine Kuerzel gehen dem allgemeinen Vokabular vor. */
   readonly profile?: CompiledProfile;
 }
 
+const REVIEW_DIMENSIONS: readonly ClaimDimension[] = ["room", "trade", "direction", "dpt"];
 const ROOM_CONFIDENCE: Readonly<Record<RoomMatchKind, number>> = { full: 0.85, abbreviation: 0.75, compound: 0.75, initials: 0.7, partial: 0.65 };
 const RANGE_PENALTY = 0.15;
 const FUNCTION_TYPE_TRADE: Readonly<Record<string, Trade>> = {
@@ -155,6 +160,13 @@ export function analyzeGroupAddress(
     claims.push({ dimension, value, source, confidence, evidence });
   };
   const functions = options.useEtsFunctions ? node.functions : [];
+
+  // Bestaetigte Antworten
+  const review = options.reviews?.get(node.ga.id);
+  for (const dimension of REVIEW_DIMENSIONS) {
+    const value = review?.[dimension];
+    if (value !== undefined && value !== "") claim(dimension, value, "review", 1, "von Hand bestaetigt");
+  }
 
   // Namensschema des Integrators
   const schemaName = options.profile?.name ?? "Namensschema";
