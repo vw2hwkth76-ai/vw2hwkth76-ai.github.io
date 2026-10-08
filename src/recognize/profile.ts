@@ -53,7 +53,7 @@ export function parseProfile(json: unknown): ProfileResult {
   const name = typeof json["name"] === "string" ? json["name"].slice(0, MAX_TEXT) : "";
   const raw = json["entries"];
   if (!Array.isArray(raw)) return { ok: false, errors: [...errors, 'Profil: Feld "entries" fehlt oder ist keine Liste.'] };
-  if (raw.length > MAX_ENTRIES) errors.push(`Profil: hoechstens ${MAX_ENTRIES} Eintraege.`);
+  if (raw.length > MAX_ENTRIES) errors.push(`Profil: höchstens ${MAX_ENTRIES} Einträge.`);
 
   const entries: ProfileEntry[] = [];
   const seen = new Map<string, number>();
@@ -113,7 +113,7 @@ export function compileProfile(profile: NamingProfile, spaces: readonly Space[])
     let roomId: string | undefined;
     if (entry.room !== undefined) {
       roomId = byName.get(normalizeText(entry.room));
-      if (roomId === undefined) warnings.push(`Profil "${profile.name}": Raum "${entry.room}" fuer "${entry.token}" gibt es in diesem Projekt nicht.`);
+      if (roomId === undefined) warnings.push(`Profil "${profile.name}": Raum "${entry.room}" für "${entry.token}" gibt es in diesem Projekt nicht.`);
     }
     tokens.set(normalizeText(entry.token), { entry, roomId });
   }

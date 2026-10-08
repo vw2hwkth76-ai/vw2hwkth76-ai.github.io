@@ -28,7 +28,7 @@ export function rewriteXml(data: Uint8Array, rules: RewriteRules, fileName: stri
   const local = (name: string): string => name.slice(name.indexOf(":") + 1);
 
   parser.on("doctype", () => {
-    throw new XmlError(`${fileName}: DOCTYPE wird aus Sicherheitsgruenden nicht verarbeitet.`);
+    throw new XmlError(`${fileName}: DOCTYPE wird aus Sicherheitsgründen nicht verarbeitet.`);
   });
   parser.on("error", (error) => {
     failure ??= error;
@@ -71,7 +71,7 @@ export function rewriteXml(data: Uint8Array, rules: RewriteRules, fileName: stri
   }
   if (failure !== undefined) {
     const detail = failure instanceof Error ? failure.message : String(failure);
-    throw new XmlError(`${fileName}: beschaedigte XML-Datei (${detail}).`);
+    throw new XmlError(`${fileName}: beschädigte XML-Datei (${detail}).`);
   }
   return out.join("");
 }

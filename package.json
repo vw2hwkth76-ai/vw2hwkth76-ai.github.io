@@ -9,11 +9,15 @@
     "node": ">=22"
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json && tsc -p tsconfig.web.json",
     "test": "vitest run",
     "check": "npm run typecheck && npm run test",
     "bench": "node --experimental-strip-types --no-warnings scripts/bench.ts",
-    "anonymisieren": "node --experimental-strip-types --no-warnings scripts/anonymisieren.ts"
+    "anonymisieren": "node --experimental-strip-types --no-warnings scripts/anonymisieren.ts",
+    "dev": "vite",
+    "build": "vite build",
+    "pruefe-build": "node --experimental-strip-types --no-warnings scripts/pruefe-build.ts",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@carbon/icons-react": "11.89.0",
@@ -21,7 +25,6 @@
     "@ibm/plex-mono": "2.5.0",
     "@ibm/plex-sans": "1.1.0",
     "@noble/ciphers": "2.4.0",
-    "@tanstack/react-table": "8.21.3",
     "@tanstack/react-virtual": "3.14.13",
     "fflate": "0.8.3",
     "react": "19.3.0",

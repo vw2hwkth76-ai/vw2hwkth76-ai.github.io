@@ -76,7 +76,7 @@ function wiringDirection(node: GaNode, graph: ProjectGraph): DirectionEvidence |
     return {
       value: "command",
       source: "ets-wiring",
-      detail: `Aktor empfaengt nur (Schreiben-Flag): ${cabinetPureReceivers.map(describe).join(", ")}`,
+      detail: `Aktor empfängt nur (Schreiben-Flag): ${cabinetPureReceivers.map(describe).join(", ")}`,
     };
   }
   if (cabinetSenders.length > 0 || links.some((link) => cabinet(link) !== false)) return undefined;

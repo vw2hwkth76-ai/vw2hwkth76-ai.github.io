@@ -29,7 +29,7 @@ export interface Claim {
 }
 
 /** Bei gleicher Konfidenz entscheidet die Quelle: explizit vor abgeleitet. */
-const SOURCE_RANK: Readonly<Record<ClaimSource, number>> = {
+export const SOURCE_RANK: Readonly<Record<ClaimSource, number>> = {
   review: 10,
   "ets-function": 9,
   "ets-ga": 9,
@@ -43,6 +43,10 @@ const SOURCE_RANK: Readonly<Record<ClaimSource, number>> = {
   family: 3,
   default: 1,
 };
+
+export function isClaimSource(value: string): value is ClaimSource {
+  return Object.hasOwn(SOURCE_RANK, value);
+}
 
 /** Ab diesem Abstand gilt der zweitbeste Beleg als ueberstimmt statt als Widerspruch. */
 const CONFLICT_MARGIN = 0.15;

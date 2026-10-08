@@ -52,7 +52,7 @@ describe("parseProfile", () => {
     const parsed = parseProfile({ format: PROFILE_FORMAT, name: "p", entries: [{ token: "KU", room: "Kueche" }, { token: "LR", room: "living room" }] });
     if (!parsed.ok) throw new Error(parsed.errors.join());
     const compiled = compileProfile(parsed.profile, demo.loaded.project.spaces);
-    expect(compiled.warnings).toEqual(['Profil "p": Raum "Kueche" fuer "KU" gibt es in diesem Projekt nicht.']);
+    expect(compiled.warnings).toEqual(['Profil "p": Raum "Kueche" für "KU" gibt es in diesem Projekt nicht.']);
     expect(compiled.tokens.get("lr")?.roomId).toBeDefined();
   });
 });

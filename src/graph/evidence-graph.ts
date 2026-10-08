@@ -159,10 +159,10 @@ function buildNode(
   }
 
   if (hasDevices && links.length === 0) {
-    diagnostics.push(diagnostic("ga.unlinked", "info", `${label} ist mit keinem Kommunikationsobjekt verknuepft.`, refs));
+    diagnostics.push(diagnostic("ga.unlinked", "info", `${label} ist mit keinem Kommunikationsobjekt verknüpft.`, refs));
   }
   if (ga.dpts.length === 0 && comObjectDpts.size === 0) {
-    diagnostics.push(diagnostic("ga.dpt-missing", "warning", `${label} hat keinen Datenpunkttyp, weder an der GA noch an verknuepften Objekten.`, refs));
+    diagnostics.push(diagnostic("ga.dpt-missing", "warning", `${label} hat keinen Datenpunkttyp, weder an der GA noch an verknüpften Objekten.`, refs));
   }
 
   const mains = new Set<number>();
@@ -172,19 +172,19 @@ function buildNode(
   }
   if (mains.size > 1) {
     diagnostics.push(
-      diagnostic("ga.dpt-conflict", "error", `${label}: verknuepfte Objekte und GA nennen unterschiedliche DPT-Haupttypen (${[...mains].sort((a, b) => a - b).join(", ")}).`, refs),
+      diagnostic("ga.dpt-conflict", "error", `${label}: verknüpfte Objekte und GA nennen unterschiedliche DPT-Haupttypen (${[...mains].sort((a, b) => a - b).join(", ")}).`, refs),
     );
   }
   if (sizes.size > 1) {
     diagnostics.push(
-      diagnostic("ga.size-conflict", "error", `${label}: verknuepfte Objekte haben unterschiedliche Groessen (${[...sizes].sort((a, b) => a - b).join(", ")} Bit).`, refs),
+      diagnostic("ga.size-conflict", "error", `${label}: verknüpfte Objekte haben unterschiedliche Größen (${[...sizes].sort((a, b) => a - b).join(", ")} Bit).`, refs),
     );
   }
   for (const dpt of ga.dpts) {
     const definition = loaded.master.dpts.get(dpt);
     if (definition && sizes.size === 1 && !sizes.has(definition.sizeInBit)) {
       diagnostics.push(
-        diagnostic("ga.dpt-size-mismatch", "error", `${label}: DPT ${dpt} hat ${definition.sizeInBit} Bit, die verknuepften Objekte ${[...sizes][0]} Bit.`, refs),
+        diagnostic("ga.dpt-size-mismatch", "error", `${label}: DPT ${dpt} hat ${definition.sizeInBit} Bit, die verknüpften Objekte ${[...sizes][0]} Bit.`, refs),
       );
     }
   }
@@ -194,7 +194,7 @@ function buildNode(
   const senders = links.filter((link) => link.sends);
   if (flagsKnown && receivers.length > 0 && senders.length === 0) {
     diagnostics.push(
-      diagnostic("ga.no-sender", "info", `${label}: kein verknuepftes Objekt sendet auf dieser GA; Werte kommen nur von aussen (Visualisierung, Gateway).`, refs),
+      diagnostic("ga.no-sender", "info", `${label}: kein verknüpftes Objekt sendet auf dieser GA; Werte kommen nur von außen (Visualisierung, Gateway).`, refs),
     );
   }
   const readable = links.some((link) => link.answersRead) ? true : flagsKnown ? false : undefined;

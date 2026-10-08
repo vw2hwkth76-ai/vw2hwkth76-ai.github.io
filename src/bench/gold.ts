@@ -30,7 +30,7 @@ export function parseGold(json: unknown): GoldStandard {
   const entries = new Map<number, GoldEntry>();
   for (const [key, value] of Object.entries(json["datenpunkte"])) {
     const address = Number(key);
-    if (!Number.isInteger(address) || !isRecord(value)) throw new Error(`Gold-Standard: ungueltiger Eintrag ${key}.`);
+    if (!Number.isInteger(address) || !isRecord(value)) throw new Error(`Gold-Standard: ungültiger Eintrag ${key}.`);
     const role = text(value["rolle"]);
     const direction = role === undefined ? undefined : GOLD_DIRECTION[role];
     if (role !== undefined && direction === undefined) throw new Error(`Gold-Standard: unbekannte Rolle "${role}" bei ${key}.`);

@@ -76,7 +76,7 @@ export function resolveDevices(
         diagnostic(
           "manufacturer.unresolved-device",
           "info",
-          `Fuer Geraet ${device.individualAddress ?? device.id} fehlen Herstellerdaten; Objektgroessen und Standardflags sind unbekannt.`,
+          `Für Gerät ${device.individualAddress ?? device.id} fehlen Herstellerdaten; Objektgrößen und Standardflags sind unbekannt.`,
           { device: device.id },
         ),
       );

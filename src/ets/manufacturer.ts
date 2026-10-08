@@ -121,7 +121,7 @@ export async function readManufacturerData(
     const app = readApplication(await archive.readManufacturerFile(file), file, appId);
     if (app === undefined) {
       diagnostics.push(
-        diagnostic("manufacturer.application-empty", "warning", `${file} enthaelt das Applikationsprogramm ${appId} nicht.`, { file }),
+        diagnostic("manufacturer.application-empty", "warning", `${file} enthält das Applikationsprogramm ${appId} nicht.`, { file }),
       );
       continue;
     }

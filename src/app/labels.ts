@@ -108,3 +108,23 @@ export function dptLabel(dpt: string, master: MasterData): string {
   const text = definition?.textDe ?? definition?.text;
   return text ? `${dptDotted(dpt)} ${text}` : dptDotted(dpt);
 }
+
+export const BUNDLE_LABEL: Readonly<Record<string, string>> = {
+  "ets-function": "ETS-Funktion",
+  channel: "Aktorkanal",
+  family: "Namensfamilie",
+  single: "Einzelne GA",
+};
+
+export const QUESTION_KIND_LABEL: Readonly<Record<string, string>> = {
+  conflict: "Widerspruch",
+  ambiguous: "Mehrdeutig",
+  missing: "Fehlt",
+  structure: "Struktur",
+};
+
+export const SEVERITY_LABEL: Readonly<Record<string, string>> = {
+  error: "Fehler",
+  warning: "Warnung",
+  info: "Hinweis",
+};

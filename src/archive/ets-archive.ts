@@ -61,7 +61,7 @@ export async function openEtsArchive(
     if (!entry) throw new ArchiveError("structure", `${name} fehlt im Archiv.`);
     const result = await outer.read(entry);
     if (!result.ok) {
-      throw new ArchiveError("unsupported", `${name} ist verschluesselt, erwartet war ein offener Eintrag.`);
+      throw new ArchiveError("unsupported", `${name} ist verschlüsselt, erwartet war ein offener Eintrag.`);
     }
     return result.data;
   };
@@ -101,7 +101,7 @@ export async function openEtsArchive(
   const innerNames = innerArchive.entries.filter((entry) => !entry.isDirectory).map((entry) => entry.name);
   const projectXml = innerNames.find((name) => PROJECT_XML.test(name));
   if (projectXml === undefined) {
-    throw new ArchiveError("structure", `${innerName} enthaelt keine project.xml.`);
+    throw new ArchiveError("structure", `${innerName} enthält keine project.xml.`);
   }
   const project = await withPassword(innerArchive, projectXml, schemaVersion, options.password);
   return {
@@ -133,7 +133,7 @@ async function withPassword(
     if (!entry) throw new ArchiveError("structure", `${name} fehlt im Archiv.`);
     const result = await archive.read(entry, passwords);
     if (!result.ok) {
-      throw new ArchiveError("password-wrong", `${name} laesst sich mit dem Projektpasswort nicht oeffnen.`);
+      throw new ArchiveError("password-wrong", `${name} lässt sich mit dem Projektpasswort nicht öffnen.`);
     }
     return result.data;
   };
@@ -142,7 +142,7 @@ async function withPassword(
   if (password === undefined || password === "") {
     throw new ArchiveError(
       "password-required",
-      "Das Projekt ist mit einem Projektpasswort geschuetzt. Bitte das Passwort eingeben.",
+      "Das Projekt ist mit einem Projektpasswort geschützt. Bitte das Passwort eingeben.",
     );
   }
 

@@ -25,7 +25,7 @@ export function parseXml(data: Uint8Array, handler: XmlHandler, fileName: string
   const parser = new SaxesParser({ xmlns: false, position: false });
   let failure: unknown;
   parser.on("doctype", () => {
-    throw new XmlError(`${fileName}: DOCTYPE wird aus Sicherheitsgruenden nicht verarbeitet.`);
+    throw new XmlError(`${fileName}: DOCTYPE wird aus Sicherheitsgründen nicht verarbeitet.`);
   });
   parser.on("error", (error) => {
     failure ??= error;
@@ -47,7 +47,7 @@ export function parseXml(data: Uint8Array, handler: XmlHandler, fileName: string
   }
   if (failure !== undefined) {
     const detail = failure instanceof Error ? failure.message : String(failure);
-    throw new XmlError(`${fileName}: beschaedigte XML-Datei (${detail}).`);
+    throw new XmlError(`${fileName}: beschädigte XML-Datei (${detail}).`);
   }
 }
 

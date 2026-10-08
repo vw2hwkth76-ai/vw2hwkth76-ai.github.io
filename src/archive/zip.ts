@@ -122,7 +122,7 @@ export class ZipArchive {
     if (integrityFailure) {
       throw new ArchiveError(
         "corrupt",
-        `${entry.name}: Pruefsumme der Verschluesselung stimmt nicht. Das Archiv ist vermutlich beschaedigt.`,
+        `${entry.name}: Prüfsumme der Verschlüsselung stimmt nicht. Das Archiv ist vermutlich beschädigt.`,
       );
     }
     return { ok: false, reason: "password-wrong" };
@@ -131,14 +131,14 @@ export class ZipArchive {
   #rawData(entry: ZipEntry): Uint8Array {
     const offset = entry.localHeaderOffset;
     if (offset + 30 > this.#data.byteLength || this.#view.getUint32(offset, true) !== SIG_LOCAL) {
-      throw new ArchiveError("corrupt", `${entry.name}: lokaler Dateikopf fehlt oder ist beschaedigt.`);
+      throw new ArchiveError("corrupt", `${entry.name}: lokaler Dateikopf fehlt oder ist beschädigt.`);
     }
     const nameLength = this.#view.getUint16(offset + 26, true);
     const extraLength = this.#view.getUint16(offset + 28, true);
     const start = offset + 30 + nameLength + extraLength;
     const end = start + entry.compressedSize;
     if (end > this.#data.byteLength) {
-      throw new ArchiveError("corrupt", `${entry.name}: Daten reichen ueber das Dateiende hinaus.`);
+      throw new ArchiveError("corrupt", `${entry.name}: Daten reichen über das Dateiende hinaus.`);
     }
     return this.#data.subarray(start, end);
   }
@@ -154,12 +154,12 @@ export class ZipArchive {
     } else {
       throw new ArchiveError(
         "unsupported",
-        `${entry.name}: Kompressionsverfahren ${method} wird nicht unterstuetzt (erwartet: Deflate).`,
+        `${entry.name}: Kompressionsverfahren ${method} wird nicht unterstützt (erwartet: Deflate).`,
       );
     }
     this.#produced += out.byteLength;
     if (checkCrc && crc32(out) !== entry.crc32) {
-      throw new ArchiveError("corrupt", `${entry.name}: CRC-Pruefsumme stimmt nicht, Archiv beschaedigt.`);
+      throw new ArchiveError("corrupt", `${entry.name}: CRC-Prüfsumme stimmt nicht, Archiv beschädigt.`);
     }
     return out;
   }
@@ -168,7 +168,7 @@ export class ZipArchive {
 function limitError(name: string): ArchiveError {
   return new ArchiveError(
     "limit-exceeded",
-    `${name}: entpackte Daten ueberschreiten das Verarbeitungslimit. Moeglicherweise ein manipuliertes Archiv.`,
+    `${name}: entpackte Daten überschreiten das Verarbeitungslimit. Möglicherweise ein manipuliertes Archiv.`,
   );
 }
 
@@ -188,7 +188,7 @@ function inflateLimited(data: Uint8Array, budget: number, name: string): Uint8Ar
     }
   } catch (error) {
     if (error instanceof ArchiveError) throw error;
-    throw new ArchiveError("corrupt", `${name}: Deflate-Daten sind beschaedigt.`);
+    throw new ArchiveError("corrupt", `${name}: Deflate-Daten sind beschädigt.`);
   }
   return concat(chunks, total);
 }
@@ -212,11 +212,11 @@ function readCentralDirectory(data: Uint8Array, limits: ZipLimits): ZipEntry[] {
   if (count === 0xffff || size === 0xffffffff || offset === 0xffffffff) {
     const locator = eocd - 20;
     if (locator < 0 || view.getUint32(locator, true) !== SIG_ZIP64_LOCATOR) {
-      throw new ArchiveError("corrupt", "ZIP64-Verweis fehlt, das Archiv ist beschaedigt.");
+      throw new ArchiveError("corrupt", "ZIP64-Verweis fehlt, das Archiv ist beschädigt.");
     }
     const record = safeNumber(view.getBigUint64(locator + 8, true));
     if (record + 56 > data.byteLength || view.getUint32(record, true) !== SIG_ZIP64_EOCD) {
-      throw new ArchiveError("corrupt", "ZIP64-Verzeichnisende fehlt, das Archiv ist beschaedigt.");
+      throw new ArchiveError("corrupt", "ZIP64-Verzeichnisende fehlt, das Archiv ist beschädigt.");
     }
     count = safeNumber(view.getBigUint64(record + 32, true));
     size = safeNumber(view.getBigUint64(record + 40, true));
@@ -226,18 +226,18 @@ function readCentralDirectory(data: Uint8Array, limits: ZipLimits): ZipEntry[] {
   if (count > limits.maxEntries) {
     throw new ArchiveError(
       "limit-exceeded",
-      `Das Archiv enthaelt ${count} Eintraege, erlaubt sind ${limits.maxEntries}.`,
+      `Das Archiv enthält ${count} Einträge, erlaubt sind ${limits.maxEntries}.`,
     );
   }
   if (offset + size > data.byteLength) {
-    throw new ArchiveError("corrupt", "Das Zentralverzeichnis reicht ueber das Dateiende hinaus.");
+    throw new ArchiveError("corrupt", "Das Zentralverzeichnis reicht über das Dateiende hinaus.");
   }
 
   const entries: ZipEntry[] = [];
   let pos = offset;
   for (let i = 0; i < count; i++) {
     if (pos + 46 > data.byteLength || view.getUint32(pos, true) !== SIG_CENTRAL) {
-      throw new ArchiveError("corrupt", "Das Zentralverzeichnis ist beschaedigt.");
+      throw new ArchiveError("corrupt", "Das Zentralverzeichnis ist beschädigt.");
     }
     const flags = view.getUint16(pos + 8, true);
     const method = view.getUint16(pos + 10, true);
@@ -271,7 +271,7 @@ function readCentralDirectory(data: Uint8Array, limits: ZipLimits): ZipEntry[] {
       } else if (field.id === EXTRA_AES && field.data.byteLength >= 7) {
         const strength = fieldView.getUint8(4);
         if (strength !== 1 && strength !== 2 && strength !== 3) {
-          throw new ArchiveError("unsupported", "Unbekannte AES-Schluessellaenge im Archiv.");
+          throw new ArchiveError("unsupported", "Unbekannte AES-Schlüssellänge im Archiv.");
         }
         encryption = {
           kind: "aes",
@@ -283,10 +283,10 @@ function readCentralDirectory(data: Uint8Array, limits: ZipLimits): ZipEntry[] {
     }
     if (flags & FLAG_ENCRYPTED && encryption.kind === "none") {
       if (method === METHOD_AES) {
-        throw new ArchiveError("corrupt", "AES-verschluesselter Eintrag ohne AES-Angaben.");
+        throw new ArchiveError("corrupt", "AES-verschlüsselter Eintrag ohne AES-Angaben.");
       }
       if (flags & 0x40) {
-        throw new ArchiveError("unsupported", "Starke PKWARE-Verschluesselung wird nicht unterstuetzt.");
+        throw new ArchiveError("unsupported", "Starke PKWARE-Verschlüsselung wird nicht unterstützt.");
       }
       encryption = { kind: "zipcrypto" };
     }
@@ -334,7 +334,7 @@ function decodeName(bytes: Uint8Array, utf8Flag: boolean): string {
 
 function safeNumber(value: bigint): number {
   if (value > BigInt(Number.MAX_SAFE_INTEGER)) {
-    throw new ArchiveError("limit-exceeded", "ZIP64-Angabe ausserhalb des verarbeitbaren Bereichs.");
+    throw new ArchiveError("limit-exceeded", "ZIP64-Angabe außerhalb des verarbeitbaren Bereichs.");
   }
   return Number(value);
 }

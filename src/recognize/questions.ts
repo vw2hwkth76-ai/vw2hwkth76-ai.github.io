@@ -1,3 +1,4 @@
+import { dptDotted } from "../ets/dpt-id.ts";
 import type { Claim, ClaimDimension } from "./claims.ts";
 import { ASPECTS } from "./lexicon.ts";
 import type { GaRecognition, Recognition } from "./recognize.ts";
@@ -24,15 +25,21 @@ export interface Question {
 const LABELS: Readonly<Record<ClaimDimension, string>> = {
   room: "Raum",
   trade: "Gewerk",
-  direction: "Befehl oder Rueckmeldung",
+  direction: "Richtung",
   dpt: "Datenpunkttyp",
 };
+const DIRECTION_TEXT: Readonly<Record<string, string>> = { command: "Befehl", status: "Rückmeldung", alarm: "Meldung" };
 const ORDER: Readonly<Record<QuestionKind, number>> = { conflict: 0, ambiguous: 1, missing: 2, structure: 3 };
 
 export function collectQuestions(recognition: Recognition, things: readonly Thing[]): Question[] {
   const questions: Question[] = [];
   const spaceName = (id: string): string => recognition.graph.spaces.get(id)?.space.name ?? id;
-  const show = (claim: Claim): string => (claim.dimension === "room" ? spaceName(claim.value) : claim.value);
+  const show = (claim: Claim): string => {
+    if (claim.dimension === "room") return spaceName(claim.value);
+    if (claim.dimension === "direction") return DIRECTION_TEXT[claim.value] ?? claim.value;
+    if (claim.dimension === "dpt") return dptDotted(claim.value);
+    return claim.value;
+  };
 
   for (const entry of recognition.groupAddresses) {
     const { analysis, decisions } = entry;
@@ -48,7 +55,7 @@ export function collectQuestions(recognition: Recognition, things: readonly Thin
           dimension,
           groupAddressId: ga.id,
           thingKey: entry.thingKey,
-          message: `${label}: ${LABELS[dimension]} widerspruechlich, ${show(decision.winner)} oder ${show(decision.conflict)}?`,
+          message: `${label}: ${LABELS[dimension]} widersprüchlich, ${show(decision.winner)} oder ${show(decision.conflict)}?`,
           suggestions: [decision.winner, decision.conflict].map((claim) => ({ value: claim.value, evidence: claim.evidence })),
         });
       }
@@ -62,7 +69,7 @@ export function collectQuestions(recognition: Recognition, things: readonly Thin
         dimension: "room",
         groupAddressId: ga.id,
         thingKey: entry.thingKey,
-        message: multi ? `${label}: Name oder Gruppenbereich nennen mehrere Raeume.` : `${label}: kein Raum erkennbar.`,
+        message: multi ? `${label}: Name oder Gruppenbereich nennen mehrere Räume.` : `${label}: kein Raum erkennbar.`,
         suggestions: [...new Set(candidates.map((match) => match.spaceId))].map((id) => ({ value: id, evidence: `genannt: ${spaceName(id)}` })),
       });
     }
@@ -73,7 +80,7 @@ export function collectQuestions(recognition: Recognition, things: readonly Thin
         dimension: "direction",
         groupAddressId: ga.id,
         thingKey: entry.thingKey,
-        message: `${label}: Befehl oder Rueckmeldung? Der Name sagt es nicht eindeutig.`,
+        message: `${label}: Befehl oder Rückmeldung? Der Name sagt es nicht eindeutig.`,
         suggestions: [
           { value: "command", evidence: "wird geschaltet oder gesetzt" },
           { value: "status", evidence: "meldet einen Zustand oder Messwert" },
@@ -94,7 +101,7 @@ export function collectQuestions(recognition: Recognition, things: readonly Thin
         dimension: "role",
         groupAddressId: undefined,
         thingKey: thing.draft.key,
-        message: `"${thing.draft.label}": ${gaIds.length} GAs mit der Rolle ${role}. Gehoeren sie zu verschiedenen Things?`,
+        message: `"${thing.draft.label}": ${gaIds.length} GAs mit der Rolle ${role}. Gehören sie zu verschiedenen Things?`,
         suggestions: [],
       });
     }
@@ -113,6 +120,6 @@ function dptQuestion(entry: GaRecognition, label: string): Question {
     groupAddressId: entry.analysis.node.ga.id,
     thingKey: entry.thingKey,
     message: `${label}: Datenpunkttyp fehlt${sizes.length === 1 ? ` (verknuepfte Objekte: ${sizes[0]} Bit)` : ""}.`,
-    suggestions: suggested ? [{ value: suggested, evidence: `typisch fuer "${aspect}"` }] : [],
+    suggestions: suggested ? [{ value: suggested, evidence: `typisch für "${aspect}"` }] : [],
   };
 }

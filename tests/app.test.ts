@@ -1,5 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { buildReport, REPORT_FORMAT, reportSummary } from "../src/app/report.ts";
+import { buildGold, buildReport, formatLink, REPORT_FORMAT, reportSummary } from "../src/app/report.ts";
+import { checkAccuracy, checkReviews } from "../src/app/review-check.ts";
+import { parseGold } from "../src/bench/gold.ts";
 import { buildDetail, buildSnapshot } from "../src/app/snapshot.ts";
 import { loadKnxProject } from "../src/ets/load.ts";
 import { buildGraph, type ProjectGraph } from "../src/graph/evidence-graph.ts";
@@ -67,5 +69,46 @@ describe("Analysebericht", () => {
     expect(text).not.toContain("012be31b-e333-4027-90d6-be17f79aa998");
     expect(text).toContain('"ga":"0/0/14"');
     expect(reportSummary(snapshot)).toContain("19 GAs");
+  });
+});
+
+describe("Abgleich mit Bestaetigungen", () => {
+  it("misst die Erkennung ohne Antworten an den bestaetigten Werten", () => {
+    const baseline = analyzeProject(demo);
+    const room = baseline.recognition.byGroupAddressId.get(idOf("0/0/14"))?.decisions.room.winner?.value ?? "";
+    const reviews = new Map([
+      [idOf("0/0/14"), { room, direction: "command" }],
+      [idOf("0/0/1"), { dpt: "DPST-1-2" }],
+    ]);
+    const check = checkReviews(baseline, reviews);
+    expect(check.byDimension.room).toMatchObject({ rated: 1, correct: 1 });
+    expect(check.byDimension.direction).toMatchObject({ rated: 1, wrong: 1 });
+    expect(check.byDimension.dpt).toMatchObject({ rated: 1, partial: 1 });
+    const wrong = check.entries.find((entry) => entry.result === "wrong");
+    expect(wrong).toMatchObject({ ga: "0/0/14", confirmed: { display: "Befehl" }, predicted: { display: "Rückmeldung" } });
+    expect(checkAccuracy(check.byDimension.room)).toBe(1);
+    expect(checkAccuracy(check.byDimension.trade)).toBeUndefined();
+
+    const snapshot = buildSnapshot(analyzeProject(demo, { useEtsFunctions: true, reviews }));
+    const report = buildReport(snapshot, { toolVersion: "0.1.0", profile: undefined, reviewCount: 2, date: "2026-10-08", reviewCheck: check });
+    expect(JSON.stringify(report)).toContain('"result":"wrong"');
+    expect(reportSummary(snapshot, check)).toContain("direction 0/1");
+  });
+
+  it("schreibt nur Bestaetigtes in den Gold-Standard, lesbar fuer den Benchmark", () => {
+    const reviews = new Map([[idOf("0/0/6"), { direction: "status" }]]);
+    const snapshot = buildSnapshot(analyzeProject(demo, { useEtsFunctions: true, reviews }));
+    const gold = parseGold(buildGold(snapshot, "2026-10-08"));
+    expect(gold.entries.size).toBe(1);
+    const entry = [...gold.entries.values()][0];
+    expect(entry).toMatchObject({ text: "0/0/6", direction: "status", room: undefined, dpt: undefined });
+  });
+
+  it("beschreibt Verknuepfungen kurz fuer den Bericht", () => {
+    const entry = analyzeProject(demo).recognition.byGroupAddressId.get(idOf("0/0/3"));
+    if (!entry) throw new Error("fehlt");
+    const actuator = buildDetail(entry, demo).links.find((link) => link.cabinet);
+    if (!actuator) throw new Error("kein Aktor");
+    expect(formatLink(actuator)).toMatch(/\[Verteiler\] KO .* KS empfängt$/);
   });
 });

@@ -147,7 +147,7 @@ function applyPairs(analyses: readonly GaAnalysis[]): void {
       value: "command",
       source: "pairing",
       confidence: 0.85,
-      evidence: `Gegenstueck zur Rueckmeldung "${statuses[0]?.node.ga.name ?? ""}"`,
+      evidence: `Gegenstück zur Rückmeldung "${statuses[0]?.node.ga.name ?? ""}"`,
     });
     for (const status of statuses) {
       status.claims.push({
@@ -155,7 +155,7 @@ function applyPairs(analyses: readonly GaAnalysis[]): void {
         value: "status",
         source: "pairing",
         confidence: 0.85,
-        evidence: `Rueckmeldung zu "${command.node.ga.name}"`,
+        evidence: `Rückmeldung zu "${command.node.ga.name}"`,
       });
       share(command, status, "dpt", 0.75);
       share(status, command, "dpt", 0.75);
@@ -173,7 +173,7 @@ function share(from: GaAnalysis, to: GaAnalysis, dimension: ClaimDimension, conf
     value: best.value,
     source: "pairing",
     confidence: Math.min(confidence, best.confidence),
-    evidence: `uebernommen vom Gegenstueck "${from.node.ga.name}" (${best.evidence})`,
+    evidence: `übernommen vom Gegenstück "${from.node.ga.name}" (${best.evidence})`,
   });
 }
 
@@ -216,7 +216,7 @@ function propagateWithinFamilies(
           value,
           source: "family",
           confidence: 0.6,
-          evidence: `wie die uebrigen Datenpunkte derselben Funktion (${source.evidence})`,
+          evidence: `wie die übrigen Datenpunkte derselben Funktion (${source.evidence})`,
         });
       }
     }

@@ -165,7 +165,7 @@ export function analyzeGroupAddress(
   const review = options.reviews?.get(node.ga.id);
   for (const dimension of REVIEW_DIMENSIONS) {
     const value = review?.[dimension];
-    if (value !== undefined && value !== "") claim(dimension, value, "review", 1, "von Hand bestaetigt");
+    if (value !== undefined && value !== "") claim(dimension, value, "review", 1, "von Hand bestätigt");
   }
 
   // Namensschema des Integrators
@@ -173,9 +173,9 @@ export function analyzeGroupAddress(
   for (const source of [name, ...ranges]) {
     const where = source === name ? "im Namen" : `im Gruppenbereich "${source.text}"`;
     const weight = source === name ? 0 : 0.05;
-    for (const trade of source.profile.trades) claim("trade", trade, "profile", 0.88 - weight, `${schemaName}: Kuerzel ${where}`);
+    for (const trade of source.profile.trades) claim("trade", trade, "profile", 0.88 - weight, `${schemaName}: Kürzel ${where}`);
     const rooms = [...new Set(source.profile.roomIds)];
-    if (rooms.length === 1 && rooms[0]) claim("room", rooms[0], "profile", 0.88 - weight, `${schemaName}: Raumkuerzel ${where}`);
+    if (rooms.length === 1 && rooms[0]) claim("room", rooms[0], "profile", 0.88 - weight, `${schemaName}: Raumkürzel ${where}`);
     const marker = DIRECTION_MARKERS.find((entry) => source.profile.markers.includes(entry));
     if (marker) claim("direction", marker, "profile", 0.88 - weight, `${schemaName}: Kennwort ${where}`);
     for (const aspect of source.profile.aspects) {
@@ -207,7 +207,7 @@ export function analyzeGroupAddress(
   for (const link of node.links.filter((entry) => isCabinet(entry, graph))) {
     const text = `${link.device.product?.text ?? ""} ${link.device.applicationName ?? ""}`;
     const match = PRODUCT_TRADE.find(([pattern]) => pattern.test(text));
-    if (match) claim("trade", match[1], "manufacturer", 0.6, `verknuepfter Aktor "${link.device.product?.text ?? link.device.device.id}"`);
+    if (match) claim("trade", match[1], "manufacturer", 0.6, `verknüpfter Aktor "${link.device.product?.text ?? link.device.device.id}"`);
   }
 
   // Richtung
@@ -246,7 +246,7 @@ export function analyzeGroupAddress(
   const gaDpt = node.ga.dpts[0];
   if (gaDpt) claim("dpt", gaDpt, "ets-ga", 0.95, "DatapointType an der GA");
   const coDpt = comObjectDpt(node);
-  if (coDpt) claim("dpt", coDpt, "manufacturer", 0.9, "DPT der verknuepften Kommunikationsobjekte");
+  if (coDpt) claim("dpt", coDpt, "manufacturer", 0.9, "DPT der verknüpften Kommunikationsobjekte");
   for (const aspect of name.aspects) {
     const dpt = ASPECTS[aspect].dpt;
     if (dpt && fitsSize(dpt)) claim("dpt", dpt, "name", 0.6, `Begriff "${aspect}" im Namen`);
@@ -298,12 +298,12 @@ export function analyzeGroupAddress(
   if (deviceRooms.length === 1 && deviceRoom && !outdoor) {
     // Raumregler sitzen im geregelten Raum, Taster oft nebenan.
     const confidence = tradeGuess === "hvac" ? 0.8 : 0.5;
-    claim("room", deviceRoom, "device-location", confidence, "Einbauort der verknuepften Bedien- und Sensorgeraete");
+    claim("room", deviceRoom, "device-location", confidence, "Einbauort der verknüpften Bedien- und Sensorgeräte");
   }
   const central = anyMarker("central");
   if (central && !claims.some((entry) => entry.dimension === "room" && entry.source !== "hierarchy")) {
     const buildings = graph.loaded.project.spaces.filter((space) => space.type === "Building");
-    if (buildings.length === 1 && buildings[0]) claim("room", buildings[0].id, "name", 0.6, "Zentralfunktion, gilt fuer das Gebaeude");
+    if (buildings.length === 1 && buildings[0]) claim("room", buildings[0].id, "name", 0.6, "Zentralfunktion, gilt für das Gebäude");
   }
 
   return {
