@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+ausgabe/
+*.log
+
+# Kundenprojekte bleiben lokal, nie ins oeffentliche Repo
+fixtures/privat/
