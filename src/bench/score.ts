@@ -36,6 +36,8 @@ export function accuracy(score: DimensionScore): number {
 }
 
 function equal(dimension: Dimension, expected: string, actual: string): boolean {
+  // Ein Haupttyp im Gold ("DPT-1") bewertet nur den Haupttyp; der Untertyp ist dort offen.
+  if (dimension === "dpt" && /^DPT-\d+$/i.test(expected)) return dptMainNumber(expected) === dptMainNumber(actual);
   if (dimension === "dpt" || dimension === "direction") return expected.toUpperCase() === actual.toUpperCase();
   return normalizeText(expected) === normalizeText(actual);
 }

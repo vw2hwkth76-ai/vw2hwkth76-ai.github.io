@@ -6,6 +6,9 @@ import { compileProfile, parseProfile } from "../src/recognize/profile.ts";
 import { formatScores, type Score, score } from "../src/bench/score.ts";
 import { loadKnxProject } from "../src/ets/load.ts";
 import { buildGraph } from "../src/graph/evidence-graph.ts";
+import { formatReadiness, type Readiness, readiness } from "../src/bench/readiness.ts";
+import type { AnalyzeOptions } from "../src/recognize/analyze.ts";
+import { analyzeProject } from "../src/recognize/pipeline.ts";
 
 /** Projekte mit Gold-Standard. Private Projekte laufen nur, wenn sie lokal vorliegen. */
 const CASES: readonly { project: string; gold: string; profile?: string }[] = [
@@ -16,10 +19,12 @@ const CASES: readonly { project: string; gold: string; profile?: string }[] = [
     profile: "fixtures/oeffentlich/demoprojekt.namensschema.json",
   },
   { project: "fixtures/privat/musterprojekt-ets6.knxproj", gold: "fixtures/privat/musterprojekt-ets6.gold.json" },
+  { project: "fixtures/privat/schule.knxproj", gold: "fixtures/privat/schule.gold.json" },
 ];
 
 const showErrors = process.argv.includes("--fehler");
 const scores: Score[] = [];
+const ready: { project: string; predictor: string; result: Readiness }[] = [];
 for (const entry of CASES) {
   if (!existsSync(entry.project) || !existsSync(entry.gold)) {
     console.log(`uebersprungen (nicht vorhanden): ${entry.project}`);
@@ -35,9 +40,16 @@ for (const entry of CASES) {
     predictors.push(recognitionPredictor("profil-ohne-ets", "Erkennung mit Namensschema, ohne ETS-Funktionen", () => ({ useEtsFunctions: false, profile })));
   }
   for (const predictor of predictors) scores.push(score(graph, gold, predictor));
+  const variants: [string, AnalyzeOptions][] = [
+    ["erkennung", { useEtsFunctions: true }],
+    ["erkennung-ohne-ets", { useEtsFunctions: false }],
+  ];
+  for (const [id, options] of variants) ready.push({ project: gold.project, predictor: id, result: readiness(analyzeProject(graph, options), gold) });
 }
 
 console.log(formatScores(scores));
+console.log("");
+console.log(formatReadiness(ready));
 if (showErrors) {
   for (const result of scores) {
     for (const error of result.errors) {

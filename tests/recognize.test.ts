@@ -43,7 +43,8 @@ describe("Erkennung ohne ETS-Funktionen", () => {
   it("findet Raumkuerzel aus Initialen und raet bei mehrdeutiger Position nicht (Demoprojekt)", () => {
     const result = score(demo, gold("oeffentlich/demoprojekt.gold.json"), WITHOUT_ETS);
     expect(accuracy(result.dimensions.room)).toBe(1);
-    expect(result.dimensions.direction.correct).toBe(15);
+    // 0/0/12 entscheidet der Objekttext ("Status der Jalousie fuer Anzeige"), 0/0/13 hat keine Verknuepfung.
+    expect(result.dimensions.direction.correct).toBe(16);
     expect(result.dimensions.direction.wrong).toBe(0);
   });
 
@@ -104,7 +105,7 @@ describe("Things", () => {
   it("stellt fuer mehrdeutige Positionen eine Rueckfrage statt zu raten", () => {
     const analysis = analyzeProject(demo, { useEtsFunctions: false });
     const open = analysis.questions.filter((question) => question.dimension === "direction").map((question) => question.groupAddressId);
-    expect(open.sort()).toEqual(["P-045C-0_GA-12", "P-045C-0_GA-13"]);
+    expect(open.sort()).toEqual(["P-045C-0_GA-13"]);
   });
 
   it("trennt Meldungen von Zentralbefehlen (Style)", () => {

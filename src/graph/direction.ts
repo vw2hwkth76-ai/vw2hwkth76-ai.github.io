@@ -57,33 +57,77 @@ export function directionEvidence(node: GaNode, graph: ProjectGraph): DirectionE
   return evidence;
 }
 
+/** Text eines Kommunikationsobjekts, deutsch und englisch, klein geschrieben. */
+export function objectText(link: GaLink): string {
+  const co = link.comObject;
+  return [co.text, co.functionText, co.textDe, co.functionTextDe].filter((part) => part !== undefined && part !== "").join(" / ").toLowerCase();
+}
+
+/** Platzhalterobjekte ohne Bedeutung ("1 byte (3)/1 byte"), etwa einer Visualisierungsattrappe. */
+export function isNeutral(link: GaLink): boolean {
+  const co = link.comObject;
+  const parts = [co.text, co.functionText].filter((part) => part !== undefined && part !== "");
+  return parts.length > 0 && parts.every((part) => /^\s*\d+\s*(bit|bits|byte|bytes)\b[\s\d()]*$/i.test(part ?? ""));
+}
+
+/** Meldet einen Zustand oder Messwert. */
+const STATUS_WORDS =
+  /\b(status|actual|measured|indicat\w*|feedback|counter value|physical value|sensor|input|output presence|presence output|occupancy|trigger|eingang|anwesenheit)\b|(r(ü|ue)ckmeld|istwert|messwert|z(ä|ae)hlerstand)/;
+/** Meldet eine Stoerung. */
+const ALARM_WORDS = /\b(failure|fault|error|alarm|short circuit|mains failure|st(ö|oe)rung|fehler|kurzschluss|netzausfall)\b/;
+/** Stellgroesse eines Reglers: ein berechneter Zustand, kein Bedienbefehl. */
+const CONTROLLER_WORDS = /(control value|continuous variable|continous|actuating value|control circuit|stellgr(ö|oe)(ss|ß)e|stellwert)/;
+/** Bediengeraet, das Befehle sendet. */
+const OPERATOR_WORDS = /\b(push button|taster|value transmitter|wertgeber|switch object|switching|schalten|dimming|dimmen|output light|brighter|darker|heller|dunkler)\b/;
+const ACTUATOR_PRODUCT = /(actuator|aktor|drive|antrieb|dali|gateway|dimmer|i\/o unit)/i;
+
 function wiringDirection(node: GaNode, graph: ProjectGraph): DirectionEvidence | undefined {
-  const links = node.links.filter((link) => link.flagsKnown);
-  if (links.length === 0 || links.length !== node.links.length) return undefined;
+  const known = node.links.filter((link) => link.flagsKnown);
+  if (known.length === 0 || known.length !== node.links.length) return undefined;
+  const links = known.filter((link) => !isNeutral(link));
+  if (links.length === 0) return undefined;
 
-  const cabinet = (link: GaLink): boolean | undefined =>
-    link.device.product?.isRailMounted ?? (graph.deviceSpace.get(link.device.device.id)?.space.type === "DistributionBoard" ? true : undefined);
-
-  const cabinetSenders = links.filter((link) => cabinet(link) === true && link.sends);
-  const cabinetPureReceivers = links.filter((link) => cabinet(link) === true && link.receives && !link.sends);
+  const cabinet = (link: GaLink): boolean =>
+    link.device.product?.isRailMounted === true || graph.deviceSpace.get(link.device.device.id)?.space.type === "DistributionBoard";
+  const actuator = (link: GaLink): boolean => cabinet(link) || ACTUATOR_PRODUCT.test(link.device.product?.text ?? "");
   const describe = (link: GaLink): string =>
     `${link.device.device.individualAddress ?? link.device.device.id} "${link.comObject.functionText ?? link.comObject.text ?? link.comObject.refId}"`;
+  const result = (value: Direction, detail: string, sources: readonly GaLink[]): DirectionEvidence => {
+    const alarm = value === "status" && sources.some((link) => ALARM_WORDS.test(objectText(link)));
+    return { value: alarm ? "alarm" : value, source: "ets-wiring", detail: alarm ? `${detail}; Störung laut Objekttext` : detail };
+  };
 
-  if (cabinetSenders.length > 0 && cabinetPureReceivers.length === 0) {
-    return { value: "status", source: "ets-wiring", detail: `Aktor sendet auf der GA: ${cabinetSenders.map(describe).join(", ")}` };
-  }
-  if (cabinetPureReceivers.length > 0 && cabinetSenders.length === 0) {
-    return {
-      value: "command",
-      source: "ets-wiring",
-      detail: `Aktor empfängt nur (Schreiben-Flag): ${cabinetPureReceivers.map(describe).join(", ")}`,
-    };
-  }
-  if (cabinetSenders.length > 0 || links.some((link) => cabinet(link) !== false)) return undefined;
+  const reportsState = (link: GaLink): boolean => STATUS_WORDS.test(objectText(link)) || ALARM_WORDS.test(objectText(link));
+  // Aktorobjekte: reine Sender melden Zustaende, Eingaenge ebenfalls; Ausgaenge mit Schreib-Flag werden gesteuert,
+  // auch wenn sie zusaetzlich senden (Rueckmeldung ueber dasselbe Objekt).
+  const actuatorLinks = links.filter(actuator);
+  const sources = actuatorLinks.filter((link) => link.sends && (!link.receives || reportsState(link)));
+  const targets = actuatorLinks.filter((link) => link.receives && !reportsState(link));
+  const controllers = links.filter((link) => link.sends && !actuator(link) && CONTROLLER_WORDS.test(objectText(link)));
 
-  const readableSenders = links.filter((link) => link.sends && link.answersRead);
-  if (readableSenders.length > 0) {
-    return { value: "status", source: "ets-wiring", detail: `lesbarer Sender ohne Aktor: ${readableSenders.map(describe).join(", ")}` };
+  if (controllers.length > 0 && targets.length > 0) {
+    return result("status", `Stellgröße eines Reglers: ${controllers.map(describe).join(", ")}`, controllers);
+  }
+  // Ein Sensor, dessen Messwert ein Aktor verwertet (Raumtemperatur an den Heizungsaktor), bleibt ein Zustand.
+  const sensors = links.filter((link) => link.sends && !actuator(link) && reportsState(link) && !OPERATOR_WORDS.test(objectText(link)));
+  if (sensors.length > 0 && targets.length > 0 && sources.length === 0) {
+    return result("status", `Sensor meldet, Aktor verwertet: ${sensors.map(describe).join(", ")}`, sensors);
+  }
+  if (sources.length > 0 && targets.length === 0) return result("status", `Aktor meldet auf der GA: ${sources.map(describe).join(", ")}`, sources);
+  if (targets.length > 0 && sources.length === 0) return result("command", `Aktor wird gesteuert: ${targets.map(describe).join(", ")}`, targets);
+  if (actuatorLinks.length > 0) return undefined;
+
+  // Ohne Aktor: Was Sensoren und Bediengeraete senden, sagt ihr Objekttext.
+  const senders = links.filter((link) => link.sends);
+  const reporting = senders.filter(reportsState);
+  if (reporting.length > 0) return result("status", `Sensor meldet: ${reporting.map(describe).join(", ")}`, reporting);
+  const operating = senders.filter((link) => OPERATOR_WORDS.test(objectText(link)));
+  if (operating.length > 0) return result("command", `Bediengerät sendet: ${operating.map(describe).join(", ")}`, operating);
+  const readable = senders.filter((link) => link.answersRead);
+  if (readable.length > 0) return result("status", `lesbarer Sender ohne Aktor: ${readable.map(describe).join(", ")}`, readable);
+  const receivers = links.filter((link) => link.receives);
+  if (senders.length === 0 && receivers.length > 0) {
+    return result("command", `nur Empfänger, der Wert kommt von außen: ${receivers.map(describe).join(", ")}`, receivers);
   }
   return undefined;
 }

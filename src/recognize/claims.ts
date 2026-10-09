@@ -78,6 +78,8 @@ export function decide(claims: readonly Claim[], dimension: ClaimDimension): Dec
 }
 
 function sameValue(dimension: ClaimDimension, a: string, b: string): boolean {
+  // Rueckmeldung und Meldung werden beide gelesen; das ist kein Widerspruch, der eine Rueckfrage lohnt.
+  if (dimension === "direction") return a === b || (a !== "command" && b !== "command");
   if (dimension !== "dpt") return a === b;
   // Gleicher Haupttyp heisst gleiche Kodierung; der Untertyp der GA gewinnt ohnehin.
   const main = (dpt: string): string => dpt.replace(/^DPST-(\d+)-\d+$/, "DPT-$1");

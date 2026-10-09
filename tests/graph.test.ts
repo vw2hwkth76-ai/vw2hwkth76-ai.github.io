@@ -50,7 +50,11 @@ describe("Evidenz-Graph", () => {
     const value = (text: string) => directionEvidence(node(demo, text), demo).find((entry) => entry.source === "ets-wiring")?.value;
     expect(value("0/0/1")).toBe("command");
     expect(value("0/0/2")).toBe("status");
+    // Raumtemperatur: Der Taster misst, der Heizungsaktor verwertet nur.
     expect(value("0/0/14")).toBe("status");
+    // Anzeigeobjekt eines Tasters ohne Aktor auf der GA: der Objekttext entscheidet.
+    expect(value("0/0/12")).toBe("status");
+    expect(value("0/0/16")).toBe("status");
     expect(value("0/0/17")).toBe("command");
     expect(value("0/0/10")).toBeUndefined();
   });

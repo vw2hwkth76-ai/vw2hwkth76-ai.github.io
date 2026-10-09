@@ -13,6 +13,8 @@ export interface GoldEntry {
   readonly function: string | undefined;
   readonly direction: Direction | undefined;
   readonly dpt: string | undefined;
+  /** Soll-Buendelung: GAs mit gleichem Wert gehoeren in ein Thing; ohne Wert steht die GA allein. */
+  readonly thing: string | undefined;
 }
 
 export interface GoldStandard {
@@ -43,6 +45,7 @@ export function parseGold(json: unknown): GoldStandard {
       function: text(value["funktion"]),
       direction,
       dpt: dpt === undefined ? undefined : (normalizeDpt(dpt) ?? dpt),
+      thing: text(value["thing"]),
     });
   }
   return { project: json["projekt"], entries };
