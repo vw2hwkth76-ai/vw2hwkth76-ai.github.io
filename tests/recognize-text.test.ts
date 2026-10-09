@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
 import type { Space } from "../src/ets/model.ts";
-import { findWords } from "../src/recognize/lexicon.ts";
-import { RoomMatcher } from "../src/recognize/rooms.ts";
+import { findWords, splitKnown } from "../src/recognize/lexicon.ts";
+import { codeKeys, RoomMatcher } from "../src/recognize/rooms.ts";
 import { tokenize } from "../src/recognize/text.ts";
 
-const space = (id: string, name: string, type = "Room"): Space => ({
+const space = (id: string, name: string, type = "Room", parentId?: string): Space => ({
   id,
   name,
   type,
   usage: undefined,
   number: undefined,
   description: "",
-  parentId: undefined,
+  parentId,
   deviceIds: [],
 });
 
@@ -42,6 +42,17 @@ const SCHOOL = new RoomMatcher([
   space("store", "Dark Room/ Art Store"),
 ]);
 
+/** Gewerbebau mit Raumnummern; gleich benannte Flurzonen in zwei Gebaeuden. */
+const CAMPUS = new RoomMatcher([
+  space("a12", "Site Level 1 Area 1&2", "Building"),
+  space("a7", "Site Level 1 Area 7", "Building"),
+  space("r057", "02_L1/B/057_Male_WC_&_Lobby", "Room", "a12"),
+  space("sr10", "10_L1/B/SR10_Plant", "Room", "a12"),
+  space("cz1a", "12_Corridor_Zone1", "Room", "a12"),
+  space("cz1b", "19_Corridor_Zone1", "Room", "a7"),
+  space("r703", "01_L1/A/003_Disabled_WC", "Room", "a7"),
+]);
+
 const rooms = (matcher: RoomMatcher, name: string): string[] => matcher.findRooms(tokenize(name)).matches.map((match) => match.spaceId).sort();
 
 describe("tokenize", () => {
@@ -52,6 +63,15 @@ describe("tokenize", () => {
     expect(tokenize("Betriebsm. Kompf.Zentral").map((token) => token.norm)).toEqual(["betriebsm", "kompf", "zentral"]);
     expect(tokenize("Physlab2G_PIRDisable").map((token) => token.norm)).toEqual(["physlab", "2", "g", "pir", "disable"]);
     expect(tokenize("BIQ").map((token) => token.norm)).toEqual(["biq"]);
+  });
+});
+
+describe("splitKnown", () => {
+  it("teilt klein zusammengeschriebene Fachwoerter, wenn beide Teile bekannt sind", () => {
+    expect(splitKnown("valuelights")).toEqual(["value", "lights"]);
+    expect(splitKnown("currentsetpoint")).toEqual(["current", "setpoint"]);
+    expect(splitKnown("wohnzimmer")).toBeUndefined();
+    expect(splitKnown("switch")).toBeUndefined();
   });
 });
 
@@ -136,6 +156,24 @@ describe("RoomMatcher", () => {
     expect(rooms(SCHOOL, "Physlab2G_Airquality_Sensor")).toEqual(["p2"]);
     // Ein Kuerzel allein ("Art" im Lager) reicht nicht.
     expect(rooms(SCHOOL, "Art_Extract_Fault")).toEqual([]);
+  });
+
+  it("erkennt Raumnummern im GA-Namen", () => {
+    expect(codeKeys("02_L1/B/057_Male_WC_&_Lobby")).toEqual(expect.arrayContaining(["b057", "l1b057"]));
+    expect(codeKeys("12_Corridor_Zone1")).toEqual(expect.arrayContaining(["corz1", "corridorzone1"]));
+    expect(codeKeys("Kitchen")).toEqual([]);
+    expect(rooms(CAMPUS, "A0101B057_ASwitchLights_Input")).toEqual(["r057"]);
+    expect(rooms(CAMPUS, "A0101BSR10_EmLamp1")).toEqual(["sr10"]);
+    // "A003" ist eine andere Zone als "B057": keine Verwechslung ueber die Nummer allein.
+    expect(rooms(CAMPUS, "A0101B003_SpaceOcc")).toEqual([]);
+    // Gleiche Flurzone in zwei Gebaeuden: beide bleiben stehen, der Gruppenbereich entscheidet spaeter.
+    expect(rooms(CAMPUS, "A0101BCORZ1_SpaceOcc")).toEqual(["cz1a", "cz1b"]);
+  });
+
+  it("unterscheidet Gebaeude nur an dem, was sie unterscheidet", () => {
+    // "Site", "Level", "Area" stehen in jedem Gebaeudenamen; "1&2" macht den Unterschied.
+    expect(rooms(CAMPUS, "Level 1 Area 1&2")).toEqual(["a12"]);
+    expect(rooms(CAMPUS, "Level 1 Area 7")).toEqual(["a7"]);
   });
 
   it("findet Etagen nur exakt", () => {

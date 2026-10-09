@@ -82,14 +82,25 @@ stillen Entscheidung.
   unter ETS-Angaben und Verdrahtung, über jeder Namensheuristik. Häufige
   Kürzel ohne Bedeutung werden mit Beispielen und DPT-Hinweisen gelistet,
   als Vorlage für das Profil und später für den KI-Vorschlag.
+- **Raumnummern:** "A0101B057_..." trifft den Raum "02_L1/B/057_..."; Räume
+  ohne Nummerncode über Kurzformen ("CORZ1" für "Corridor_Zone1"). Gibt es
+  denselben Raumnamen in mehreren Gebäuden, entscheidet das Gebäude, das der
+  Gruppenbereich nennt; Wörter, die in jedem Gebäudenamen stehen, zählen
+  dabei nicht.
+- **Projektkonvention:** GAs, deren Name ohne Raum gleich lautet, tragen
+  dieselbe Funktion. Was die verknüpften unter ihnen über Verdrahtung und
+  Objekt-DPT belegen, gilt für die unverknüpften, solange sie sich einig sind.
 - **Rückfragen** für Widersprüche, Mehrdeutigkeiten, fehlende Werte und
-  doppelte Rollen. Mehrdeutige Begriffe ("Wert", "Position") ohne Kennwort
-  werden bewusst nicht geraten.
+  doppelte Rollen, je Funktion statt je GA: Fehlt der DPT bei 49 gleichartigen
+  GAs, ist das eine Frage, und die Antwort gilt für alle. Mehrdeutige Begriffe
+  ("Wert", "Position") ohne Kennwort werden bewusst nicht geraten.
 
 ## Oberfläche (Schritt 3)
 
-- **Import** per Datei oder Beispielprojekt, geschützte ETS5- und
-  ETS6-Projekte mit Passwortdialog. Die Analyse läuft in einem Web Worker.
+- **Import** als `.knxproj`, als ZIP eines entpackten Projekts (auch mit
+  Unterordner oder mit einer `.knxproj` darin), als entpackter Ordner oder
+  Beispielprojekt; geschützte ETS5- und ETS6-Projekte mit Passwortdialog.
+  Die Analyse läuft in einem Web Worker.
 - **Übersicht:** Kennzahlen, Anteil entschiedener Werte je Dimension nach
   Belegstärke, Trefferquote gegen die eigenen Bestätigungen, Hinweise aus
   dem Projekt. Schalter, ob ETS-Funktionen als Beleg zählen.
@@ -162,25 +173,31 @@ Vorgänger, in Klammern die Werte von `ets2td`.
 | Demoprojekt, mit Namensschema (5 Kürzel) | 100 % | 63,2 % + 7 teils | 94,1 % | 100 % |
 | Demoprojekt, mit allem | 100 % | 100 % | 100 % | 100 % |
 | Musterprojekt (ETS6, lokal) | 100 % (85,0) | 86,5 % (91,9) | 100 % (71,1) | 100 % (67,6) |
-| Schulprojekt (ETS3-Zeit, lokal, kein DPT im Projekt) | 97,5 % | – | 98,6 % | 99,6 % |
+| Schulprojekt (ETS3-Zeit, lokal, kein DPT im Projekt) | 97,5 % | – | 99,1 % | 99,6 % |
+| Projekt C (Gewerbebau, 6 % der GAs verknüpft, kein DPT) | 100 % (4,7) | – | 98,2 % (58,2) | 97,2 % (59,1) |
 
 Dazu misst der Benchmark, wie viel ohne Rückfrage in Thing Descriptions
 geht: Anteil der GAs, die in einem Thing liegen, Richtung und DPT
 entschieden haben und keine offene Rückfrage tragen; die Bündelung paarweise
 gegen die Soll-Things des Gold-Standards.
 
-| Projekt | TD-fertig ohne Rückfrage | Bündelung Präzision | Bündelung Vollständigkeit |
-|---|---|---|---|
-| Style | 100 % | – | – |
-| Demoprojekt | 89,5 % | – | – |
-| Musterprojekt (lokal) | 69,1 % | – | – |
-| Schulprojekt (lokal) | 99,7 % (vorher 39,1) | 99,6 % (57,8) | 91,8 % (22,9) |
+| Projekt | TD-fertig ohne Rückfrage | Rückfragen | Bündelung Präzision | Bündelung Vollständigkeit |
+|---|---|---|---|---|
+| Style | 100 % | 0 | – | – |
+| Demoprojekt | 89,5 % | 2 | – | – |
+| Musterprojekt (lokal) | 69,1 % | 47 | – | – |
+| Schulprojekt (lokal) | 99,7 % (vorher 39,1) | 7 (555) | 98,9 % (57,8) | 93,1 % (22,9) |
+| Projekt C (lokal), blind gemessen | 3,8 % | 842 | 95,4 % | 9,9 % |
+| Projekt C nach Anpassung | 72,6 % | 28 | 100 % | 99,8 % |
 
 Einordnung:
 
 - Das **Musterprojekt und das Schulprojekt sind Trainingsmaterial**, kein
   Test: Vokabular und Regeln sind beim Blick auf genau diese Projekte
   entstanden. Belastbar werden die Zahlen erst an ungesehenen Projekten.
+- Bei Projekt C fehlt für gut ein Viertel der GAs jeder Beleg zur Kodierung
+  (herstellereigene 3- und 4-Byte-Objekte ohne DPT, unverknüpfte
+  Reglerfunktionen). Das bleibt bewusst eine Rückfrage, je Funktion eine.
 - "TD-fertig" heißt entschieden, nicht fehlerfrei: Beim Schulprojekt liegen
   einige Things auf Gebäude- oder Bereichsebene, wo kein Raum erkennbar war,
   und manche DPTs sind nur im Haupttyp bekannt (1 Bit ohne Untertyp).

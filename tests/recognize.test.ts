@@ -62,6 +62,25 @@ describe("Erkennung ohne ETS-Funktionen", () => {
     expect(ready.bundling?.recall).toBeGreaterThanOrEqual(0.9);
   });
 
+  it.skipIf(!hasFixture("privat/projekt-c.zip"))("haelt die Werte am Projekt mit Raumnummern und kaum Verknuepfungen (nur lokal)", async () => {
+    const graph = await graphOf("privat/projekt-c.zip");
+    const goldC = gold("privat/projekt-c.gold.json");
+    const result = score(graph, goldC, WITH_ETS);
+    expect(accuracy(result.dimensions.room)).toBe(1);
+    expect(result.dimensions.direction.wrong).toBe(0);
+    expect(result.dimensions.dpt.wrong).toBe(0);
+    expect(accuracy(result.dimensions.direction)).toBeGreaterThanOrEqual(0.97);
+    expect(accuracy(result.dimensions.dpt)).toBeGreaterThanOrEqual(0.97);
+    const analysis = analyzeProject(graph, { useEtsFunctions: true });
+    const ready = readiness(analysis, goldC);
+    expect(ready.ready / ready.groupAddresses).toBeGreaterThanOrEqual(0.72);
+    expect(ready.bundling?.precision).toBe(1);
+    expect(ready.bundling?.recall).toBeGreaterThanOrEqual(0.99);
+    // Eine Frage je Funktion statt je GA.
+    expect(analysis.questions.length).toBeLessThanOrEqual(30);
+    expect(analysis.questions.some((question) => question.groupAddressIds.length >= 49)).toBe(true);
+  });
+
   it.skipIf(!hasFixture("privat/musterprojekt-ets6.knxproj"))("haelt die Werte am Musterprojekt (Trainingsprojekt, ets2td: 85 / 92 / 71 / 68 %)", async () => {
     const graph = await graphOf("privat/musterprojekt-ets6.knxproj");
     const result = score(graph, gold("privat/musterprojekt-ets6.gold.json"), WITHOUT_ETS);

@@ -80,12 +80,16 @@ const ROLE_MAINS: Readonly<Record<string, readonly number[]>> = {
   AirQuality: [9, 5],
   WindowStatus: [1],
   Presence: [1],
+  PresenceTrigger: [1],
   Alarm: [1, 5],
   ForcedPosition: [1, 2],
   SummerMode: [1],
   HeatCoolMode: [1],
   TempOutside: [9, 14],
   TextMessage: [16],
+  SetpointShift: [9, 6, 1, 14],
+  HeatingDemand: [1, 5],
+  CoolingDemand: [1, 5],
   MeterReading: [7, 8, 12, 13, 14],
   WindAlarm: [1],
   WindSpeed: [9, 14],
@@ -141,6 +145,9 @@ const ROLES: Readonly<Partial<Record<Trade | "any", Partial<Record<Aspect, RoleR
     airQuality: () => "AirQuality",
     summer: () => "SummerMode",
     heatCool: () => "HeatCoolMode",
+    setpointShift: () => "SetpointShift",
+    heatingDemand: () => "HeatingDemand",
+    coolingDemand: () => "CoolingDemand",
   },
   monitoring: {
     // Temperatur einer Wetterstation ist die Aussentemperatur.
@@ -160,6 +167,10 @@ const ROLES: Readonly<Partial<Record<Trade | "any", Partial<Record<Aspect, RoleR
     heatCool: () => "HeatCoolMode",
     text: () => "TextMessage",
     counter: () => "MeterReading",
+    lux: () => "Illuminance",
+    trigger: () => "PresenceTrigger",
+    errorCode: () => "ErrorCode",
+    setpointShift: () => "SetpointShift",
     time: () => "Time",
     date: () => "Date",
     operating: () => "OperatingStatus",
@@ -247,8 +258,11 @@ export function roleOf(entry: GaRecognition, trade: string | undefined): string 
   const dpt = entry.decisions.dpt.winner?.value;
   const main = dpt ? dptMainNumber(dpt) : undefined;
   const ignore = (isTrade(trade) ? LOCATION_ASPECTS[trade] : undefined) ?? NO_ASPECTS;
+  const bare = entry.analysis.name.aspects.every((aspect) => ignore.has(aspect));
+  // Eine Meldung ohne weiteren Begriff ("AlarmHeatingState") ist eine Meldung, kein Heizstatus.
+  if (entry.analysis.name.markers.has("alarm") && bare && fitsRole("Alarm", main)) return "Alarm";
   // Ein blosses Kennwort im Namen ("Status") geht vor dem Aspekt des Gruppenbereichs ("Heizen").
-  if (entry.analysis.name.markers.has("status") && entry.analysis.name.aspects.every((aspect) => ignore.has(aspect))) {
+  if (entry.analysis.name.markers.has("status") && bare) {
     const role = statusRole(trade, main);
     if (role) return role;
   }
@@ -299,7 +313,7 @@ function thingType(trade: string | undefined, roles: ReadonlySet<string>): Thing
       return "System";
     case "monitoring":
       if (roles.has("WindowStatus")) return "WindowContact";
-      if (roles.has("Presence")) return "Presence";
+      if (roles.has("Presence") || roles.has("PresenceTrigger")) return "Presence";
       if (roles.has("WindAlarm") || roles.has("RainAlarm")) return "Weather";
       return "Alarm";
     default:

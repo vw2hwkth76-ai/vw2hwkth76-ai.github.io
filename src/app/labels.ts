@@ -17,6 +17,7 @@ export const SOURCE_LABEL: Readonly<Record<ClaimSource, string>> = {
   hierarchy: "Gruppenbereich",
   "device-location": "Gerätestandort",
   pairing: "Paar",
+  convention: "Konvention",
   family: "Familie",
   default: "Annahme",
 };
@@ -82,6 +83,12 @@ export const ASPECT_LABEL: Readonly<Record<Aspect, string>> = {
   heatCool: "Heizen/Kühlen",
   text: "Text",
   counter: "Zählerstand",
+  lux: "Helligkeit",
+  setpointShift: "Sollwertverschiebung",
+  errorCode: "Fehlercode",
+  trigger: "Trigger",
+  heatingDemand: "Heizanforderung",
+  coolingDemand: "Kühlanforderung",
 };
 
 export const MARKER_LABEL: Readonly<Record<Marker, string>> = {

@@ -5,9 +5,10 @@ import { normalizeText, type Token, tokenize } from "./text.ts";
  * "sequence": alle Bestandteile des Raumnamens im GA-Namen, auch gekuerzt,
  * als Synonym oder in anderer Reihenfolge; "loose" ebenso, aber ohne den
  * Geschossbuchstaben hinter der Raumnummer; "mismatch" mit anderem
- * Geschossbuchstaben ("Lab8F" fuer "Lab8G"), nur wenn es keinen besseren gibt.
+ * Geschossbuchstaben ("Lab8F" fuer "Lab8G"), nur wenn es keinen besseren gibt;
+ * "code": die Raumnummer ("A0101B057" fuer "02_L1/B/057_Male_WC").
  */
-export type RoomMatchKind = "full" | "sequence" | "loose" | "mismatch" | "abbreviation" | "compound" | "initials" | "partial";
+export type RoomMatchKind = "code" | "full" | "sequence" | "loose" | "mismatch" | "abbreviation" | "compound" | "initials" | "partial";
 
 export interface RoomMatch {
   readonly spaceId: string;
@@ -24,7 +25,7 @@ export interface RoomFinding {
 
 const ROOM_TYPES = new Set(["Room", "Corridor", "Stairway", "Stairs", "BuildingPart", "Space"]);
 const GENERIC = new Set(["room", "raum", "zimmer", "bereich", "area", "zone", "floor", "etage", "geschoss", "haus", "house", "the", "und", "and"]);
-const RANK: Readonly<Record<RoomMatchKind, number>> = { full: 3, sequence: 3, loose: 2, mismatch: 1, abbreviation: 2, compound: 2, initials: 2, partial: 1 };
+const RANK: Readonly<Record<RoomMatchKind, number>> = { code: 4, full: 3, sequence: 3, loose: 2, mismatch: 1, abbreviation: 2, compound: 2, initials: 2, partial: 1 };
 /** Grundwoerter deutscher Raumnamen, aus denen Kuerzel wie "WZ" oder "SZ" entstehen. */
 const ROOM_HEADS = ["zimmer", "raum", "kammer", "stube", "flur", "bereich", "kueche", "bad"];
 const MIN_ABBREVIATION = 3;
@@ -37,10 +38,14 @@ interface Candidate {
   readonly initials: string | undefined;
   /** Bestandteile fuer den Sequenzabgleich, zerlegt wie GA-Namen ("Lab2G" zu lab, 2, g). */
   readonly sequence: SequenceParts | undefined;
+  /** Schluessel der Raumnummer in Vergleichsform ("b057", "l1b057", "corz1"). */
+  readonly codes: readonly string[];
 }
 
 interface SequenceParts {
   readonly words: readonly string[];
+  /** Woerter, die alle Raeume dieser Art tragen ("Site Level ... Area" in jedem Gebaeudenamen): unterscheiden nichts. */
+  readonly optional: ReadonlySet<string>;
   readonly numbers: readonly string[];
   /** Einzelbuchstaben, meist das Geschoss hinter der Raumnummer. */
   readonly letters: readonly string[];
@@ -62,7 +67,71 @@ function sequenceParts(name: string): SequenceParts | undefined {
   const tokens = tokenize(core).map((token) => token.norm).filter((norm) => !GENERIC.has(norm));
   const words = tokens.filter((norm) => /^[a-z]{2,}$/.test(norm));
   if (words.length === 0) return undefined;
-  return { words, numbers: tokens.filter((norm) => /^\d+$/.test(norm)), letters: tokens.filter((norm) => /^[a-z]$/.test(norm)) };
+  return { words, optional: new Set(), numbers: tokens.filter((norm) => /^\d+$/.test(norm)), letters: tokens.filter((norm) => /^[a-z]$/.test(norm)) };
+}
+
+const MIN_CODE = 4;
+
+/**
+ * Raumnummer als Vergleichsschluessel. "02_L1/B/057_Male_WC" (fuehrende Sortiernummer weg)
+ * ergibt "b057" und "l1b057"; ein Name ohne Nummerncode wie "Corridor_Zone1" ergibt
+ * Kurzformen aus den Wortanfaengen und der Nummer ("corz1", "corrzone1").
+ */
+export function codeKeys(name: string): string[] {
+  const keys = new Set<string>();
+  const core = name.replace(/^\s*\d+[_\s.-]+/, "");
+  const slashed = /[A-Za-z0-9]+(?:\/[A-Za-z0-9]+)+/.exec(core);
+  if (slashed) {
+    const parts = normalizeText(slashed[0].replace(/\//g, " ")).split(" ");
+    if (/\d/.test(parts[parts.length - 1] ?? "")) {
+      keys.add(parts.slice(-2).join(""));
+      keys.add(parts.join(""));
+    }
+  } else {
+    const tokens = tokenize(core.replace(/\([^)]*\)/g, " ")).map((token) => token.norm);
+    const number = tokens[tokens.length - 1];
+    const words = tokens.slice(0, -1);
+    if (number !== undefined && /^\d+$/.test(number) && words.length >= 2 && words.length <= 3 && words.every((word) => /^[a-z]+$/.test(word))) {
+      let stems = [""];
+      for (const word of words) {
+        const prefixes = new Set([1, 2, 3, 4].map((length) => word.slice(0, length)).concat(word));
+        stems = stems.flatMap((stem) => [...prefixes].map((prefix) => stem + prefix));
+      }
+      for (const stem of stems) keys.add(stem + number);
+    }
+  }
+  return [...keys].filter((key) => key.length >= MIN_CODE);
+}
+
+/** Zusammenhaengende Woerter eines Namens ("A0101B057") mit den Positionen ihrer Tokens. */
+function runs(tokens: readonly Token[]): { text: string; tokens: number[] }[] {
+  const result: { text: string; tokens: number[] }[] = [];
+  let previous: Token | undefined;
+  for (const token of tokens) {
+    const current = result[result.length - 1];
+    if (previous && current && token.start === previous.end) {
+      current.text += token.norm;
+      current.tokens.push(token.index);
+    } else {
+      result.push({ text: token.norm, tokens: [token.index] });
+    }
+    previous = token;
+  }
+  return result;
+}
+
+/** Raeume, deren Nummer ein Wort des Namens abschliesst; gleiche Nummern in mehreren Gebaeuden bleiben alle stehen. */
+function codeMatches(candidates: readonly Candidate[], tokens: readonly Token[]): RoomMatch[] {
+  const result: RoomMatch[] = [];
+  for (const run of runs(tokens)) {
+    if (!/\d/.test(run.text)) continue;
+    for (const candidate of candidates) {
+      if (candidate.codes.some((key) => run.text === key || run.text.endsWith(key))) {
+        result.push({ spaceId: candidate.space.id, tokens: run.tokens, kind: "code" });
+      }
+    }
+  }
+  return result;
 }
 
 function initialsOf(parts: readonly string[]): string | undefined {
@@ -75,6 +144,23 @@ function initialsOf(parts: readonly string[]): string | undefined {
   return undefined;
 }
 
+/** Woerter, die jeder Raum derselben Art im Namen traegt, werden optional. */
+function withCommonWords(candidates: readonly Candidate[]): Candidate[] {
+  const byType = new Map<string, Candidate[]>();
+  for (const entry of candidates) byType.set(entry.space.type, [...(byType.get(entry.space.type) ?? []), entry]);
+  const common = new Map<string, Set<string>>();
+  for (const [type, list] of byType) {
+    if (list.length < 2) continue;
+    const [head, ...rest] = list.map((entry) => new Set(entry.sequence?.words ?? []));
+    common.set(type, new Set([...(head ?? [])].filter((word) => rest.every((words) => words.has(word)))));
+  }
+  return candidates.map((entry) => {
+    const optional = common.get(entry.space.type);
+    if (!entry.sequence || !optional || optional.size === 0) return entry;
+    return { ...entry, sequence: { ...entry.sequence, optional } };
+  });
+}
+
 /** Gleicht Woerter eines Namens gegen die Raeume der ETS-Gebaeudestruktur ab. */
 export class RoomMatcher {
   readonly #rooms: Candidate[];
@@ -83,9 +169,13 @@ export class RoomMatcher {
   constructor(spaces: readonly Space[]) {
     const candidate = (space: Space): Candidate => {
       const parts = normalizeText(space.name).split(" ").filter((part) => part !== "");
-      return { space, parts, initials: initialsOf(parts), sequence: sequenceParts(space.name) };
+      return { space, parts, initials: initialsOf(parts), sequence: sequenceParts(space.name), codes: codeKeys(space.name) };
     };
-    this.#rooms = spaces.filter((space) => ROOM_TYPES.has(space.type)).map(candidate).filter((entry) => entry.parts.length > 0);
+    // Gebaeude zaehlen erst, wenn es mehrere gibt; dann nennt der Gruppenbereich oft, welches gemeint ist.
+    const buildings = spaces.filter((space) => space.type === "Building");
+    const types = buildings.length > 1 ? new Set([...ROOM_TYPES, "Building"]) : ROOM_TYPES;
+    const rooms = spaces.filter((space) => types.has(space.type)).map(candidate).filter((entry) => entry.parts.length > 0);
+    this.#rooms = withCommonWords(rooms);
     this.#floors = spaces.filter((space) => space.type === "Floor").map(candidate).filter((entry) => entry.parts.length > 0);
   }
 
@@ -103,6 +193,11 @@ export class RoomMatcher {
 }
 
 function match(candidates: readonly Candidate[], tokens: readonly Token[], fuzzy = true): RoomFinding {
+  if (fuzzy) {
+    // Eine Raumnummer ist der staerkste Hinweis im Namen.
+    const codes = codeMatches(candidates, tokens);
+    if (codes.length > 0) return { matches: codes, ambiguousTokens: [] };
+  }
   const raw: RoomMatch[] = [];
   const initialsCount = new Map<string, number>();
   for (const candidate of candidates) {
@@ -215,9 +310,10 @@ function sequenceMatch(parts: SequenceParts, tokens: readonly Token[]): { tokens
     const word = parts.words[index] ?? "";
     const token = take((entry) => sameWord(entry.norm, word) !== "none");
     if (token) {
-      if (sameWord(token.norm, word) === "exact") exact++;
+      if (sameWord(token.norm, word) === "exact" && !parts.optional.has(word)) exact++;
       continue;
     }
+    if (parts.optional.has(word)) continue;
     // Zusammengeschriebenes Kuerzel aus zwei Bestandteilen: "Physlab" fuer "Physics Lab".
     const next = parts.words[index + 1];
     const joined = next === undefined ? undefined : take((entry) => splitsInto(entry.norm, word, next));

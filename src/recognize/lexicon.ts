@@ -45,7 +45,13 @@ export type Aspect =
   | "summer"
   | "heatCool"
   | "text"
-  | "counter";
+  | "counter"
+  | "lux"
+  | "setpointShift"
+  | "errorCode"
+  | "trigger"
+  | "heatingDemand"
+  | "coolingDemand";
 
 export type Marker = "status" | "command" | "alarm" | "central" | "outOfUse" | "outdoor";
 
@@ -110,6 +116,12 @@ export const ASPECTS: Readonly<Record<Aspect, AspectInfo>> = {
   heatCool: { direction: "command", dpt: "DPST-1-100", trade: "hvac" },
   text: { direction: "status", dpt: "DPST-16-0", trade: undefined },
   counter: { direction: "status", dpt: "DPST-12-1", trade: "metering" },
+  lux: { direction: "status", dpt: "DPST-9-4", trade: "lighting" },
+  errorCode: { direction: "status", dpt: undefined, trade: undefined },
+  trigger: { direction: "status", dpt: "DPT-1", trade: undefined },
+  heatingDemand: { direction: undefined, dpt: undefined, trade: "hvac" },
+  coolingDemand: { direction: undefined, dpt: undefined, trade: "hvac" },
+  setpointShift: { direction: "command", dpt: "DPST-9-2", trade: "hvac" },
 };
 
 export function isAspect(value: unknown): value is Aspect {
@@ -134,6 +146,9 @@ add({ marker: "status" }, "rm rueckmeldung rueckm rueck status stat sta feedback
 add({ marker: "command" }, "soll cmd befehl set");
 add({ marker: "alarm" }, "alarm alarme alert alerts warnung warning feuer fire brand rauch smoke stoerung stoer fault failure fehler error ueberlast overload ausgeloest sabotage leckage leck einbruch panik ausfall kurzschluss");
 add({ marker: "alarm" }, "fault", "suffix");
+add({ marker: "status", aspect: "errorCode" }, "fehlercode errorcode");
+add({ aspect: "heatingDemand", trade: "hvac" }, "heizanforderung waermeanforderung");
+add({ aspect: "coolingDemand", trade: "hvac" }, "kuehlanforderung");
 add({ marker: "alarm" }, "alarm stoermeldung", "suffix");
 add({ marker: "central" }, "zentral central zentrale gesamt global");
 add({ marker: "outOfUse" }, "unbenutzt stillgelegt unused spare reserve dummy");
@@ -157,7 +172,9 @@ add({ aspect: "step" }, "kurz kurzzeit kurzzeitbetrieb step stop stopp schritt")
 add({ aspect: "position" }, "position pos hoehe height behangposition");
 add({ aspect: "slat" }, "lamelle lamellen slat slats lamellenposition");
 add({ aspect: "temperature" }, "temperatur temperature temp raumtemperatur", "both");
-add({ aspect: "setpoint" }, "sollwert setpoint solltemperatur");
+add({ aspect: "setpoint" }, "sollwert setpoint solltemperatur", "suffix");
+add({ aspect: "setpointShift" }, "sollwertverschiebung setpointshift");
+add({ aspect: "lux" }, "lux luxlevel beleuchtungsstaerke illuminance");
 add({ aspect: "mode" }, "betriebsart betriebsmodus betriebsm modus mode");
 add({ aspect: "modeComfort" }, "komfort kompf comfort");
 add({ aspect: "modeNight" }, "nacht night nachtabsenkung");
@@ -165,7 +182,9 @@ add({ aspect: "modeFrost" }, "frost frostschutz");
 add({ aspect: "modeStandby" }, "standby eco economy");
 add({ aspect: "valve" }, "stellwert stellgroesse variable ventil valve");
 add({ aspect: "window" }, "fenster fensterkontakt window kontakt contact", "suffix");
-add({ aspect: "presence" }, "praesenz presence anwesenheit bewegung motion belegung occupancy occupied pir", "both");
+add({ aspect: "presence" }, "praesenz presence anwesenheit bewegung motion belegung occupancy occupied occ pir", "both");
+// "Trigger" eines Praesenzmelders koppelt Master und Slave; er meldet nicht die Belegung des Raums.
+add({ aspect: "trigger" }, "trigger");
 add({ aspect: "damper", trade: "hvac" }, "damper klappe luftklappe", "suffix");
 add({ aspect: "forced" }, "forced zwang zwangsstellung zwangsposition zwangsfuehrung override", "prefix");
 add({ aspect: "summer", trade: "hvac" }, "summer sommer sommerbetrieb", "prefix");
@@ -197,6 +216,17 @@ const PHRASES: readonly { readonly words: readonly string[]; readonly info: Word
   { words: ["on", "off"], info: { aspect: "switch" } },
   { words: ["building", "protection"], info: { aspect: "modeFrost" } },
   { words: ["short", "circuit"], info: { marker: "alarm" } },
+  // Ein Fehlercode ist ein Wert, den das Geraet meldet, kein Alarmbit.
+  { words: ["error", "code"], info: { marker: "status", aspect: "errorCode" } },
+  { words: ["fehler", "code"], info: { marker: "status", aspect: "errorCode" } },
+  { words: ["heating", "demand"], info: { aspect: "heatingDemand", trade: "hvac" } },
+  { words: ["cooling", "demand"], info: { aspect: "coolingDemand", trade: "hvac" } },
+  { words: ["heating", "mode"], info: { aspect: "heatCool", trade: "hvac" } },
+  { words: ["occupancy", "mode"], info: { aspect: "mode", trade: "hvac" } },
+  { words: ["lux", "level"], info: { aspect: "lux" } },
+  { words: ["shift", "setpoint"], info: { aspect: "setpointShift" } },
+  { words: ["setpoint", "shift"], info: { aspect: "setpointShift" } },
+  { words: ["setpoint", "offset"], info: { aspect: "setpointShift" } },
   { words: ["heating", "cooling"], info: { aspect: "heatCool", trade: "hvac" } },
   { words: ["heizen", "kuehlen"], info: { aspect: "heatCool", trade: "hvac" } },
   { words: ["air", "quality"], info: { aspect: "airQuality", trade: "hvac" } },
@@ -212,6 +242,23 @@ export interface WordHit {
 const MIN_COMPOUND_PART = 4;
 
 /** Findet Fachbegriffe in einer Tokenfolge, Mehrwortbegriffe zuerst. */
+/** Woerter ohne eigene Bedeutung im Funktionsnamen ("_Input", "Test"); sie trennen weder Things noch Paare. */
+export const FILLER_WORDS: ReadonlySet<string> = new Set(["input", "eingang", "test"]);
+
+/**
+ * Zerlegt klein zusammengeschriebene Fachwoerter ("valuelights", "currentsetpoint"),
+ * wenn beide Teile im Vokabular stehen. Liefert die Teile oder undefined.
+ */
+export function splitKnown(word: string): readonly [string, string] | undefined {
+  if (word.length < 7 || words.has(word)) return undefined;
+  for (let cut = 3; cut <= word.length - 3; cut++) {
+    const head = word.slice(0, cut);
+    const tail = word.slice(cut);
+    if (words.has(head) && words.has(tail)) return [head, tail];
+  }
+  return undefined;
+}
+
 export function findWords(tokens: readonly Token[]): WordHit[] {
   const hits: WordHit[] = [];
   const used = new Set<number>();

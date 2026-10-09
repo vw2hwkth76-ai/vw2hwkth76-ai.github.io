@@ -1,10 +1,12 @@
 import { readFileSync } from "node:fs";
+import { unzipSync, zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 import { utf8 } from "../src/archive/bytes.ts";
 import { crc32 } from "../src/archive/crc32.ts";
 import { ArchiveError } from "../src/archive/errors.ts";
 import { deriveEts6ZipPassword, openEtsArchive } from "../src/archive/ets-archive.ts";
 import { DEFAULT_LIMITS, ZipArchive, type ZipEntry } from "../src/archive/zip.ts";
+import { loadKnxProject } from "../src/ets/load.ts";
 
 const fixture = (name: string): Uint8Array => readFileSync(new URL(`../fixtures/archiv/${name}`, import.meta.url));
 const TEXT = utf8("Wohnzimmer Licht Decke schalten 1/1/1\n".repeat(400));
@@ -131,5 +133,23 @@ describe("openEtsArchive", () => {
     expect(archive.installationXmls).toEqual(["P-045C/0.xml"]);
     expect(archive.manufacturerXmls).toContain("M-0083/Hardware.xml");
     expect(archive.manufacturerXmls).not.toContain("M-0083/Baggages/Symbol0_Balken.png");
+  });
+
+  it("liest entpackte, wieder gepackte Projekte, auch im Unterordner oder als .knxproj im ZIP", async () => {
+    const original = fixture("../oeffentlich/demoprojekt.knxproj");
+    const files = unzipSync(original);
+    const inFolder = zipSync(Object.fromEntries(Object.entries(files).map(([name, data]) => [`Export Demo/${name}`, data])));
+    const wrapped = zipSync({ "Anhang/demoprojekt.knxproj": original, "Anhang/Lies mich.txt": utf8("Projekt im Anhang") });
+    for (const variant of [zipSync(files), inFolder, wrapped]) {
+      const archive = await openEtsArchive(variant);
+      expect(archive.projectXml).toBe("P-045C/project.xml");
+      expect(archive.installationXmls).toEqual(["P-045C/0.xml"]);
+      expect(archive.manufacturerXmls).toContain("M-0083/Hardware.xml");
+      expect((await loadKnxProject(variant)).project.groupAddresses).toHaveLength(19);
+    }
+  });
+
+  it("lehnt ZIPs ohne ETS-Projekt verstaendlich ab", async () => {
+    expect(await errorCode(openEtsArchive(zipSync({ "notizen/text.txt": utf8("kein Projekt") })))).toBe("structure");
   });
 });

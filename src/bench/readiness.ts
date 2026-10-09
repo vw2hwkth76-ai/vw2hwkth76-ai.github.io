@@ -18,10 +18,12 @@ export interface Readiness {
   readonly singleThings: number;
   /** Paarweise Genauigkeit und Vollstaendigkeit der Buendelung gegen den Gold-Standard. */
   readonly bundling: { readonly precision: number; readonly recall: number } | undefined;
+  /** Rueckfragen, die ein Mensch beantworten muss; eine Frage je Funktion zaehlt einmal. */
+  readonly questions: number;
 }
 
 export function readiness(analysis: ProjectAnalysis, gold?: GoldStandard): Readiness {
-  const asked = new Set(analysis.questions.flatMap((question) => (question.groupAddressId ? [question.groupAddressId] : [])));
+  const asked = new Set(analysis.questions.flatMap((question) => question.groupAddressIds));
   let ready = 0;
   let firm = 0;
   const entries = analysis.recognition.groupAddresses;
@@ -65,18 +67,19 @@ export function readiness(analysis: ProjectAnalysis, gold?: GoldStandard): Readi
     things: analysis.things.length,
     singleThings: analysis.things.filter((thing) => thing.draft.groupAddressIds.length === 1).length,
     bundling,
+    questions: analysis.questions.length,
   };
 }
 
 export function formatReadiness(rows: readonly { readonly project: string; readonly predictor: string; readonly result: Readiness }[]): string {
   const percent = (value: number, total: number): string => `${total === 0 ? 0 : ((value / total) * 100).toFixed(1)} %`;
   const lines = [
-    "| Projekt | Verfahren | GAs | TD-fertig ohne Rückfrage | davon fest belegt | Things | davon mit 1 GA | Bündelung Präzision | Bündelung Vollständigkeit |",
-    "|---|---|---|---|---|---|---|---|---|",
+    "| Projekt | Verfahren | GAs | TD-fertig ohne Rückfrage | davon fest belegt | Rückfragen | Things | davon mit 1 GA | Bündelung Präzision | Bündelung Vollständigkeit |",
+    "|---|---|---|---|---|---|---|---|---|---|",
   ];
   for (const { project, predictor, result } of rows) {
     lines.push(
-      `| ${project} | ${predictor} | ${result.groupAddresses} | ${percent(result.ready, result.groupAddresses)} | ${percent(result.firm, result.groupAddresses)} | ${result.things} | ${result.singleThings} | ${result.bundling ? percent(result.bundling.precision, 1) : "–"} | ${result.bundling ? percent(result.bundling.recall, 1) : "–"} |`,
+      `| ${project} | ${predictor} | ${result.groupAddresses} | ${percent(result.ready, result.groupAddresses)} | ${percent(result.firm, result.groupAddresses)} | ${result.questions} | ${result.things} | ${result.singleThings} | ${result.bundling ? percent(result.bundling.precision, 1) : "–"} | ${result.bundling ? percent(result.bundling.recall, 1) : "–"} |`,
     );
   }
   return lines.join("\n");

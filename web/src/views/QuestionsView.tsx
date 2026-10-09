@@ -146,6 +146,7 @@ function QuestionRow({ question }: { readonly question: QuestionView }): ReactNo
             {QUESTION_KIND_LABEL[question.kind]}
           </Tag>
           <span className="helper">{dimension === "role" ? "Bündelung" : DIMENSION_LABEL[dimension]}</span>
+          {question.gaIds.length > 1 ? <span className="helper">{count(question.gaIds.length)} GAs</span> : null}
         </div>
         <p className="ws-question__text">{question.message}</p>
       </div>
@@ -157,7 +158,7 @@ function QuestionRow({ question }: { readonly question: QuestionView }): ReactNo
                 kind="tertiary"
                 size="sm"
                 title={suggestion.evidence}
-                onClick={() => workspace.setReview([gaId], dimension, suggestion.value)}
+                onClick={() => workspace.setReview(question.gaIds.length > 0 ? question.gaIds : [gaId], dimension, suggestion.value)}
               >
                 {suggestion.display}
               </Button>

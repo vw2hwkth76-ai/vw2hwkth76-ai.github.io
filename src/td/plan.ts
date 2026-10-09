@@ -273,7 +273,7 @@ function stableKey(thing: Thing, members: readonly GaRecognition[]): string {
 
 export function planThings(analysis: ProjectAnalysis, options: PlanOptions): TdPlan {
   const { recognition } = analysis;
-  const openQuestions = new Set(analysis.questions.flatMap((question) => (question.groupAddressId ? [question.groupAddressId] : [])));
+  const openQuestions = new Set(analysis.questions.flatMap((question) => question.groupAddressIds));
   const things: PlannedThing[] = [];
   const skipped: { key: string; title: string; reason: string }[] = [];
   let excludedCount = 0;
@@ -319,7 +319,9 @@ export function planThings(analysis: ProjectAnalysis, options: PlanOptions): TdP
       roomId: thing.draft.roomId,
       bundling: thing.draft.source,
       central: thing.draft.central,
-      openQuestions: analysis.questions.filter((question) => (question.groupAddressId ? memberIds.has(question.groupAddressId) : question.thingKey === thing.draft.key)).length,
+      openQuestions: analysis.questions.filter((question) =>
+        question.groupAddressIds.length > 0 ? question.groupAddressIds.some((id) => memberIds.has(id)) : question.thingKey === thing.draft.key,
+      ).length,
       affordances,
       excluded,
     });

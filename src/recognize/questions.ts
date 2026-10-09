@@ -1,7 +1,7 @@
 import { dptDotted } from "../ets/dpt-id.ts";
 import type { Claim, ClaimDimension } from "./claims.ts";
 import { ASPECTS } from "./lexicon.ts";
-import { type GaRecognition, linkProfile, type Recognition } from "./recognize.ts";
+import { functionKey, type GaRecognition, linkProfile, type Recognition } from "./recognize.ts";
 import { aspectOf, type Thing } from "./things.ts";
 
 export type QuestionKind = "conflict" | "missing" | "ambiguous" | "structure";
@@ -16,7 +16,9 @@ export interface Question {
   readonly id: string;
   readonly kind: QuestionKind;
   readonly dimension: ClaimDimension | "role";
+  /** Erste betroffene GA; bei einer Frage je Funktion stehen alle in groupAddressIds. */
   readonly groupAddressId: string | undefined;
+  readonly groupAddressIds: readonly string[];
   readonly thingKey: string | undefined;
   readonly message: string;
   readonly suggestions: readonly Suggestion[];
@@ -29,6 +31,8 @@ const LABELS: Readonly<Record<ClaimDimension, string>> = {
   dpt: "Datenpunkttyp",
 };
 const DIRECTION_TEXT: Readonly<Record<string, string>> = { command: "Befehl", status: "Rückmeldung", alarm: "Meldung" };
+/** Rollen, die ein Thing mehrfach tragen darf: ein Raumregler meldet Heiz- und Kuehlstoerung. */
+const MULTI_ROLES = new Set(["Alarm", "TextMessage"]);
 const ORDER: Readonly<Record<QuestionKind, number>> = { conflict: 0, ambiguous: 1, missing: 2, structure: 3 };
 
 export function collectQuestions(recognition: Recognition, things: readonly Thing[]): Question[] {
@@ -54,6 +58,7 @@ export function collectQuestions(recognition: Recognition, things: readonly Thin
           kind: "conflict",
           dimension,
           groupAddressId: ga.id,
+          groupAddressIds: [ga.id],
           thingKey: entry.thingKey,
           message: `${label}: ${LABELS[dimension]} widersprüchlich, ${show(decision.winner)} oder ${show(decision.conflict)}?`,
           suggestions: [decision.winner, decision.conflict].map((claim) => ({ value: claim.value, evidence: claim.evidence })),
@@ -68,6 +73,7 @@ export function collectQuestions(recognition: Recognition, things: readonly Thin
         kind: multi ? "ambiguous" : "missing",
         dimension: "room",
         groupAddressId: ga.id,
+        groupAddressIds: [ga.id],
         thingKey: entry.thingKey,
         message: multi ? `${label}: Name oder Gruppenbereich nennen mehrere Räume.` : `${label}: kein Raum erkennbar.`,
         suggestions: [...new Set(candidates.map((match) => match.spaceId))].map((id) => ({ value: id, evidence: `genannt: ${spaceName(id)}` })),
@@ -79,6 +85,7 @@ export function collectQuestions(recognition: Recognition, things: readonly Thin
         kind: "missing",
         dimension: "direction",
         groupAddressId: ga.id,
+        groupAddressIds: [ga.id],
         thingKey: entry.thingKey,
         message: `${label}: Befehl oder Rückmeldung? Der Name sagt es nicht eindeutig.`,
         suggestions: [
@@ -91,9 +98,16 @@ export function collectQuestions(recognition: Recognition, things: readonly Thin
   }
 
   for (const thing of things) {
+    // Befehl und Rueckmeldung derselben Rolle sind ein Paar; nur gleiche Rolle mit gleicher Richtung ist verdaechtig.
     const byRole = new Map<string, string[]>();
-    for (const [gaId, role] of thing.roles) byRole.set(role, [...(byRole.get(role) ?? []), gaId]);
-    for (const [role, gaIds] of byRole) {
+    for (const [gaId, role] of thing.roles) {
+      if (MULTI_ROLES.has(role)) continue;
+      const entry = recognition.byGroupAddressId.get(gaId);
+      const side = entry?.decisions.direction.winner?.value === "command" ? "command" : "status";
+      byRole.set(`${role}|${side}`, [...(byRole.get(`${role}|${side}`) ?? []), gaId]);
+    }
+    for (const [roleKey, gaIds] of byRole) {
+      const role = roleKey.split("|")[0] ?? roleKey;
       if (gaIds.length < 2) continue;
       // Ein Wert vom Bediengeraet und derselbe Wert am Aktor sind zwei Zugaenge zu einer Funktion, kein zweites Thing.
       const profiles = gaIds.map((id) => {
@@ -106,13 +120,52 @@ export function collectQuestions(recognition: Recognition, things: readonly Thin
         kind: "structure",
         dimension: "role",
         groupAddressId: undefined,
+        groupAddressIds: [],
         thingKey: thing.draft.key,
         message: `"${thing.draft.label}": ${gaIds.length} GAs mit der Rolle ${role}. Gehören sie zu verschiedenen Things?`,
         suggestions: [],
       });
     }
   }
-  return questions.sort((a, b) => ORDER[a.kind] - ORDER[b.kind] || a.id.localeCompare(b.id));
+  return groupByFunction(questions, recognition).sort((a, b) => ORDER[a.kind] - ORDER[b.kind] || a.id.localeCompare(b.id));
+}
+
+/**
+ * Fehlt derselbe Wert bei GAs gleicher Funktion ("<Raum>_EmLamp1Test" in 26 Raeumen),
+ * ist das eine Entscheidung, keine 26. Die Antwort gilt dann fuer alle.
+ */
+function groupByFunction(questions: readonly Question[], recognition: Recognition): Question[] {
+  const result: Question[] = [];
+  const groups = new Map<string, Question[]>();
+  for (const question of questions) {
+    const entry = question.groupAddressId ? recognition.byGroupAddressId.get(question.groupAddressId) : undefined;
+    const key = entry && question.kind === "missing" && question.dimension !== "room" ? functionKey(entry.analysis) : undefined;
+    if (!key) {
+      result.push(question);
+      continue;
+    }
+    const groupKey = `${question.dimension}|${key}`;
+    groups.set(groupKey, [...(groups.get(groupKey) ?? []), question]);
+  }
+  for (const [key, members] of groups) {
+    const head = members[0];
+    if (!head || members.length === 1) {
+      result.push(...members);
+      continue;
+    }
+    const ids = members.flatMap((member) => member.groupAddressIds);
+    const sizes = new Set(ids.flatMap((id) => [...(recognition.byGroupAddressId.get(id)?.analysis.node.comObjectSizes ?? [])]));
+    const example = recognition.byGroupAddressId.get(ids[0] ?? "")?.analysis.node.ga;
+    const what = head.dimension === "dpt" ? `Datenpunkttyp fehlt${sizes.size === 1 ? ` (verknüpfte Objekte: ${[...sizes][0]} Bit)` : ""}` : "Befehl oder Rückmeldung?";
+    result.push({
+      ...head,
+      id: `funktion:${key}`,
+      groupAddressIds: ids,
+      thingKey: undefined,
+      message: `${ids.length} GAs gleicher Funktion wie ${example?.text ?? ""} "${example?.name ?? ""}": ${what}${what.endsWith("?") ? "" : "."} Die Antwort gilt für alle.`,
+    });
+  }
+  return result;
 }
 
 function dptQuestion(entry: GaRecognition, label: string): Question {
@@ -124,8 +177,9 @@ function dptQuestion(entry: GaRecognition, label: string): Question {
     kind: "missing",
     dimension: "dpt",
     groupAddressId: entry.analysis.node.ga.id,
+    groupAddressIds: [entry.analysis.node.ga.id],
     thingKey: entry.thingKey,
-    message: `${label}: Datenpunkttyp fehlt${sizes.length === 1 ? ` (verknuepfte Objekte: ${sizes[0]} Bit)` : ""}.`,
+    message: `${label}: Datenpunkttyp fehlt${sizes.length === 1 ? ` (verknüpfte Objekte: ${sizes[0]} Bit)` : ""}.`,
     suggestions: suggested ? [{ value: suggested, evidence: `typisch für "${aspect}"` }] : [],
   };
 }

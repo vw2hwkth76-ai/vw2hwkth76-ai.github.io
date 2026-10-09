@@ -20,6 +20,7 @@ const CASES: readonly { project: string; gold: string; profile?: string }[] = [
   },
   { project: "fixtures/privat/musterprojekt-ets6.knxproj", gold: "fixtures/privat/musterprojekt-ets6.gold.json" },
   { project: "fixtures/privat/schule.knxproj", gold: "fixtures/privat/schule.gold.json" },
+  { project: "fixtures/privat/projekt-c.zip", gold: "fixtures/privat/projekt-c.gold.json" },
 ];
 
 const showErrors = process.argv.includes("--fehler");

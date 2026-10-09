@@ -1,5 +1,6 @@
 import { Button, FileUploaderDropContainer, InlineLoading, InlineNotification } from "@carbon/react";
-import { type ReactNode, useState } from "react";
+import { zipSync } from "fflate";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import demoProfile from "../../../fixtures/oeffentlich/demoprojekt.namensschema.json";
 import demoUrl from "../../../fixtures/oeffentlich/demoprojekt.knxproj?url";
 import styleUrl from "../../../fixtures/oeffentlich/style3.knxproj?url";
@@ -35,7 +36,7 @@ const EXAMPLES: readonly Example[] = [
 const MAX_BYTES = 512 * 1024 * 1024;
 
 const HINTS: Readonly<Record<string, string>> = {
-  "not-a-zip": "Die Datei ist kein ETS-Projektarchiv. Erwartet wird eine .knxproj-Datei aus der ETS (Projekt exportieren).",
+  "not-a-zip": "Die Datei ist kein ETS-Projektarchiv. Erwartet wird eine .knxproj-Datei aus der ETS (Projekt exportieren) oder ein ZIP mit dem entpackten Projekt.",
   structure: "Im Archiv fehlt ein erwarteter Teil. Bitte das Projekt in der ETS neu exportieren.",
   "limit-exceeded": "Das Archiv überschreitet die Verarbeitungsgrenzen.",
   unsupported: "Dieses Archivformat wird noch nicht unterstützt.",
@@ -49,13 +50,20 @@ interface Props {
 
 export function StartView(props: Props): ReactNode {
   const [localError, setLocalError] = useState<string>();
-  const busy = props.opening !== undefined;
+  const [packing, setPacking] = useState(false);
+  const folderInput = useRef<HTMLInputElement>(null);
+  const busy = props.opening !== undefined || packing;
+
+  // Ordnerauswahl ist kein Standardattribut; React kennt es nicht als Prop.
+  useEffect(() => {
+    folderInput.current?.setAttribute("webkitdirectory", "");
+  }, []);
 
   const pick = (files: readonly File[]): void => {
     const file = files[0];
     if (!file) return;
-    if (!/\.knxproj$/i.test(file.name)) {
-      setLocalError(`"${file.name}" ist keine .knxproj-Datei.`);
+    if (!/\.(knxproj|zip)$/i.test(file.name)) {
+      setLocalError(`"${file.name}" ist weder eine .knxproj-Datei noch ein ZIP.`);
       return;
     }
     if (file.size > MAX_BYTES) {
@@ -64,6 +72,30 @@ export function StartView(props: Props): ReactNode {
     }
     setLocalError(undefined);
     props.onOpen({ name: file.name, blob: file });
+  };
+
+  /** Ein entpacktes ETS-Projekt als Ordner: im Browser ohne Kompression zu einem ZIP zusammenlegen. */
+  const pickFolder = async (list: FileList | null): Promise<void> => {
+    const files = list ? [...list] : [];
+    if (files.length === 0) return;
+    const total = files.reduce((sum, file) => sum + file.size, 0);
+    if (total > MAX_BYTES) {
+      setLocalError("Der Ordner ist größer als 512 MB.");
+      return;
+    }
+    setLocalError(undefined);
+    setPacking(true);
+    try {
+      const entries: Record<string, Uint8Array> = {};
+      for (const file of files) entries[file.webkitRelativePath || file.name] = new Uint8Array(await file.arrayBuffer());
+      const packed = zipSync(entries, { level: 0 });
+      const folder = files[0]?.webkitRelativePath.split("/")[0] || "projekt";
+      props.onOpen({ name: `${folder}.zip`, blob: new Blob([packed.slice().buffer]) });
+    } catch (error) {
+      setLocalError(`Ordner nicht lesbar (${error instanceof Error ? error.message : String(error)}).`);
+    } finally {
+      setPacking(false);
+    }
   };
 
   const openExample = async (example: Example): Promise<void> => {
@@ -88,15 +120,31 @@ export function StartView(props: Props): ReactNode {
 
         <div className="ws-start__drop">
           {busy ? (
-            <InlineLoading description={`${props.opening} wird gelesen`} />
+            <InlineLoading description={packing ? "Ordner wird zusammengestellt" : `${props.opening ?? ""} wird gelesen`} />
           ) : (
             <FileUploaderDropContainer
-              accept={[".knxproj"]}
-              labelText="Datei hierher ziehen oder klicken, um eine .knxproj-Datei auszuwählen"
+              accept={[".knxproj", ".zip"]}
+              labelText="Datei hierher ziehen oder klicken: .knxproj aus der ETS oder ZIP mit entpacktem Projekt"
               name="projekt"
               onAddFiles={(_event, { addedFiles }) => pick(addedFiles)}
             />
           )}
+        </div>
+        <div className="ws-start__folder">
+          <Button kind="ghost" size="sm" disabled={busy} onClick={() => folderInput.current?.click()}>
+            Entpackten Projektordner wählen
+          </Button>
+          <input
+            ref={folderInput}
+            type="file"
+            multiple
+            hidden
+            aria-label="Entpackten Projektordner wählen"
+            onChange={(event) => {
+              void pickFolder(event.target.files);
+              event.target.value = "";
+            }}
+          />
         </div>
 
         {props.error || localError ? (

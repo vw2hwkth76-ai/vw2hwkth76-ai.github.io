@@ -16,6 +16,7 @@ export type ClaimSource =
   | "hierarchy"
   | "device-location"
   | "pairing"
+  | "convention"
   | "family"
   | "default";
 
@@ -37,6 +38,7 @@ export const SOURCE_RANK: Readonly<Record<ClaimSource, number>> = {
   manufacturer: 8,
   profile: 8,
   pairing: 7,
+  convention: 7,
   name: 6,
   "device-location": 5,
   hierarchy: 4,

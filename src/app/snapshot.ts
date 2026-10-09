@@ -64,6 +64,8 @@ export interface QuestionView {
   readonly kind: QuestionKind;
   readonly dimension: ClaimDimension | "role";
   readonly gaId: string | undefined;
+  /** Alle betroffenen GAs; mehr als eine, wenn die Frage fuer eine ganze Funktion gilt. */
+  readonly gaIds: readonly string[];
   readonly gaText: string | undefined;
   readonly thingKey: string | undefined;
   readonly message: string;
@@ -188,8 +190,7 @@ export function buildSnapshot(analysis: ProjectAnalysis, profileWarnings: readon
   for (const thing of analysis.things) for (const [gaId, role] of thing.roles) roleOf.set(gaId, role);
   const questionsByGa = new Map<string, string[]>();
   for (const question of analysis.questions) {
-    if (!question.groupAddressId) continue;
-    questionsByGa.set(question.groupAddressId, [...(questionsByGa.get(question.groupAddressId) ?? []), question.id]);
+    for (const id of question.groupAddressIds) questionsByGa.set(id, [...(questionsByGa.get(id) ?? []), question.id]);
   }
   const gaText = new Map(project.groupAddresses.map((ga) => [ga.id, ga]));
 
@@ -295,6 +296,7 @@ export function buildSnapshot(analysis: ProjectAnalysis, profileWarnings: readon
       kind: question.kind,
       dimension: question.dimension,
       gaId: question.groupAddressId,
+      gaIds: question.groupAddressIds,
       gaText: question.groupAddressId ? gaText.get(question.groupAddressId)?.text : undefined,
       thingKey: question.thingKey,
       message: question.message,

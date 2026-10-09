@@ -4,7 +4,7 @@ import { directionEvidence, isActuatorLink, isNeutral, objectText } from "../gra
 import type { Space } from "../ets/model.ts";
 import type { GaLink, GaNode, ProjectGraph } from "../graph/evidence-graph.ts";
 import type { Claim, ClaimDimension, ClaimSource } from "./claims.ts";
-import { type Aspect, ASPECTS, findWords, type Marker, type Trade, type WordHit } from "./lexicon.ts";
+import { type Aspect, ASPECTS, FILLER_WORDS, findWords, type Marker, splitKnown, type Trade, type WordHit } from "./lexicon.ts";
 import type { CompiledProfile } from "./profile.ts";
 import { type RoomFinding, type RoomMatchKind, RoomMatcher } from "./rooms.ts";
 import { labelOf, type Token, tokenize } from "./text.ts";
@@ -67,6 +67,7 @@ export interface AnalyzeOptions {
 
 const REVIEW_DIMENSIONS: readonly ClaimDimension[] = ["room", "trade", "direction", "dpt"];
 const ROOM_CONFIDENCE: Readonly<Record<RoomMatchKind, number>> = {
+  code: 0.9,
   full: 0.85,
   sequence: 0.85,
   loose: 0.8,
@@ -113,12 +114,30 @@ const DIRECTION_MARKERS: readonly Marker[] = ["alarm", "status", "command"];
  * sind Befehle fuer einen bestimmten Betriebsmodus.
  */
 const WEAK_ASPECTS = new Set<Aspect>(["window", "heat", "mode"]);
+/** Begriffe, die etwas mit einem Objekt tun (sperren, zuruecksetzen, zwangsfuehren), statt es zu benennen. */
+const CONTROL_ASPECTS = new Set<Aspect>(["lock", "reset", "forced"]);
 /** Aspekte, die im Licht einen Ort nennen. */
 const PLACE_ASPECTS = new Set<Aspect>(["window"]);
 const LABEL_MARKERS = new Set<Marker>(["status", "command", "alarm", "central", "outOfUse", "outdoor"]);
 
+/** Teilt klein zusammengeschriebene Fachwoerter ("AValuelights" zu value, lights), damit Familien und Paare sich finden. */
+function splitTokens(tokens: readonly Token[]): Token[] {
+  const result: Token[] = [];
+  for (const token of tokens) {
+    const parts = token.raw.length === token.norm.length ? splitKnown(token.norm) : undefined;
+    if (!parts) {
+      result.push({ ...token, index: result.length });
+      continue;
+    }
+    const cut = parts[0].length;
+    result.push({ index: result.length, raw: token.raw.slice(0, cut), norm: parts[0], start: token.start, end: token.start + cut });
+    result.push({ index: result.length, raw: token.raw.slice(cut), norm: parts[1], start: token.start + cut, end: token.end });
+  }
+  return result;
+}
+
 export function analyzeName(text: string, matcher: RoomMatcher, profile?: CompiledProfile): NameAnalysis {
-  const tokens = tokenize(text);
+  const tokens = splitTokens(tokenize(text));
   const profileHits = new Map(
     tokens.flatMap((token) => {
       const entry = profile?.tokens.get(token.norm);
@@ -136,6 +155,7 @@ export function analyzeName(text: string, matcher: RoomMatcher, profile?: Compil
   const places = new Set<number>();
   const replacements = new Map<number, string>();
   for (const match of rooms.matches) for (const index of match.tokens) consumed.add(index);
+  for (const token of tokens) if (FILLER_WORDS.has(token.norm)) consumed.add(token.index);
   for (const hit of hits) {
     const { marker, aspect, trade } = hit.info;
     if (marker) markers.add(marker);
@@ -259,15 +279,27 @@ export function analyzeGroupAddress(
   for (const evidence of directionEvidence(node, graph)) {
     if (evidence.source === "ets-function-role" && !options.useEtsFunctions) continue;
     const wiring = evidence.source === "ets-wiring";
+    // Die Verdrahtung sagt, dass gemeldet wird; ob es eine Stoerung ist, sagt bei einem Bit der Name ("ExtractFault").
+    const alarm = wiring && evidence.value === "status" && name.markers.has("alarm") && [...sizes].every((size) => size <= 1);
     // Die Verdrahtung ist funktional, die ETS-Rolle eine Zuordnung von Hand; bei Widerspruch gewinnt die Verdrahtung.
-    claim("direction", evidence.value, wiring ? "ets-wiring" : "ets-function", wiring ? 0.93 : 0.9, evidence.detail);
+    claim(
+      "direction",
+      alarm ? "alarm" : evidence.value,
+      wiring ? "ets-wiring" : "ets-function",
+      wiring ? 0.93 : 0.9,
+      alarm ? `${evidence.detail}; Störung laut Name` : evidence.detail,
+    );
   }
   const nameMarker = DIRECTION_MARKERS.find((marker) => name.markers.has(marker));
   if (nameMarker) {
     // "Alarm" sagt, was transportiert wird, nicht wohin; gegen die Verdrahtung (ein Aktor wird gesteuert) traegt es nicht.
     claim("direction", nameMarker, "name", nameMarker === "status" ? 0.8 : 0.75, `Kennwort im Namen "${node.ga.name}"`);
   } else {
-    const aspectDirection = nameAspects.map((aspect) => ASPECTS[aspect].direction).find((direction) => direction !== undefined);
+    // Steuernde Begriffe gelten vor dem Objekt, an dem sie haengen: "PIRDisable" sperrt den Melder, meldet keine Praesenz.
+    const aspectDirection = [...nameAspects]
+      .sort((a, b) => Number(!CONTROL_ASPECTS.has(a)) - Number(!CONTROL_ASPECTS.has(b)))
+      .map((aspect) => ASPECTS[aspect].direction)
+      .find((direction) => direction !== undefined);
     if (aspectDirection) claim("direction", aspectDirection, "name", 0.6, `Begriff im Namen "${node.ga.name}"`);
     for (const range of [...ranges].reverse()) {
       const rangeMarker = DIRECTION_MARKERS.find((marker) => range.markers.has(marker));
@@ -288,7 +320,8 @@ export function analyzeGroupAddress(
   if (gaDpt) claim("dpt", gaDpt, "ets-ga", 0.95, "DatapointType an der GA");
   const coDpt = comObjectDpt(node);
   if (coDpt) claim("dpt", coDpt, "manufacturer", 0.9, "DPT der verknüpften Kommunikationsobjekte");
-  for (const aspect of nameAspects) {
+  // Steuernde Begriffe zuerst: "PIRDisable" ist eine Freigabe (1.003), keine Belegung (1.018).
+  for (const aspect of [...nameAspects].sort((a, b) => Number(!CONTROL_ASPECTS.has(a)) - Number(!CONTROL_ASPECTS.has(b)))) {
     const dpt = ASPECTS[aspect].dpt;
     if (dpt) claim("dpt", dpt, "name", 0.6, `Begriff "${aspect}" im Namen`);
   }
@@ -324,11 +357,16 @@ export function analyzeGroupAddress(
   for (const membership of functions) {
     if (membership.space) claim("room", membership.space.id, "ets-function", 0.95, `ETS-Funktion "${membership.function.name}" im Raum "${membership.space.name}"`);
   }
-  const nameRooms = distinct(name.rooms.matches.map((match) => match.spaceId));
+  // Gleich benannte Raeume in mehreren Gebaeuden ("Corridor_Zone1"): Der Gruppenbereich sagt, welches Gebaeude gemeint ist.
+  const scope = [...ranges].reverse().map((range) => distinct(range.rooms.matches.map((match) => match.spaceId))).find((ids) => ids.length === 1)?.[0];
+  const named = distinct(name.rooms.matches.map((match) => match.spaceId));
+  const scoped = scope && named.length > 1 ? named.filter((id) => id !== scope && isWithin(id, scope, graph)) : [];
+  const nameRooms = scoped.length === 1 ? scoped : named;
   const multiRoomName = nameRooms.length > 1;
-  const nameRoom = name.rooms.matches[0];
+  const nameRoom = name.rooms.matches.find((match) => match.spaceId === nameRooms[0]);
   if (nameRooms.length === 1 && nameRoom) {
-    claim("room", nameRoom.spaceId, "name", ROOM_CONFIDENCE[nameRoom.kind], `Raum im Namen "${node.ga.name}"`);
+    const detail = scoped.length === 1 ? `, eindeutig im Bereich "${graph.spaces.get(scope ?? "")?.space.name ?? ""}"` : "";
+    claim("room", nameRoom.spaceId, "name", ROOM_CONFIDENCE[nameRoom.kind], `Raum im Namen "${node.ga.name}"${detail}`);
   }
   // "PhysicsLab 5&6": zwei Raeume im Namen, die Funktion gehoert zum gemeinsamen Bereich, solange das nicht das ganze Gebaeude ist.
   const common = multiRoomName ? commonSpace(nameRooms, graph) : undefined;
@@ -394,6 +432,7 @@ export function analyzeGroupAddress(
 /** Funktionstexte der Herstellerobjekte, die eine Aufgabe eindeutig benennen; Sperre vor Praesenz ("Presence block"). */
 const OBJECT_ASPECTS: readonly (readonly [RegExp, Aspect])[] = [
   [/(disable|enable|block|sperr|freigab)/, "lock"],
+  [/(trigger in|trigger object|triggerobjekt)/, "trigger"],
   [/(presence|pr(ä|ae)senz|occupan|anwesenheit)/, "presence"],
   [/(actuating value|continuous variable|control value|stellgr(ö|oe)|stellwert)/, "valve"],
   [/(forced|zwang)/, "forced"],
@@ -412,6 +451,15 @@ function objectAspects(node: GaNode, graph: ProjectGraph): Aspect[] {
     if (hit && !result.includes(hit[1])) result.push(hit[1]);
   }
   return result;
+}
+
+function isWithin(id: string, ancestor: string, graph: ProjectGraph): boolean {
+  let current = graph.spaces.get(id)?.space;
+  while (current) {
+    if (current.id === ancestor) return true;
+    current = current.parentId ? graph.spaces.get(current.parentId)?.space : undefined;
+  }
+  return false;
 }
 
 /** Naechster gemeinsamer Vorfahr mehrerer Raeume in der Gebaeudestruktur. */

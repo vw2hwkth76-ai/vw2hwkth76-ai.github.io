@@ -44,20 +44,49 @@ export async function deriveEts6ZipPassword(password: string): Promise<string> {
   return base64(new Uint8Array(bits));
 }
 
+/**
+ * Wurzel eines wieder gepackten Projekts: "" fuer eine .knxproj, "Projekt/" wenn alles in
+ * einem Unterordner liegt; undefined, wenn weder knx_master.xml noch P-xxxx/project.xml da ist.
+ */
+function projectRoot(names: readonly string[]): string | undefined {
+  if (names.includes(MASTER_XML)) return "";
+  const masters = names.filter((name) => name.endsWith(`/${MASTER_XML}`));
+  if (masters.length === 1) return (masters[0] ?? "").slice(0, -MASTER_XML.length);
+  const projects = names.filter((name) => /(?:^|\/)P-[0-9A-Fa-f]+\/project\.xml$/i.test(name) || INNER_ARCHIVE.test(name.split("/").pop() ?? ""));
+  const roots = new Set(projects.map((name) => name.replace(/P-[0-9A-Fa-f]+(\/project\.xml|\.zip)$/i, "")));
+  return roots.size === 1 ? [...roots][0] : undefined;
+}
+
 export async function openEtsArchive(
   data: Uint8Array,
   options: EtsArchiveOptions = {},
 ): Promise<EtsArchive> {
+  return openArchive(data, options, false);
+}
+
+async function openArchive(data: Uint8Array, options: EtsArchiveOptions, nested: boolean): Promise<EtsArchive> {
   const limits = options.limits ?? DEFAULT_LIMITS;
   const outer = ZipArchive.open(data, limits);
-  const names = outer.entries.filter((entry) => !entry.isDirectory).map((entry) => entry.name);
+  const all = outer.entries.filter((entry) => !entry.isDirectory).map((entry) => entry.name);
 
-  const masterEntry = outer.get(MASTER_XML);
+  // Ein ZIP mit genau einer .knxproj darin (etwa vom Mailanhang): die innere oeffnen.
+  const root = projectRoot(all);
+  const knxprojs = all.filter((name) => /\.knxproj$/i.test(name));
+  if (root === undefined && !nested && knxprojs.length === 1 && knxprojs[0]) {
+    const entry = outer.get(knxprojs[0]);
+    const result = entry ? await outer.read(entry) : undefined;
+    if (result?.ok) return openArchive(result.data, options, true);
+  }
+  const prefix = root ?? "";
+  const names = all.filter((name) => name.startsWith(prefix)).map((name) => name.slice(prefix.length));
+  const at = (name: string): ZipEntry | undefined => outer.get(prefix + name);
+
+  const masterEntry = at(MASTER_XML);
   const schemaVersion = masterEntry ? await readSchemaVersion(outer, masterEntry) : undefined;
   const manufacturerXmls = names.filter((name) => MANUFACTURER_XML.test(name)).sort();
 
   const readOuter = async (name: string): Promise<Uint8Array> => {
-    const entry = outer.get(name);
+    const entry = at(name);
     if (!entry) throw new ArchiveError("structure", `${name} fehlt im Archiv.`);
     const result = await outer.read(entry);
     if (!result.ok) {
@@ -78,7 +107,7 @@ export async function openEtsArchive(
   if (directProject.length > 0) {
     const projectXml = directProject[0] ?? "";
     const folder = projectXml.slice(0, projectXml.lastIndexOf("/") + 1);
-    const project = await withPassword(outer, projectXml, schemaVersion, options.password);
+    const project = await withPassword(outer, projectXml, schemaVersion, options.password, prefix);
     return {
       ...base,
       passwordProtected: project.protected,
@@ -94,7 +123,7 @@ export async function openEtsArchive(
     throw new ArchiveError(
       "structure",
       "Unerwartete Archivstruktur: weder <Projekt>/project.xml noch <Projekt>.zip gefunden. " +
-        "Bitte das Projekt in der ETS als .knxproj exportieren.",
+        "Bitte das Projekt in der ETS als .knxproj exportieren oder den entpackten Projektordner mit knx_master.xml wählen.",
     );
   }
   const innerArchive = ZipArchive.open(await readOuter(innerName), limits);
@@ -124,12 +153,13 @@ async function withPassword(
   probeName: string,
   schemaVersion: number | undefined,
   password: string | undefined,
+  prefix = "",
 ): Promise<PasswordedReader> {
-  const probe = archive.get(probeName);
+  const probe = archive.get(prefix + probeName);
   if (!probe) throw new ArchiveError("structure", `${probeName} fehlt im Archiv.`);
 
   const reader = (passwords: readonly Uint8Array[]) => async (name: string) => {
-    const entry: ZipEntry | undefined = archive.get(name);
+    const entry: ZipEntry | undefined = archive.get(prefix + name);
     if (!entry) throw new ArchiveError("structure", `${name} fehlt im Archiv.`);
     const result = await archive.read(entry, passwords);
     if (!result.ok) {

@@ -2,7 +2,7 @@ import { isActuatorLink, isNeutral } from "../graph/direction.ts";
 import type { ProjectGraph } from "../graph/evidence-graph.ts";
 import { type AnalyzeOptions, analyzeGroupAddress, type GaAnalysis, isCabinet } from "./analyze.ts";
 import { type Claim, type ClaimDimension, type Decision, decide } from "./claims.ts";
-import type { Aspect } from "./lexicon.ts";
+import { type Aspect, FILLER_WORDS } from "./lexicon.ts";
 import { RoomMatcher } from "./rooms.ts";
 
 export const DECISION_DIMENSIONS: readonly ClaimDimension[] = ["room", "trade", "direction", "dpt"];
@@ -41,6 +41,7 @@ export function recognize(graph: ProjectGraph, options: AnalyzeOptions = { useEt
   const analyses = graph.groupAddresses.map((node) => analyzeGroupAddress(node, graph, matcher, options));
 
   applyPairs(analyses);
+  applyConventions(analyses);
   applyCentralDirection(analyses);
 
   // Erste Entscheidung, damit Familien Raum und Gewerk kennen.
@@ -51,6 +52,8 @@ export function recognize(graph: ProjectGraph, options: AnalyzeOptions = { useEt
     const trade = decided?.trade.winner?.value;
     const tokens = (placeTrade(trade) ? analysis.name.placeTokens : analysis.name.labelTokens)
       .filter((token) => !(trade === "hvac" && analysis.name.hits.some((hit) => hit.tokens.includes(token.index) && hit.info.trade === "hvac")))
+      // "Licht", "Lights" allein unterscheiden keine Things; "Spot" oder "Downlight" schon.
+      .filter((token) => !GENERIC_LABELS.has(token.norm))
       .map((token) => token.norm);
     return [
       analysis.node.ranges[0]?.id ?? "",
@@ -114,10 +117,16 @@ export function recognize(graph: ProjectGraph, options: AnalyzeOptions = { useEt
     }
   }
   for (const members of byRoomDevice.values()) for (const id of members.slice(1)) families.union(members[0] ?? id, id);
-  // GAs, die als Raumklima eines Raums gebuendelt sind; ihr Thing heisst nach Raum und Teilsystem.
-  const climate = new Set<string>();
-  for (const members of byRoomDevice.values()) if (members.length > 1) for (const id of members) climate.add(id);
-  bundleRoomClimate(analyses, families, first, graph, options, climate);
+  // GAs, die als Teilsystem eines Raums gebuendelt sind; ihr Thing heisst nach Raum und Teilsystem.
+  const subsystems = new Map<string, Subsystem>();
+  for (const members of byRoomDevice.values()) {
+    if (members.length < 2) continue;
+    for (const id of members) {
+      const analysis = analyses.find((entry) => entry.node.ga.id === id);
+      if (analysis) subsystems.set(id, climateSide(analysis));
+    }
+  }
+  bundleRoomSubsystems(analyses, families, first, graph, options, subsystems);
 
   propagateWithinFamilies(analyses, families, first);
 
@@ -127,7 +136,7 @@ export function recognize(graph: ProjectGraph, options: AnalyzeOptions = { useEt
     thingKey: families.find(analysis.node.ga.id),
   }));
   const byGa = new Map(recognitions.map((entry) => [entry.analysis.node.ga.id, entry]));
-  const things = buildThings(recognitions, byChannel, options, climate, graph);
+  const things = buildThings(recognitions, byChannel, options, subsystems, graph);
   return { graph, groupAddresses: recognitions, byGroupAddressId: byGa, things };
 }
 
@@ -151,7 +160,7 @@ function applyPairs(analyses: readonly GaAnalysis[]): void {
     const statusTokens = new Set(
       analysis.name.hits.filter((hit) => hit.info.marker === "status").flatMap((hit) => hit.tokens),
     );
-    const rest = analysis.name.tokens.filter((token) => !statusTokens.has(token.index)).map((token) => token.norm);
+    const rest = analysis.name.tokens.filter((token) => !statusTokens.has(token.index) && !FILLER_WORDS.has(token.norm)).map((token) => token.norm);
     return `${analysis.node.ranges[analysis.node.ranges.length - 1]?.id ?? ""}|${rest.join(" ")}`;
   };
   for (const analysis of analyses) {
@@ -187,6 +196,77 @@ function applyPairs(analyses: readonly GaAnalysis[]): void {
       share(status, command, "room", 0.7);
     }
   }
+}
+
+const CONVENTION_CONFIDENCE = 0.8;
+/** Belege, die ein verknuepftes Objekt liefert und die sich auf gleichnamige GAs uebertragen lassen. */
+const CONVENTION_SOURCES: Readonly<Record<"direction" | "dpt", ReadonlySet<string>>> = {
+  direction: new Set(["ets-wiring"]),
+  dpt: new Set(["manufacturer"]),
+};
+
+/**
+ * Projektkonvention: GAs, deren Name ohne Raum gleich lautet ("<Raum>_ASwitchLights_Input"),
+ * tragen dieselbe Funktion. Was die verknuepften unter ihnen belegen (Verdrahtung, Objekt-DPT),
+ * gilt fuer die unverknuepften, solange sich die verknuepften einig sind.
+ */
+function applyConventions(analyses: readonly GaAnalysis[]): void {
+  const groups = new Map<string, GaAnalysis[]>();
+  for (const analysis of analyses) {
+    const key = functionKey(analysis);
+    if (key) groups.set(key, [...(groups.get(key) ?? []), analysis]);
+  }
+  for (const members of groups.values()) {
+    if (members.length < 2) continue;
+    for (const dimension of ["direction", "dpt"] as const) {
+      const sources = CONVENTION_SOURCES[dimension];
+      const own = (member: GaAnalysis): Claim | undefined =>
+        member.claims.filter((claim) => claim.dimension === dimension && sources.has(claim.source)).sort((a, b) => b.confidence - a.confidence)[0];
+      const witnesses = members.flatMap((member) => {
+        const claim = own(member);
+        return claim ? [{ member, claim }] : [];
+      });
+      if (witnesses.length === 0 || witnesses.length === members.length) continue;
+      const values = new Set(witnesses.map((entry) => entry.claim.value));
+      const mains = new Set(witnesses.map((entry) => entry.claim.value.replace(/^DPST-(\d+)-\d+$/, "DPT-$1")));
+      const value = values.size === 1 ? witnesses[0]?.claim.value : dimension === "dpt" && mains.size === 1 ? [...mains][0] : undefined;
+      if (value === undefined) continue;
+      const confidence = Math.min(CONVENTION_CONFIDENCE, ...witnesses.map((entry) => entry.claim.confidence));
+      const example = witnesses[0]?.member.node.ga.name ?? "";
+      for (const member of members) {
+        if (own(member)) continue;
+        member.claims.push({
+          dimension,
+          value,
+          source: "convention",
+          confidence,
+          evidence: `wie ${witnesses.length} verknüpfte GA${witnesses.length === 1 ? "" : "s"} gleicher Funktion ("${example}")`,
+        });
+      }
+    }
+  }
+}
+
+/** Name ohne Raum und Nummern ("a switch lights input"), nur wenn der Name einen Raum nennt; sonst ist nicht klar, was Funktion ist. */
+export function functionKey(analysis: GaAnalysis): string | undefined {
+  const roomTokens = new Set(analysis.name.rooms.matches.flatMap((match) => match.tokens));
+  if (roomTokens.size === 0) for (const index of leadingCode(analysis)) roomTokens.add(index);
+  if (roomTokens.size === 0) return undefined;
+  const rest = analysis.name.tokens.filter((token) => !roomTokens.has(token.index)).map((token) => (/^\d+$/.test(token.norm) ? "#" : token.norm));
+  if (!rest.some((token) => /^[a-z]{2,}$/.test(token))) return undefined;
+  return `${analysis.node.ranges[0]?.id ?? ""}|${rest.join(" ")}`;
+}
+
+/**
+ * Ein Code vor dem ersten Unterstrich ("A0101BFFLOB1_EmLamp1") steht fuer den Ort, auch wenn er
+ * zu keinem ETS-Raum passt. Er muss Buchstaben und Ziffern mischen, damit "Licht_Kueche" nicht zaehlt.
+ */
+function leadingCode(analysis: GaAnalysis): number[] {
+  const name = analysis.node.ga.name.trim();
+  const match = /^([A-Za-z0-9]+)_/.exec(name);
+  const code = match?.[1] ?? "";
+  if (code.length < 5 || !/\d/.test(code) || !/[A-Za-z]/.test(code)) return [];
+  return analysis.name.tokens.filter((token) => token.end <= code.length).map((token) => token.index);
 }
 
 function share(from: GaAnalysis, to: GaAnalysis, dimension: ClaimDimension, confidence: number): void {
@@ -251,7 +331,7 @@ function buildThings(
   recognitions: readonly GaRecognition[],
   byChannel: ReadonlyMap<string, readonly string[]>,
   options: AnalyzeOptions,
-  climate: ReadonlySet<string>,
+  subsystems: ReadonlyMap<string, Subsystem>,
   graph: ProjectGraph,
 ): ThingDraft[] {
   const language = namingLanguage(recognitions);
@@ -274,11 +354,9 @@ function buildThings(
           : "family";
     const roomId = mostCommon(members.map((member) => member.decisions.room.winner?.value).filter((value) => value !== undefined));
     const roomName = roomId ? graph.spaces.get(roomId)?.space.name.trim() : undefined;
-    const air = members.some((member) => climateSide(member.analysis) === "air");
-    const climateLabel =
-      members.length > 1 && roomName && members.every((member) => climate.has(member.analysis.node.ga.id))
-        ? `${roomName} ${CLIMATE_WORDS[language][air ? "air" : "water"]}`
-        : undefined;
+    const kinds = new Set(members.map((member) => subsystems.get(member.analysis.node.ga.id)));
+    const kind = kinds.size === 1 ? [...kinds][0] : undefined;
+    const climateLabel = members.length > 1 && roomName && kind ? `${roomName} ${SUBSYSTEM_WORDS[language][kind]}` : undefined;
     things.push({
       key,
       label: etsFunction?.name ?? climateLabel ?? familyLabel(members) ?? members[0]?.analysis.node.ga.name ?? key,
@@ -294,61 +372,77 @@ function buildThings(
 }
 
 /** Generische Gewerkbegriffe verlieren gegen konkrete Bezeichnungen ("Radiator" vor "heating"). */
-const GENERIC_LABELS = new Set(["heating", "heizung", "heizen", "hvac", "licht", "light", "lighting", "beleuchtung", "beschattung", "shading", "rolladen", "rollladen"]);
+const GENERIC_LABELS = new Set(["heating", "heizung", "heizen", "hvac", "licht", "light", "lights", "lighting", "beleuchtung", "beschattung", "shading", "rolladen", "rollladen"]);
+
+type Subsystem = "water" | "air" | "presence";
 
 /**
- * Schema "Ort / Gewerk" ("Ground Floor / Heating"): Nennt die Hauptgruppe
- * kein Gewerk, eine tiefere aber schon, ist das Klima eines Raums darin ein
- * Thing, je Heizung und Lueftung. Die Namen nennen dann nur Einzelfunktionen
- * ("Damper_Text", "Airquality Sensor"). Bei "Gewerk / Funktion" (Style) und
- * "Gewerk / Raum" greift das nicht; dort unterscheiden die Namen die Things.
- * Haben zwei Aktorausgaenge dieselbe Aufgabe, sind es zwei Kreise und es
- * bleibt bei den Familien.
+ * Teilsysteme eines Raums als ein Thing: Heizung, Lueftung, Praesenzmelder. Das gilt,
+ * wenn die Gruppenbereiche keine Funktion tragen: beim Schema "Ort / Gewerk"
+ * ("Ground Floor / Heating") und bei rein organisatorischen Bereichen ("Level 1 Area 1&2").
+ * Die Namen nennen dann nur Einzelfunktionen ("Summer_Mode", "SpaceOcc"). Bei
+ * "Gewerk / Funktion" (Style) und "Gewerk / Raum" greift das nicht; dort unterscheiden
+ * die Namen die Things. Haben zwei Aktorausgaenge dieselbe Aufgabe, sind es zwei Kreise.
  */
-function bundleRoomClimate(
+function bundleRoomSubsystems(
   analyses: readonly GaAnalysis[],
   families: UnionFind<string>,
   first: ReadonlyMap<string, Record<ClaimDimension, Decision>>,
   graph: ProjectGraph,
   options: AnalyzeOptions,
-  climate: Set<string>,
+  subsystems: Map<string, Subsystem>,
 ): void {
   const groups = new Map<string, GaAnalysis[]>();
   for (const analysis of analyses) {
     if (options.useEtsFunctions && analysis.node.functions.length > 0) continue;
     const decided = first.get(analysis.node.ga.id);
     const room = decided?.room.winner?.value;
-    if (decided?.trade.winner?.value !== "hvac" || !room) continue;
     // Nur echte Raeume: Zentralbefehle auf Gebaeude- oder Bereichsebene sind eigene Things.
-    if (!ROOM_TYPES.has(graph.spaces.get(room)?.space.type ?? "")) continue;
-    const [top, ...deeper] = analysis.ranges;
-    if (!top || top.trades.length > 0) continue;
-    const scope = [...deeper].reverse().findIndex((range) => range.trades.length > 0);
-    if (scope < 0) continue;
-    const rangeId = analysis.node.ranges[analysis.node.ranges.length - 1 - scope]?.id ?? "";
-    const key = `${rangeId}|${room}|${climateSide(analysis)}`;
+    if (!room || !ROOM_TYPES.has(graph.spaces.get(room)?.space.type ?? "")) continue;
+    const subsystem: Subsystem | undefined =
+      decided?.trade.winner?.value === "hvac" ? climateSide(analysis) : hasPresence(analysis) ? "presence" : undefined;
+    if (!subsystem) continue;
+    const scope = subsystemScope(analysis);
+    if (scope === undefined) continue;
+    const key = `${scope}|${room}|${subsystem}`;
     groups.set(key, [...(groups.get(key) ?? []), analysis]);
+    subsystems.set(analysis.node.ga.id, subsystem);
   }
   for (const members of groups.values()) {
-    // Dieselbe Aufgabe in zwei Familien an gleichartigen Geraeten (zwei Aktorausgaenge, zwei Fuehler) heisst zwei Kreise.
+    // Dieselbe Aufgabe an zwei Aktorausgaengen in verschiedenen Familien heisst zwei Kreise.
     const seen = new Map<string, string>();
     let clash = false;
     for (const member of members) {
       const aspect = member.name.aspects[0] ?? member.objectAspects[0];
-      if (!aspect) continue;
-      const key = `${aspect}|${linkProfile(member, graph)}`;
+      if (!aspect || linkProfile(member, graph) !== "actuator") continue;
       const family = families.find(member.node.ga.id);
-      const other = seen.get(key);
+      const other = seen.get(aspect);
       if (other !== undefined && other !== family) clash = true;
-      seen.set(key, family);
+      seen.set(aspect, family);
     }
-    if (clash) continue;
+    if (clash) {
+      for (const member of members) subsystems.delete(member.node.ga.id);
+      continue;
+    }
     const head = members[0]?.node.ga.id;
-    for (const member of members) {
-      if (head) families.union(head, member.node.ga.id);
-      climate.add(member.node.ga.id);
-    }
+    for (const member of members) if (head) families.union(head, member.node.ga.id);
   }
+}
+
+/** Gruppenbereich, in dem die Teilsysteme eines Raums gebuendelt werden; undefined, wenn die Bereiche Funktionen nennen. */
+function subsystemScope(analysis: GaAnalysis): string | undefined {
+  const [top, ...deeper] = analysis.ranges;
+  const ids = analysis.node.ranges;
+  if (!top) return undefined;
+  const neutral = analysis.ranges.every((range) => range.trades.length === 0 && range.aspects.length === 0);
+  if (neutral) return ids[ids.length - 1]?.id ?? "";
+  if (top.trades.length > 0) return undefined;
+  const scope = [...deeper].reverse().findIndex((range) => range.trades.length > 0);
+  return scope < 0 ? undefined : (ids[ids.length - 1 - scope]?.id ?? "");
+}
+
+function hasPresence(analysis: GaAnalysis): boolean {
+  return [...analysis.name.aspects, ...analysis.objectAspects].some((aspect) => aspect === "presence" || aspect === "trigger");
 }
 
 /** Woran eine GA haengt: Aktorausgang, Bediengeraet oder nichts Verwertbares. */
@@ -358,7 +452,10 @@ export function linkProfile(analysis: GaAnalysis, graph: ProjectGraph): "actuato
   return links.length > 0 ? "device" : "none";
 }
 
-const CLIMATE_WORDS = { de: { air: "Lüftung", water: "Heizung" }, en: { air: "Ventilation", water: "Heating" } } as const;
+const SUBSYSTEM_WORDS = {
+  de: { air: "Lüftung", water: "Heizung", presence: "Präsenz" },
+  en: { air: "Ventilation", water: "Heating", presence: "Presence" },
+} as const;
 const GERMAN_HINTS = new Set(["licht", "leuchte", "heizung", "heizen", "rollladen", "rolladen", "jalousie", "lueftung", "kueche", "wohnzimmer", "schlafzimmer", "flur", "zentral", "schalten", "dimmen", "sollwert", "istwert", "rueckmeldung"]);
 const ENGLISH_HINTS = new Set(["light", "lights", "lighting", "heating", "blind", "blinds", "shutter", "ventilation", "kitchen", "living", "bedroom", "central", "switching", "switch", "dimming", "setpoint", "status", "temperature"]);
 

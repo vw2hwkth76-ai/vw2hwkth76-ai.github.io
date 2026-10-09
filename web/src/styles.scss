@@ -182,6 +182,10 @@ body {
     max-width: none;
   }
 
+  .ws-start__folder {
+    margin-top: $spacing-03;
+  }
+
   .ws-start__examples {
     display: flex;
     flex-wrap: wrap;

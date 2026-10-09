@@ -173,3 +173,38 @@ TD-fertig, 555 Rückfragen.
 - **Gold-Standard mit Ermessen.** Stellgröße des Reglers als Zustand,
   Störungen als Meldung, Präsenz-Trigger als Zustand, Zentrallichter als
   eigene Things: Das sind vertretbare Festlegungen, keine Fakten.
+
+## Befunde an Projekt C (Gewerbebau, blind gemessen)
+
+Zuerst ohne jede Anpassung gemessen: 3,8 % TD-fertig, 842 Rückfragen. Das
+ist die belastbare Zahl dafür, wie die Regeln aus den bisherigen Projekten
+auf ein neues übertragen.
+
+- **Räume über Nummern, nicht über Namen.** Die GAs heißen
+  "A0101B057_ASwitchLights_Input", der Raum "02_L1/B/057_Male_WC_&_Lobby".
+  In Gewerbebauten und Praxen ist das die Regel. Der Raumcode ist der
+  stärkste Hinweis im Namen.
+- **Mehrere Gebäude mit gleichen Raumnamen.** "Corridor_Zone1" gibt es in
+  allen vier Gebäuden; eindeutig wird es erst über den Gruppenbereich ("Level
+  1 Area 1&2"), der das Gebäude nennt. Dafür zählen Wörter, die in jedem
+  Gebäudenamen stehen, nicht als Merkmal.
+- **6 % der GAs verknüpft.** Verdrahtung und Herstellerdaten belegen nur
+  drei Räume; die Konvention überträgt sie auf die übrigen 26. Die
+  verknüpften müssen sich einig sein.
+- **Gruppenbereiche ohne Funktion.** "New Main Group / Level 1 Area 1&2"
+  nennt weder Gewerk noch Begriff. Dann sind Raumklima und Präsenzmelder
+  eines Raums je ein Thing, wie beim Schema "Ort / Gewerk".
+- **Fehlercode ist kein Alarm.** Eine Meldung ist ein Bit; ein Fehlercode in
+  4 Byte ist ein gemeldeter Wert. Der Gold-Standard des Schulprojekts war
+  dabei uneinheitlich (1-Byte-EVG-Fehlerstatus als Meldung) und ist
+  korrigiert.
+- **Steuernde Begriffe vor dem Objekt.** "PIRDisable" sperrt den Melder,
+  meldet keine Präsenz; "OccupancyMode" ist die Betriebsart des Reglers.
+- **Eine Frage je Funktion.** Fehlt der DPT bei allen
+  "<Raum>_EmLamp1Test", ist das eine Entscheidung. Die Antwort gilt für
+  alle GAs der Funktion.
+- **Ehrliche Obergrenze.** Herstellereigene 3- und 4-Byte-Objekte haben in
+  den Stammdaten keinen DPT, unverknüpfte Reglerfunktionen ("HeatingDemand")
+  keine Größe. Ohne Kodierung lässt sich keine TD schreiben; diese GAs
+  bleiben offen, statt geraten zu werden.
+

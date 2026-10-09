@@ -72,7 +72,7 @@ export function isNeutral(link: GaLink): boolean {
 
 /** Meldet einen Zustand oder Messwert. */
 const STATUS_WORDS =
-  /\b(status|actual|measured|indicat\w*|feedback|counter value|physical value|sensor|input|output presence|presence output|occupancy|trigger|eingang|anwesenheit)\b|(r(ü|ue)ckmeld|istwert|messwert|z(ä|ae)hlerstand)/;
+  /\b(status|actual|measured|indicat\w*|feedback|report|surveillance|counter value|physical value|sensor|input|output presence|presence output|occupancy|trigger|eingang|anwesenheit|meldung)\b|(r(ü|ue)ckmeld|istwert|messwert|z(ä|ae)hlerstand)/;
 /** Meldet eine Stoerung. */
 const ALARM_WORDS = /\b(failure|fault|error|alarm|short circuit|mains failure|st(ö|oe)rung|fehler|kurzschluss|netzausfall)\b/;
 /** Stellgroesse eines Reglers: ein berechneter Zustand, kein Bedienbefehl. */
@@ -100,7 +100,10 @@ function wiringDirection(node: GaNode, graph: ProjectGraph): DirectionEvidence |
   const describe = (link: GaLink): string =>
     `${link.device.device.individualAddress ?? link.device.device.id} "${link.comObject.functionText ?? link.comObject.text ?? link.comObject.refId}"`;
   const result = (value: Direction, detail: string, sources: readonly GaLink[]): DirectionEvidence => {
-    const alarm = value === "status" && sources.some((link) => ALARM_WORDS.test(objectText(link)));
+    // Eine Meldung ist ein Bit; ein Fehlercode in 4 Byte ist ein gemeldeter Wert.
+    const alarm =
+      value === "status" &&
+      sources.some((link) => ALARM_WORDS.test(objectText(link)) && (link.comObject.objectSizeBits === undefined || link.comObject.objectSizeBits <= 1));
     return { value: alarm ? "alarm" : value, source: "ets-wiring", detail: alarm ? `${detail}; Störung laut Objekttext` : detail };
   };
 
