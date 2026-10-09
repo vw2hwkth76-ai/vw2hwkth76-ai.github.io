@@ -26,7 +26,12 @@ interface Props<T> {
   readonly columns: readonly Column<T>[];
   readonly rowId: (row: T) => string;
   readonly activeId: string | undefined;
+  /** Markiert eine Zeile, per Klick oder Pfeiltaste. */
   readonly onActivate: (row: T) => void;
+  /** Oeffnet eine Zeile, per Klick oder Eingabetaste; Pfeiltasten oeffnen nichts. */
+  readonly onOpen?: (row: T) => void;
+  /** Meldet die angezeigte Reihenfolge, etwa fuer Vorheriges/Naechstes ausserhalb der Tabelle. */
+  readonly onOrder?: (ids: readonly string[]) => void;
   readonly selection?: Selection;
   readonly initialSort?: { readonly id: string; readonly desc: boolean };
   readonly muted?: (row: T) => boolean;
@@ -42,7 +47,7 @@ const COLLATOR = new Intl.Collator("de", { numeric: true, sensitivity: "base" })
  * Leertaste waehlt sie fuer Sammelaktionen aus.
  */
 export function VirtualTable<T>(props: Props<T>): ReactNode {
-  const { rows, columns, rowId, activeId, onActivate, selection } = props;
+  const { rows, columns, rowId, activeId, onActivate, onOpen, selection } = props;
   const scrollRef = useRef<HTMLDivElement>(null);
   const anchorRef = useRef<number | undefined>(undefined);
   const [sort, setSort] = useState(props.initialSort);
@@ -66,6 +71,17 @@ export function VirtualTable<T>(props: Props<T>): ReactNode {
     estimateSize: () => ROW_HEIGHT,
     overscan: 16,
   });
+
+  const onOrder = useRef(props.onOrder);
+  onOrder.current = props.onOrder;
+  useEffect(() => {
+    onOrder.current?.(sorted.map(rowId));
+  }, [sorted, rowId]);
+
+  const choose = (row: T): void => {
+    onActivate(row);
+    onOpen?.(row);
+  };
 
   const activeIndex = useMemo(() => (activeId === undefined ? -1 : sorted.findIndex((row) => rowId(row) === activeId)), [sorted, activeId, rowId]);
 
@@ -137,13 +153,28 @@ export function VirtualTable<T>(props: Props<T>): ReactNode {
           event.preventDefault();
         }
         break;
+      case "Enter": {
+        const row = activeIndex >= 0 ? sorted[activeIndex] : undefined;
+        if (row && onOpen) {
+          onOpen(row);
+          event.preventDefault();
+        }
+        break;
+      }
     }
   };
 
   if (rows.length === 0) return <div className="ws-vt">{props.empty}</div>;
 
   return (
-    <div className="ws-vt" ref={scrollRef} tabIndex={0} role="region" aria-label={`${props.label}, Pfeiltasten wählen eine Zeile`} onKeyDown={onKeyDown}>
+    <div
+      className="ws-vt"
+      ref={scrollRef}
+      tabIndex={0}
+      role="region"
+      aria-label={`${props.label}, Pfeiltasten wählen eine Zeile${onOpen ? ", Eingabe öffnet sie" : ""}`}
+      onKeyDown={onKeyDown}
+    >
       <table className="cds--data-table cds--data-table--sm" aria-rowcount={sorted.length + 1}>
         <colgroup>
           {selection ? <col style={{ width: "2.5rem" }} /> : null}
@@ -202,7 +233,7 @@ export function VirtualTable<T>(props: Props<T>): ReactNode {
                 aria-current={item.index === activeIndex ? "true" : undefined}
                 className={classes || undefined}
                 style={{ height: ROW_HEIGHT }}
-                onClick={() => onActivate(row)}
+                onClick={() => choose(row)}
               >
                 {selection ? (
                   <td className="ws-col-check" onClick={(event) => event.stopPropagation()}>
@@ -219,7 +250,7 @@ export function VirtualTable<T>(props: Props<T>): ReactNode {
                 {columns.map((column) => (
                   <td key={column.id} title={column.title?.(row)}>
                     {column.primary ? (
-                      <button type="button" className="ws-rowlink" onClick={(event) => (event.stopPropagation(), onActivate(row))}>
+                      <button type="button" className="ws-rowlink" onClick={(event) => (event.stopPropagation(), choose(row))}>
                         {column.cell(row)}
                       </button>
                     ) : (

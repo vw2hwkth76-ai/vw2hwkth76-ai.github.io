@@ -496,14 +496,12 @@ body {
     table-layout: fixed;
   }
 
-  thead th {
+  // Hoehere Spezifitaet als Carbons "th:last-of-type { position: static }", sonst rutscht die letzte Spalte beim Scrollen weg.
+  .cds--data-table thead th {
     position: sticky;
     top: 0;
     z-index: 1;
     overflow: hidden;
-  }
-
-  .cds--data-table thead th {
     padding-inline: $spacing-05;
   }
 
@@ -888,44 +886,61 @@ body {
   border: 1px solid $border-subtle;
 }
 
-.ws-td-grid {
-  display: grid;
-  gap: $spacing-05;
-  margin-top: $spacing-06;
-
-  @media (min-width: 82rem) {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-}
-
-.ws-td-list,
-.ws-td-preview {
-  height: 36rem;
-}
-
 .ws-td-list {
   display: flex;
-  min-width: 0;
+  height: min(44rem, calc(100vh - 6rem));
+  min-height: 20rem;
+  margin-top: $spacing-06;
 
   .ws-vt table {
-    min-width: 32rem;
+    min-width: 48rem;
   }
 }
 
-.ws-td-preview {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+// Vollbild-Fenster einer Thing Description
+
+.ws-td-modal .cds--modal-container,
+.ws-td-modal .cds--modal-container.cds--modal-container--lg {
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+  max-block-size: none;
 }
 
-.ws-td-preview__bar {
+.ws-td-modal .cds--modal-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin-bottom: 0;
+  padding-bottom: $spacing-05;
+  overflow: hidden;
+}
+
+.ws-td-modal__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $spacing-03;
+
+  .cds--content-switcher {
+    flex: 1 1 24rem;
+    max-width: 36rem;
+  }
+}
+
+.ws-td-modal__step {
   display: flex;
   align-items: center;
   gap: $spacing-02;
+  margin-left: auto;
+}
 
-  .cds--content-switcher {
-    flex: 1;
-  }
+.ws-td-modal__position {
+  @include type.type-style('body-compact-01');
+  min-width: 6rem;
+  color: $text-secondary;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 .ws-td-preview__path {

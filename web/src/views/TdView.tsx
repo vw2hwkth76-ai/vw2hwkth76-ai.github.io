@@ -1,6 +1,20 @@
-import { Copy, Download } from "@carbon/icons-react";
-import { Button, ContentSwitcher, InlineLoading, InlineNotification, Select, SelectItem, Switch, TextInput, Toggle } from "@carbon/react";
+import { ChevronLeft, ChevronRight, Copy, Download } from "@carbon/icons-react";
+import {
+  Button,
+  ComposedModal,
+  ContentSwitcher,
+  InlineLoading,
+  InlineNotification,
+  ModalBody,
+  ModalHeader,
+  Select,
+  SelectItem,
+  Switch,
+  TextInput,
+  Toggle,
+} from "@carbon/react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
+import type { ThingView } from "../../../src/app/snapshot.ts";
 import type { TdOptions, TdThingEntry } from "../../../src/td/render.ts";
 import { isRecord } from "../../../src/util/guards.ts";
 import { type Column, VirtualTable } from "../components/VirtualTable.tsx";
@@ -13,12 +27,28 @@ import { useWorkspace } from "../workspace.ts";
 type Pane = "field" | "platform" | "model";
 const PANES: readonly Pane[] = ["field", "platform", "model"];
 
-const COLUMNS: readonly Column<TdThingEntry>[] = [
-  { id: "title", header: "Thing", sort: (thing) => thing.title, cell: (thing) => thing.title, primary: true, title: (thing) => thing.title },
-  { id: "properties", header: "Properties", width: "8.5rem", sort: (thing) => thing.properties, cell: (thing) => count(thing.properties) },
-  { id: "actions", header: "Actions", width: "7rem", sort: (thing) => thing.actions, cell: (thing) => count(thing.actions) },
-  { id: "excluded", header: "Ohne GA", width: "7.5rem", sort: (thing) => thing.excluded, cell: (thing) => (thing.excluded > 0 ? count(thing.excluded) : "") },
-];
+function columns(things: ReadonlyMap<string, ThingView>): readonly Column<TdThingEntry>[] {
+  const thing = (entry: TdThingEntry): ThingView | undefined => things.get(entry.key);
+  return [
+    { id: "title", header: "Thing", sort: (entry) => entry.title, cell: (entry) => entry.title, primary: true, title: (entry) => entry.title },
+    { id: "type", header: "Typ", width: "12rem", sort: (entry) => thing(entry)?.typeLabel ?? "", cell: (entry) => thing(entry)?.typeLabel ?? "" },
+    {
+      id: "room",
+      header: "Raum",
+      width: "16%",
+      sort: (entry) => thing(entry)?.room ?? "\uffff",
+      cell: (entry) => thing(entry)?.room ?? <span className="ws-none">offen</span>,
+      title: (entry) => thing(entry)?.room,
+    },
+    { id: "properties", header: "Properties", width: "8.5rem", sort: (entry) => entry.properties, cell: (entry) => count(entry.properties) },
+    { id: "actions", header: "Actions", width: "7rem", sort: (entry) => entry.actions, cell: (entry) => count(entry.actions) },
+    { id: "excluded", header: "Ohne GA", width: "7.5rem", sort: (entry) => entry.excluded, cell: (entry) => (entry.excluded > 0 ? count(entry.excluded) : "") },
+  ];
+}
+
+function plural(value: number, one: string, many: string): string {
+  return `${count(value)} ${value === 1 ? one : many}`;
+}
 
 /** Basis-URL pruefen: absolut und mit Schraegstrich am Ende, damit relative hrefs sauber aufloesen. */
 function validBase(value: string, schemes: readonly string[]): string | undefined {
@@ -47,7 +77,11 @@ export function TdView(): ReactNode {
   const options = state.td;
   const [result, setResult] = useState<TdResult>();
   const [error, setError] = useState<string>();
-  const [selected, setSelected] = useState<string>();
+  /** Markierte Zeile; bleibt nach dem Schliessen des Fensters zur Orientierung stehen. */
+  const [highlight, setHighlight] = useState<string>();
+  /** Im Vollbild-Fenster geoeffnetes Thing. */
+  const [opened, setOpened] = useState<string>();
+  const [order, setOrder] = useState<readonly string[]>([]);
   const [pane, setPane] = useState<Pane>("field");
   const [gateway, setGateway] = useState(options.gateway);
   const [platform, setPlatform] = useState(options.platform);
@@ -67,7 +101,16 @@ export function TdView(): ReactNode {
   }, [client, snapshot, options]);
 
   const files = useMemo(() => new Map(result?.files.map((file) => [file.path, file.text]) ?? []), [result]);
-  const active = result?.things.find((thing) => thing.key === selected) ?? result?.things[0];
+  const tableColumns = useMemo(() => columns(workspace.lookups.thingByKey), [workspace.lookups.thingByKey]);
+  const active = opened !== undefined ? result?.things.find((thing) => thing.key === opened) : undefined;
+  const position = active ? order.indexOf(active.key) : -1;
+  const step = (offset: number): void => {
+    const next = order[position + offset];
+    if (next === undefined) return;
+    setOpened(next);
+    setHighlight(next);
+  };
+  const activeView = active ? workspace.lookups.thingByKey.get(active.key) : undefined;
   const modelPath = modelPathOf(active ? files.get(active.fieldPath) : undefined);
   const path = active ? (pane === "field" ? active.fieldPath : pane === "platform" ? active.platformPath : modelPath) : undefined;
   const text = path ? files.get(path) : undefined;
@@ -199,31 +242,55 @@ export function TdView(): ReactNode {
             <Figure label="Dateien" value={count(result.files.length + 1)} note={`erzeugt in ${count(result.milliseconds)} ms`} />
           </dl>
 
-          <div className="ws-td-grid">
-            <section aria-label="Things" className="ws-td-list">
-              <VirtualTable<TdThingEntry>
-                label="Things mit Thing Description"
-                rows={result.things}
-                columns={COLUMNS}
-                rowId={(thing) => thing.key}
-                activeId={active?.key}
-                onActivate={(thing) => setSelected(thing.key)}
-                empty={
-                  <div className="ws-empty">
-                    <h3>Kein Thing mit Thing Description</h3>
-                    <p>
-                      {options.strict
-                        ? "Im strengen Modus ist keine GA fest belegt. Werte bestätigen oder den Schalter lösen."
-                        : "Das Projekt enthält keine nutzbaren GAs."}
-                    </p>
-                  </div>
-                }
-              />
-            </section>
-            <section aria-label="Vorschau" className="ws-td-preview">
-              <div className="ws-td-preview__bar">
+          <section aria-label="Things" className="ws-td-list">
+            <VirtualTable<TdThingEntry>
+              label="Things mit Thing Description"
+              rows={result.things}
+              columns={tableColumns}
+              rowId={(thing) => thing.key}
+              activeId={highlight}
+              onActivate={(thing) => setHighlight(thing.key)}
+              onOpen={(thing) => setOpened(thing.key)}
+              onOrder={setOrder}
+              empty={
+                <div className="ws-empty">
+                  <h3>Kein Thing mit Thing Description</h3>
+                  <p>
+                    {options.strict
+                      ? "Im strengen Modus ist keine GA fest belegt. Werte bestätigen oder den Schalter lösen."
+                      : "Das Projekt enthält keine nutzbaren GAs."}
+                  </p>
+                </div>
+              }
+            />
+          </section>
+          <p className="helper" style={{ marginTop: "0.5rem" }}>
+            Klick oder Eingabetaste öffnet die Thing Description im Vollbild.
+          </p>
+
+          <ComposedModal
+            open={active !== undefined}
+            size="lg"
+            className="ws-td-modal"
+            aria-label={active ? `Thing Description ${active.title}` : "Thing Description"}
+            onClose={() => setOpened(undefined)}
+          >
+            <ModalHeader
+              label={[
+                activeView?.typeLabel,
+                activeView?.room,
+                active ? `${plural(active.properties, "Property", "Properties")}, ${plural(active.actions, "Action", "Actions")}` : undefined,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+              title={active?.title ?? ""}
+              iconDescription="Schließen"
+              closeModal={() => setOpened(undefined)}
+            />
+            <ModalBody>
+              <div className="ws-td-modal__bar">
                 <ContentSwitcher
-                  size="sm"
+                  size="md"
                   selectedIndex={PANES.indexOf(pane)}
                   onChange={({ index }) => {
                     const next = typeof index === "number" ? PANES[index] : undefined;
@@ -234,23 +301,34 @@ export function TdView(): ReactNode {
                   <Switch name="platform" text="Plattform-TD" />
                   <Switch name="model" text="Thing Model" disabled={!modelPath} />
                 </ContentSwitcher>
-                <Button kind="ghost" size="sm" renderIcon={Copy} hasIconOnly iconDescription="Kopieren" disabled={!text} onClick={() => void copy()} />
+                <Button kind="ghost" size="md" renderIcon={Copy} hasIconOnly iconDescription="Kopieren" disabled={!text} onClick={() => void copy()} />
                 <Button
                   kind="ghost"
-                  size="sm"
+                  size="md"
                   renderIcon={Download}
                   hasIconOnly
                   iconDescription="Datei herunterladen"
                   disabled={!text || !path}
                   onClick={() => text && path && download(path.split("/").pop() ?? "td.json", text, "application/td+json")}
                 />
+                <div className="ws-td-modal__step">
+                  <Button kind="tertiary" size="md" renderIcon={ChevronLeft} disabled={position <= 0} onClick={() => step(-1)}>
+                    Vorheriges
+                  </Button>
+                  <span className="ws-td-modal__position" aria-live="polite">
+                    {position >= 0 ? `${count(position + 1)} von ${count(order.length)}` : ""}
+                  </span>
+                  <Button kind="tertiary" size="md" renderIcon={ChevronRight} disabled={position < 0 || position >= order.length - 1} onClick={() => step(1)}>
+                    Nächstes
+                  </Button>
+                </div>
               </div>
               <div className="helper ws-td-preview__path">{path ?? "Kein Thing Model für diesen Typ; nur KNX-Funktionstypen haben eines."}</div>
               <pre className="ws-summary ws-td-code" tabIndex={0} aria-label={path ? `Inhalt von ${path}` : "Kein Inhalt"}>
                 {text ?? ""}
               </pre>
-            </section>
-          </div>
+            </ModalBody>
+          </ComposedModal>
 
           {result.skipped.length > 0 ? (
             <section className="ws-section" aria-labelledby="td-skipped">
