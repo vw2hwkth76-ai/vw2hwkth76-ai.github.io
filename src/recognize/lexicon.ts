@@ -38,7 +38,14 @@ export type Aspect =
   | "lock"
   | "scene"
   | "energy"
-  | "power";
+  | "power"
+  | "damper"
+  | "airQuality"
+  | "forced"
+  | "summer"
+  | "heatCool"
+  | "text"
+  | "counter";
 
 export type Marker = "status" | "command" | "alarm" | "central" | "outOfUse" | "outdoor";
 
@@ -94,8 +101,15 @@ export const ASPECTS: Readonly<Record<Aspect, AspectInfo>> = {
   reset: { direction: "command", dpt: "DPST-1-15", trade: "system" },
   lock: { direction: "command", dpt: "DPST-1-3", trade: undefined },
   scene: { direction: "command", dpt: undefined, trade: "scene" },
-  energy: { direction: "status", dpt: undefined, trade: "metering" },
-  power: { direction: "status", dpt: undefined, trade: "metering" },
+  energy: { direction: "status", dpt: "DPST-13-13", trade: "metering" },
+  power: { direction: "status", dpt: "DPST-14-56", trade: "metering" },
+  damper: { direction: "command", dpt: "DPST-5-1", trade: "hvac" },
+  airQuality: { direction: "status", dpt: "DPST-9-8", trade: "hvac" },
+  forced: { direction: "command", dpt: undefined, trade: undefined },
+  summer: { direction: "command", dpt: "DPST-1-1", trade: "hvac" },
+  heatCool: { direction: "command", dpt: "DPST-1-100", trade: "hvac" },
+  text: { direction: "status", dpt: "DPST-16-0", trade: undefined },
+  counter: { direction: "status", dpt: "DPST-12-1", trade: "metering" },
 };
 
 export function isAspect(value: unknown): value is Aspect {
@@ -118,7 +132,8 @@ function add(info: WordInfo, list: string, mode: "word" | "prefix" | "suffix" | 
 
 add({ marker: "status" }, "rm rueckmeldung rueckm rueck status stat sta feedback fb state info ist istwert actual current aktuell aktueller aktuelle zustand messwert");
 add({ marker: "command" }, "soll cmd befehl set");
-add({ marker: "alarm" }, "alarm alarme alert alerts warnung warning feuer fire brand rauch smoke stoerung stoer fault fehler error ueberlast overload ausgeloest sabotage leckage leck einbruch panik");
+add({ marker: "alarm" }, "alarm alarme alert alerts warnung warning feuer fire brand rauch smoke stoerung stoer fault failure fehler error ueberlast overload ausgeloest sabotage leckage leck einbruch panik ausfall kurzschluss");
+add({ marker: "alarm" }, "fault", "suffix");
 add({ marker: "alarm" }, "alarm stoermeldung", "suffix");
 add({ marker: "central" }, "zentral central zentrale gesamt global");
 add({ marker: "outOfUse" }, "unbenutzt stillgelegt unused spare reserve dummy");
@@ -126,7 +141,7 @@ add({ marker: "outdoor" }, "aussen outdoor outside aussenanlage aussenbereich", 
 
 add({ trade: "lighting" }, "licht light lights leuchte leuchten lampe lamp beleuchtung lighting spot spots downlight led dali dimmer stripe", "both");
 add({ trade: "shading" }, "rollladen rolladen rollo jalousie jalousien raffstore raffstoren markise markiese beschattung sonnenschutz blind blinds shutter shutters shade shading awning vorhang behang", "both");
-add({ trade: "hvac" }, "heizung heating hzg kuehlen kuehlung cooling klima hvac lueftung ventilation luefter fan radiator heizkoerper fussbodenheizung fbh thermostat rtr", "both");
+add({ trade: "hvac" }, "heizung heating hzg kuehlen kuehlung cooling klima hvac lueftung ventilation luefter fan radiator heizkoerper fussbodenheizung fbh thermostat rtr rtc extract abluft zuluft exhaust fume", "both");
 add({ trade: "hvac", aspect: "heat" }, "heizen heat heiz", "prefix");
 add({ trade: "monitoring" }, "ueberwachung monitoring sicherheit security wetter weather melder", "both");
 add({ trade: "metering" }, "zaehler zaehlerstand verbrauch meter metering kwh", "both");
@@ -150,7 +165,13 @@ add({ aspect: "modeFrost" }, "frost frostschutz");
 add({ aspect: "modeStandby" }, "standby eco economy");
 add({ aspect: "valve" }, "stellwert stellgroesse variable ventil valve");
 add({ aspect: "window" }, "fenster fensterkontakt window kontakt contact", "suffix");
-add({ aspect: "presence" }, "praesenz presence anwesenheit bewegung motion belegung occupancy", "both");
+add({ aspect: "presence" }, "praesenz presence anwesenheit bewegung motion belegung occupancy occupied pir", "both");
+add({ aspect: "damper", trade: "hvac" }, "damper klappe luftklappe", "suffix");
+add({ aspect: "forced" }, "forced zwang zwangsstellung zwangsposition zwangsfuehrung override", "prefix");
+add({ aspect: "summer", trade: "hvac" }, "summer sommer sommerbetrieb", "prefix");
+add({ aspect: "text" }, "text textmeldung");
+add({ aspect: "counter", trade: "metering" }, "counter zaehlerwert impulse impulszaehler");
+add({ aspect: "airQuality", trade: "hvac" }, "airquality luftqualitaet co2 voc mischgas", "both");
 add({ aspect: "wind" }, "wind windgeschwindigkeit", "prefix");
 add({ aspect: "rain" }, "regen rain");
 add({ aspect: "time" }, "uhrzeit", "suffix");
@@ -175,6 +196,10 @@ const PHRASES: readonly { readonly words: readonly string[]; readonly info: Word
   { words: ["ein", "aus"], info: { aspect: "switch" } },
   { words: ["on", "off"], info: { aspect: "switch" } },
   { words: ["building", "protection"], info: { aspect: "modeFrost" } },
+  { words: ["short", "circuit"], info: { marker: "alarm" } },
+  { words: ["heating", "cooling"], info: { aspect: "heatCool", trade: "hvac" } },
+  { words: ["heizen", "kuehlen"], info: { aspect: "heatCool", trade: "hvac" } },
+  { words: ["air", "quality"], info: { aspect: "airQuality", trade: "hvac" } },
 ];
 
 export interface WordHit {

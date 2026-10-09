@@ -75,6 +75,13 @@ export const ASPECT_LABEL: Readonly<Record<Aspect, string>> = {
   scene: "Szene",
   energy: "Energie",
   power: "Leistung",
+  damper: "Klappe",
+  airQuality: "Luftqualität",
+  forced: "Zwangsstellung",
+  summer: "Sommerbetrieb",
+  heatCool: "Heizen/Kühlen",
+  text: "Text",
+  counter: "Zählerstand",
 };
 
 export const MARKER_LABEL: Readonly<Record<Marker, string>> = {
@@ -91,6 +98,7 @@ export const THING_TYPE_LABEL: Readonly<Record<ThingType, string>> = {
   DimmableLight: "Licht dimmbar",
   SunProtection: "Sonnenschutz",
   Heating: "Heizung",
+  Ventilation: "Lüftung",
   Socket: "Steckdose",
   WindowContact: "Fensterkontakt",
   Alarm: "Meldung",

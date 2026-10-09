@@ -81,15 +81,22 @@ const CONTROLLER_WORDS = /(control value|continuous variable|continous|actuating
 const OPERATOR_WORDS = /\b(push button|taster|value transmitter|wertgeber|switch object|switching|schalten|dimming|dimmen|output light|brighter|darker|heller|dunkler)\b/;
 const ACTUATOR_PRODUCT = /(actuator|aktor|drive|antrieb|dali|gateway|dimmer|i\/o unit)/i;
 
+/** Aktor: Reiheneinbau, im Verteiler oder dem Produktnamen nach. */
+export function isActuatorLink(link: GaLink, graph: ProjectGraph): boolean {
+  return (
+    link.device.product?.isRailMounted === true ||
+    graph.deviceSpace.get(link.device.device.id)?.space.type === "DistributionBoard" ||
+    ACTUATOR_PRODUCT.test(link.device.product?.text ?? "")
+  );
+}
+
 function wiringDirection(node: GaNode, graph: ProjectGraph): DirectionEvidence | undefined {
   const known = node.links.filter((link) => link.flagsKnown);
   if (known.length === 0 || known.length !== node.links.length) return undefined;
   const links = known.filter((link) => !isNeutral(link));
   if (links.length === 0) return undefined;
 
-  const cabinet = (link: GaLink): boolean =>
-    link.device.product?.isRailMounted === true || graph.deviceSpace.get(link.device.device.id)?.space.type === "DistributionBoard";
-  const actuator = (link: GaLink): boolean => cabinet(link) || ACTUATOR_PRODUCT.test(link.device.product?.text ?? "");
+  const actuator = (link: GaLink): boolean => isActuatorLink(link, graph);
   const describe = (link: GaLink): string =>
     `${link.device.device.individualAddress ?? link.device.device.id} "${link.comObject.functionText ?? link.comObject.text ?? link.comObject.refId}"`;
   const result = (value: Direction, detail: string, sources: readonly GaLink[]): DirectionEvidence => {

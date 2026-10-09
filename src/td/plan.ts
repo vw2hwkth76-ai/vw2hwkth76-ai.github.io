@@ -327,7 +327,7 @@ export function planThings(analysis: ProjectAnalysis, options: PlanOptions): TdP
   return { things, skipped, excludedCount };
 }
 
-const STATUS_ROLES = new Set(["ValvePosition", "ValveSwitch"]);
+const STATUS_ROLES = new Set(["ValvePosition", "ActualValvePosition", "ValveSwitch"]);
 
 /** Affordances eines normierten KNX-Funktionstyps, ohne GAs; Grundlage der Thing Models. */
 export function planFunctionType(functionType: FunctionType, options: Pick<PlanOptions, "commands">): PlannedAffordance[] {

@@ -58,8 +58,21 @@ stillen Entscheidung.
   Alarm, Zentral und stillgelegt.
 - **Raumabgleich** gegen die ETS-Räume: exakt, Abkürzung ("Bad",
   "Schlafzim."), Kompositum, Initialen ("LR", "WZ"), Mehrwort ("Living
-  room"); mehrere Räume ergeben eine Rückfrage.
-- **Things** aus ETS-Funktion, Aktorkanal und Namensfamilie, getypt nach den
+  room"). Raumnamen werden zerlegt wie GA-Namen ("PhysLab2G" trifft
+  "Physics Lab2G (line1)"): Klammerzusätze optional, Kürzel, Synonyme
+  (Corridor/Circulation, WC/Toilets), Geschossbuchstabe hinter der Nummer
+  (G/Ground, F/First), Tippfehler. Nennt ein Name mehrere Räume
+  ("Lab 5&6"), gilt der gemeinsame Bereich; ohne jeden Hinweis das Gebäude.
+- **DPT aus den Herstellerobjekten**, wenn weder GA noch Objekt einen DPT
+  tragen (ältere Herstellerdaten): Die Objektgröße legt den Haupttyp fest,
+  wo sie eindeutig ist (1 Bit ist DPT 1), Objekttext und EIS-Angabe den
+  Untertyp ("Output presence" 1.018, "EIS 5" DPT 9). Kein Text gilt gegen
+  die Größe.
+- **Things** aus ETS-Funktion, Aktorkanal, Raumgerät und Namensfamilie.
+  Heizungs- und Lüftungs-GAs eines Raums am selben Regler oder Antrieb im
+  Raum sind ein Thing; beim Schema "Ort / Gewerk" ("Ground Floor /
+  Heating") auch ohne gemeinsames Gerät, solange keine zwei Ausgänge
+  dieselbe Aufgabe haben. Getypt nach den
   KNX-Funktionstypen (FT-1, FT-6, FT-7, FT-9, FT-10) mit den KNX-Rollen
   (SwitchOnOff, InfoOnOff, DimmingControl, ...), ergänzt um Rollen ohne Norm
   (ComfortMode, HeatingStatus, ...).
@@ -145,16 +158,32 @@ Vorgänger, in Klammern die Werte von `ets2td`.
 | Projekt | Raum | Funktion | Richtung | DPT |
 |---|---|---|---|---|
 | Style, ohne ETS-Funktionen | 99,2 % (97,6) | 76,4 % (72,8) | 92,6 % (74,0) | 100 % (100) |
-| Demoprojekt, ohne ETS-Funktionen | 100 % (100) | 0 % (89,5) | 88,2 % (52,9) | 100 % (100) |
-| Demoprojekt, mit Namensschema (5 Kürzel) | 100 % | 63,2 % + 7 teils | 88,2 % | 100 % |
+| Demoprojekt, ohne ETS-Funktionen | 100 % (100) | 0 % (89,5) | 94,1 % (52,9) | 100 % (100) |
+| Demoprojekt, mit Namensschema (5 Kürzel) | 100 % | 63,2 % + 7 teils | 94,1 % | 100 % |
 | Demoprojekt, mit allem | 100 % | 100 % | 100 % | 100 % |
 | Musterprojekt (ETS6, lokal) | 100 % (85,0) | 86,5 % (91,9) | 100 % (71,1) | 100 % (67,6) |
+| Schulprojekt (ETS3-Zeit, lokal, kein DPT im Projekt) | 97,5 % | – | 98,6 % | 99,6 % |
+
+Dazu misst der Benchmark, wie viel ohne Rückfrage in Thing Descriptions
+geht: Anteil der GAs, die in einem Thing liegen, Richtung und DPT
+entschieden haben und keine offene Rückfrage tragen; die Bündelung paarweise
+gegen die Soll-Things des Gold-Standards.
+
+| Projekt | TD-fertig ohne Rückfrage | Bündelung Präzision | Bündelung Vollständigkeit |
+|---|---|---|---|
+| Style | 100 % | – | – |
+| Demoprojekt | 89,5 % | – | – |
+| Musterprojekt (lokal) | 69,1 % | – | – |
+| Schulprojekt (lokal) | 99,7 % (vorher 39,1) | 99,6 % (57,8) | 91,8 % (22,9) |
 
 Einordnung:
 
-- Das **Musterprojekt ist Trainingsmaterial**, kein Test: Das Vokabular ist
-  beim Blick auf genau dieses Projekt entstanden. Belastbar wird die Zahl
-  erst an ungesehenen Projekten.
+- Das **Musterprojekt und das Schulprojekt sind Trainingsmaterial**, kein
+  Test: Vokabular und Regeln sind beim Blick auf genau diese Projekte
+  entstanden. Belastbar werden die Zahlen erst an ungesehenen Projekten.
+- "TD-fertig" heißt entschieden, nicht fehlerfrei: Beim Schulprojekt liegen
+  einige Things auf Gebäude- oder Bereichsebene, wo kein Raum erkennbar war,
+  und manche DPTs sind nur im Haupttyp bekannt (1 Bit ohne Untertyp).
 - Die fehlenden Richtungen sind ausschließlich mehrdeutige Fälle ohne
   Kennwort, falsche Richtungen gibt es in keinem Projekt.
 - Die Funktionsnamen im Demoprojekt sind Kurzcodes ("L LR", "LD LR"); die

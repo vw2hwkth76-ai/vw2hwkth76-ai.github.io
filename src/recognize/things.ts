@@ -14,6 +14,7 @@ export type ThingType =
   | "DimmableLight"
   | "SunProtection"
   | "Heating"
+  | "Ventilation"
   | "Socket"
   | "WindowContact"
   | "Alarm"
@@ -40,16 +41,79 @@ export interface Thing {
   readonly roles: ReadonlyMap<string, string>;
 }
 
-type RoleRule = (direction: Direction | undefined) => string | undefined;
+/** marked: Der Name traegt ein Rueckmelde-Kennwort ("Status_Valve"). */
+type RoleRule = (direction: Direction | undefined, main: number | undefined, marked: boolean) => string | undefined;
 
 const BY_DIRECTION = (command: string, status: string): RoleRule => (direction) =>
   direction === "status" ? status : direction === "command" ? command : undefined;
+
+/**
+ * Haupttypen, die eine Rolle zulaesst. Passt der entschiedene DPT nicht,
+ * ist der Begriff im Namen etwas anderes ("Power_Status" mit 1 Bit ist
+ * keine Leistung), und die naechste Deutung kommt zum Zug.
+ */
+const ROLE_MAINS: Readonly<Record<string, readonly number[]>> = {
+  SwitchOnOff: [1],
+  InfoOnOff: [1],
+  DimmingControl: [3],
+  DimmingValue: [5],
+  InfoDimmingValue: [5],
+  MoveUpDown: [1],
+  StopStepUpDown: [1],
+  AbsolutePositionBlindsPercentage: [5],
+  CurrentAbsolutePositionBlindsPercentage: [5],
+  AbsolutePositionSlatPercentage: [5],
+  CurrentAbsolutePositionSlatPercentage: [5],
+  TempRoom: [9, 14],
+  TempRoomSetpoint: [9, 14, 6, 1],
+  InfoTempRoomSetpoint: [9, 14],
+  HVACMode: [20],
+  ComfortMode: [1],
+  NightMode: [1],
+  FrostProtectionMode: [1],
+  StandbyMode: [1],
+  ValvePosition: [5],
+  ActualValvePosition: [5],
+  ValveSwitch: [1],
+  HeatingStatus: [1],
+  DamperPosition: [5],
+  AirQuality: [9, 5],
+  WindowStatus: [1],
+  Presence: [1],
+  Alarm: [1, 5],
+  ForcedPosition: [1, 2],
+  SummerMode: [1],
+  HeatCoolMode: [1],
+  TempOutside: [9, 14],
+  TextMessage: [16],
+  MeterReading: [7, 8, 12, 13, 14],
+  WindAlarm: [1],
+  WindSpeed: [9, 14],
+  RainAlarm: [1],
+  Illuminance: [9],
+  Time: [10, 19],
+  Date: [11, 19],
+  OperatingStatus: [1],
+  Reset: [1],
+  Lock: [1],
+  SceneControl: [17, 18],
+  InfoScene: [17],
+  Energy: [12, 13, 14],
+  Power: [9, 14],
+};
+
+function fitsRole(role: string, main: number | undefined): boolean {
+  const mains = ROLE_MAINS[role];
+  return main === undefined || mains === undefined || mains.includes(main);
+}
 
 const ROLES: Readonly<Partial<Record<Trade | "any", Partial<Record<Aspect, RoleRule>>>>> = {
   lighting: {
     switch: BY_DIRECTION("SwitchOnOff", "InfoOnOff"),
     dim: () => "DimmingControl",
-    value: BY_DIRECTION("DimmingValue", "InfoDimmingValue"),
+    // "Brightness" als Messwert in Lux ist ein Helligkeitssensor, kein Dimmwert.
+    value: (direction, main, marked) => (main === 9 ? "Illuminance" : BY_DIRECTION("DimmingValue", "InfoDimmingValue")(direction, main, marked)),
+    presence: () => "Presence",
   },
   socket: { switch: BY_DIRECTION("SwitchOnOff", "InfoOnOff") },
   shading: {
@@ -69,16 +133,33 @@ const ROLES: Readonly<Partial<Record<Trade | "any", Partial<Record<Aspect, RoleR
     modeNight: () => "NightMode",
     modeFrost: () => "FrostProtectionMode",
     modeStandby: () => "StandbyMode",
-    valve: () => "ValvePosition",
+    // Die Stellgroesse kommt vom Regler, die Ist-Stellung meldet der Antrieb zurueck.
+    valve: (_direction, _main, marked) => (marked ? "ActualValvePosition" : "ValvePosition"),
     heat: () => "ValveSwitch",
     window: () => "WindowStatus",
+    damper: () => "DamperPosition",
+    airQuality: () => "AirQuality",
+    summer: () => "SummerMode",
+    heatCool: () => "HeatCoolMode",
+  },
+  monitoring: {
+    // Temperatur einer Wetterstation ist die Aussentemperatur.
+    temperature: () => "TempOutside",
   },
   any: {
     window: () => "WindowStatus",
     presence: () => "Presence",
     alarm: () => "Alarm",
-    wind: () => "WindAlarm",
+    wind: (_direction, main) => (main === 9 || main === 14 ? "WindSpeed" : "WindAlarm"),
     rain: () => "RainAlarm",
+    value: (_direction, main) => (main === 9 ? "Illuminance" : undefined),
+    damper: () => "DamperPosition",
+    airQuality: () => "AirQuality",
+    forced: () => "ForcedPosition",
+    summer: () => "SummerMode",
+    heatCool: () => "HeatCoolMode",
+    text: () => "TextMessage",
+    counter: () => "MeterReading",
     time: () => "Time",
     date: () => "Date",
     operating: () => "OperatingStatus",
@@ -103,22 +184,48 @@ const DPT_ASPECT: Readonly<Record<string, Aspect>> = {
   "DPST-10-1": "time",
   "DPST-11-1": "date",
   "DPST-1-5": "alarm",
+  "DPST-1-18": "presence",
+  "DPST-1-100": "heatCool",
+  "DPST-16-0": "text",
+  "DPST-16-1": "text",
+  "DPST-12-1": "counter",
+  "DPST-13-10": "energy",
+  "DPST-13-13": "energy",
 };
 
-/** Aspekt einer GA; bei mehreren der, dessen typischer DPT zum entschiedenen passt ("Dimming value" mit 5.001). */
-export function aspectOf(entry: GaRecognition): Aspect | undefined {
+/** Begriffe, die im Licht einen Ort meinen ("Fensterreihe", "Window_Switch"), keine Funktion. */
+const LOCATION_ASPECTS: Readonly<Partial<Record<Trade, ReadonlySet<Aspect>>>> = {
+  lighting: new Set<Aspect>(["window"]),
+  socket: new Set<Aspect>(["window"]),
+};
+const NO_ASPECTS: ReadonlySet<Aspect> = new Set();
+
+/**
+ * Moegliche Aspekte einer GA, beste zuerst: aus dem Namen, den Texten der
+ * verknuepften Objekte, dem Gruppenbereich und zuletzt dem DPT; je Quelle der
+ * mit dem entschiedenen Untertyp vor dem mit gleichem Haupttyp ("PIRDisable"
+ * mit 1.003 ist eine Sperre, keine Praesenz).
+ */
+function aspectCandidates(entry: GaRecognition, ignore: ReadonlySet<Aspect>): Aspect[] {
   const { name, ranges } = entry.analysis;
   const dpt = entry.decisions.dpt.winner?.value;
   const main = dpt ? dptMainNumber(dpt) : undefined;
-  const fitting = (aspects: readonly Aspect[]): Aspect | undefined => {
-    const typed = ASPECTS;
-    return aspects.find((aspect) => {
-      const typical = typed[aspect].dpt;
-      return main !== undefined && typical !== undefined && dptMainNumber(typical) === main;
-    }) ?? aspects[0];
+  const rank = (aspect: Aspect): number => {
+    const typical = ASPECTS[aspect].dpt;
+    if (typical !== undefined && typical === dpt) return 0;
+    if (typical !== undefined && main !== undefined && dptMainNumber(typical) === main) return 1;
+    return 2;
   };
-  const fromRange = [...ranges].reverse().find((range) => range.aspects.length > 0)?.aspects;
-  return fitting(name.aspects) ?? (fromRange ? fitting(fromRange) : undefined) ?? (dpt ? DPT_ASPECT[dpt] : undefined);
+  const ordered = (aspects: readonly Aspect[]): Aspect[] =>
+    aspects.filter((aspect) => !ignore.has(aspect)).map((aspect, index) => ({ aspect, index })).sort((a, b) => rank(a.aspect) - rank(b.aspect) || a.index - b.index).map((item) => item.aspect);
+  const fromRanges = [...ranges].reverse().flatMap((range) => ordered(range.aspects));
+  const fromDpt = dpt ? DPT_ASPECT[dpt] : undefined;
+  return [...new Set([...ordered(name.aspects), ...ordered(entry.analysis.objectAspects), ...fromRanges, ...(fromDpt ? [fromDpt] : [])])];
+}
+
+/** Aspekt einer GA; bei mehreren der, dessen typischer DPT zum entschiedenen passt ("Dimming value" mit 5.001). */
+export function aspectOf(entry: GaRecognition): Aspect | undefined {
+  return aspectCandidates(entry, NO_ASPECTS)[0];
 }
 
 
@@ -127,17 +234,32 @@ export function directionOf(entry: GaRecognition): Direction | undefined {
   return value === "command" || value === "status" || value === "alarm" ? value : undefined;
 }
 
+/** Rolle eines blossen "Status" ohne weiteren Begriff, nach Gewerk und Haupttyp. */
+function statusRole(trade: string | undefined, main: number | undefined): string | undefined {
+  if (trade === "hvac") return main === 5 ? "ValvePosition" : main === undefined || main === 1 ? "HeatingStatus" : undefined;
+  if (trade === "lighting") return main === 5 ? "InfoDimmingValue" : main === undefined || main === 1 ? "InfoOnOff" : undefined;
+  if (trade === "socket") return main === undefined || main === 1 ? "InfoOnOff" : undefined;
+  return undefined;
+}
+
 export function roleOf(entry: GaRecognition, trade: string | undefined): string | undefined {
   const direction = directionOf(entry);
+  const dpt = entry.decisions.dpt.winner?.value;
+  const main = dpt ? dptMainNumber(dpt) : undefined;
+  const ignore = (isTrade(trade) ? LOCATION_ASPECTS[trade] : undefined) ?? NO_ASPECTS;
   // Ein blosses Kennwort im Namen ("Status") geht vor dem Aspekt des Gruppenbereichs ("Heizen").
-  if (entry.analysis.name.markers.has("status") && entry.analysis.name.aspects.length === 0) {
-    if (trade === "hvac") return "HeatingStatus";
-    if (trade === "lighting" || trade === "socket") return "InfoOnOff";
+  if (entry.analysis.name.markers.has("status") && entry.analysis.name.aspects.every((aspect) => ignore.has(aspect))) {
+    const role = statusRole(trade, main);
+    if (role) return role;
   }
-  const aspect = aspectOf(entry);
-  if (!aspect) return undefined;
-  const specific = isTrade(trade) ? ROLES[trade]?.[aspect] : undefined;
-  return (specific ?? ROLES.any?.[aspect])?.(direction);
+  for (const aspect of aspectCandidates(entry, ignore)) {
+    const rules = [isTrade(trade) ? ROLES[trade]?.[aspect] : undefined, ROLES.any?.[aspect]];
+    for (const rule of rules) {
+      const role = rule?.(direction, main, entry.analysis.name.markers.has("status"));
+      if (role && fitsRole(role, main)) return role;
+    }
+  }
+  return undefined;
 }
 
 export function typeThings(recognition: Recognition): Thing[] {
@@ -161,8 +283,12 @@ function thingType(trade: string | undefined, roles: ReadonlySet<string>): Thing
       return [...roles].some((role) => role.startsWith("Dimming") || role.includes("DimmingValue")) ? "DimmableLight" : "SwitchableLight";
     case "shading":
       return "SunProtection";
-    case "hvac":
-      return roles.has("WindowStatus") && roles.size === 1 ? "WindowContact" : "Heating";
+    case "hvac": {
+      if (roles.has("WindowStatus") && roles.size === 1) return "WindowContact";
+      const airside = [...roles].some((role) => role === "DamperPosition" || role === "AirQuality");
+      const waterside = [...roles].some((role) => /Temp|Valve|Heating|Mode$/.test(role) && role !== "SummerMode");
+      return airside && !waterside ? "Ventilation" : "Heating";
+    }
     case "socket":
       return "Socket";
     case "scene":

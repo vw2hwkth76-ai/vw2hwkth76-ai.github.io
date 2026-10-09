@@ -13,8 +13,8 @@ export interface Token {
 }
 
 const WORD_RUN = /[\p{L}\p{N}]+/gu;
-/** Grenzen innerhalb eines Wortlaufs: Binnenmajuskel ("SollTemp"), Buchstabe/Ziffer ("Licht1"). */
-const INNER_BOUNDARY = /(?<=[a-zäöüß])(?=[A-ZÄÖÜ])|(?<=\p{L})(?=\p{N})|(?<=\p{N})(?=\p{L})/u;
+/** Grenzen innerhalb eines Wortlaufs: Binnenmajuskel ("SollTemp"), Akronym vor Wort ("PIRDisable"), Buchstabe/Ziffer ("Licht1"). */
+const INNER_BOUNDARY = /(?<=[a-zäöüß])(?=[A-ZÄÖÜ])|(?<=[A-ZÄÖÜ])(?=[A-ZÄÖÜ][a-zäöüß])|(?<=\p{L})(?=\p{N})|(?<=\p{N})(?=\p{L})/u;
 
 /** Zerlegt einen Namen in Woerter und behaelt die Originalpositionen. */
 export function tokenize(text: string): Token[] {

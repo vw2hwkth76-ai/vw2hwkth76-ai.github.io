@@ -1,7 +1,7 @@
 import { dptDotted } from "../ets/dpt-id.ts";
 import type { Claim, ClaimDimension } from "./claims.ts";
 import { ASPECTS } from "./lexicon.ts";
-import type { GaRecognition, Recognition } from "./recognize.ts";
+import { type GaRecognition, linkProfile, type Recognition } from "./recognize.ts";
 import { aspectOf, type Thing } from "./things.ts";
 
 export type QuestionKind = "conflict" | "missing" | "ambiguous" | "structure";
@@ -95,6 +95,12 @@ export function collectQuestions(recognition: Recognition, things: readonly Thin
     for (const [gaId, role] of thing.roles) byRole.set(role, [...(byRole.get(role) ?? []), gaId]);
     for (const [role, gaIds] of byRole) {
       if (gaIds.length < 2) continue;
+      // Ein Wert vom Bediengeraet und derselbe Wert am Aktor sind zwei Zugaenge zu einer Funktion, kein zweites Thing.
+      const profiles = gaIds.map((id) => {
+        const entry = recognition.byGroupAddressId.get(id);
+        return entry ? linkProfile(entry.analysis, recognition.graph) : "none";
+      });
+      if (new Set(profiles).size === profiles.length) continue;
       questions.push({
         id: `${thing.draft.key}:${role}`,
         kind: "structure",

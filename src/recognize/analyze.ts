@@ -1,5 +1,7 @@
 import { dptMainNumber } from "../ets/dpt-id.ts";
-import { directionEvidence } from "../graph/direction.ts";
+import { objectDpt } from "./object-dpt.ts";
+import { directionEvidence, isActuatorLink, isNeutral, objectText } from "../graph/direction.ts";
+import type { Space } from "../ets/model.ts";
 import type { GaLink, GaNode, ProjectGraph } from "../graph/evidence-graph.ts";
 import type { Claim, ClaimDimension, ClaimSource } from "./claims.ts";
 import { type Aspect, ASPECTS, findWords, type Marker, type Trade, type WordHit } from "./lexicon.ts";
@@ -19,6 +21,13 @@ export interface NameAnalysis {
   readonly labelTokens: readonly Token[];
   /** Anzeigename aus den verbleibenden Woertern, Profilkuerzel durch ihren Namen ersetzt. */
   readonly label: string;
+  /**
+   * Wie labelTokens und label, aber mit Ortsbegriffen: Im Licht meint
+   * "Window" die Fensterreihe und unterscheidet Things, bei der Heizung den
+   * Fensterkontakt, der zum Raum-Thing gehoert.
+   */
+  readonly placeTokens: readonly Token[];
+  readonly placeLabel: string;
   /** Treffer aus dem Namensschema des Integrators. */
   readonly profile: {
     readonly trades: readonly Trade[];
@@ -40,6 +49,8 @@ export interface GaAnalysis {
   readonly multiRoomName: boolean;
   readonly multiRoomRange: boolean;
   readonly label: string;
+  /** Aspekte aus den Texten der verknuepften Objekte, Aktorobjekte zuerst; Rueckfall, wenn der Name nichts sagt. */
+  readonly objectAspects: readonly Aspect[];
   readonly claims: Claim[];
 }
 
@@ -55,8 +66,22 @@ export interface AnalyzeOptions {
 }
 
 const REVIEW_DIMENSIONS: readonly ClaimDimension[] = ["room", "trade", "direction", "dpt"];
-const ROOM_CONFIDENCE: Readonly<Record<RoomMatchKind, number>> = { full: 0.85, abbreviation: 0.75, compound: 0.75, initials: 0.7, partial: 0.65 };
+const ROOM_CONFIDENCE: Readonly<Record<RoomMatchKind, number>> = {
+  full: 0.85,
+  sequence: 0.85,
+  loose: 0.8,
+  mismatch: 0.65,
+  abbreviation: 0.75,
+  compound: 0.75,
+  initials: 0.7,
+  partial: 0.65,
+};
 const RANGE_PENALTY = 0.15;
+const MULTI_ROOM_CONFIDENCE = 0.75;
+const AREA_PENALTY = 0.15;
+const BUILDING_FALLBACK_CONFIDENCE = 0.4;
+const ROOM_LIKE = new Set(["Room", "Corridor", "Stairway", "Stairs", "Space"]);
+const ALARM_DPT = "DPST-1-5";
 const FUNCTION_TYPE_TRADE: Readonly<Record<string, Trade>> = {
   "FT-1": "lighting",
   "FT-2": "lighting",
@@ -88,6 +113,8 @@ const DIRECTION_MARKERS: readonly Marker[] = ["alarm", "status", "command"];
  * sind Befehle fuer einen bestimmten Betriebsmodus.
  */
 const WEAK_ASPECTS = new Set<Aspect>(["window", "heat", "mode"]);
+/** Aspekte, die im Licht einen Ort nennen. */
+const PLACE_ASPECTS = new Set<Aspect>(["window"]);
 const LABEL_MARKERS = new Set<Marker>(["status", "command", "alarm", "central", "outOfUse", "outdoor"]);
 
 export function analyzeName(text: string, matcher: RoomMatcher, profile?: CompiledProfile): NameAnalysis {
@@ -106,6 +133,7 @@ export function analyzeName(text: string, matcher: RoomMatcher, profile?: Compil
   const aspects: Aspect[] = [];
   const trades: Trade[] = [];
   const consumed = new Set<number>();
+  const places = new Set<number>();
   const replacements = new Map<number, string>();
   for (const match of rooms.matches) for (const index of match.tokens) consumed.add(index);
   for (const hit of hits) {
@@ -116,6 +144,7 @@ export function analyzeName(text: string, matcher: RoomMatcher, profile?: Compil
     // Gewerkwoerter bleiben im Funktionsnamen ("Licht A"), Marker und Aspekte nicht.
     const labelRelevant = (marker !== undefined && LABEL_MARKERS.has(marker)) || aspect !== undefined;
     if (labelRelevant) for (const index of hit.tokens) consumed.add(index);
+    if (aspect && PLACE_ASPECTS.has(aspect) && !marker) for (const index of hit.tokens) places.add(index);
   }
   const fromSchema = { trades: [] as Trade[], aspects: [] as Aspect[], markers: [] as Marker[], roomIds: [] as string[], tokens: [...profileHits.keys()] };
   for (const [index, { entry, roomId }] of profileHits) {
@@ -131,6 +160,7 @@ export function analyzeName(text: string, matcher: RoomMatcher, profile?: Compil
   trades.unshift(...fromSchema.trades);
   const controlAspects = aspects.filter((aspect) => !WEAK_ASPECTS.has(aspect));
   const labelTokens = tokens.filter((token) => !consumed.has(token.index));
+  const placeTokens = tokens.filter((token) => !consumed.has(token.index) || places.has(token.index));
   return {
     text,
     tokens,
@@ -141,6 +171,8 @@ export function analyzeName(text: string, matcher: RoomMatcher, profile?: Compil
     trades,
     labelTokens,
     label: labelOf(text, labelTokens, replacements),
+    placeTokens,
+    placeLabel: labelOf(text, placeTokens, replacements),
     profile: fromSchema,
   };
 }
@@ -160,6 +192,18 @@ export function analyzeGroupAddress(
     claims.push({ dimension, value, source, confidence, evidence });
   };
   const functions = options.useEtsFunctions ? node.functions : [];
+  const sizes = node.comObjectSizes;
+  const fitsSize = (dpt: string): boolean => {
+    const size = graph.loaded.master.dpts.get(dpt)?.sizeInBit;
+    return sizes.size !== 1 || size === undefined || sizes.has(size);
+  };
+  // Ein Begriff, dessen typische Groesse der Objektgroesse widerspricht, meint etwas anderes ("Power_Status" mit 1 Bit).
+  const sized = (aspects: readonly Aspect[]): Aspect[] =>
+    aspects.filter((aspect) => {
+      const dpt = ASPECTS[aspect].dpt;
+      return dpt === undefined || fitsSize(dpt);
+    });
+  const nameAspects = sized(name.aspects);
 
   // Bestaetigte Antworten
   const review = options.reviews?.get(node.ga.id);
@@ -192,13 +236,14 @@ export function analyzeGroupAddress(
   }
   const nameTrade = name.trades[0];
   if (nameTrade) claim("trade", nameTrade, "name", 0.8, `Wort im Namen "${node.ga.name}"`);
-  for (const aspect of name.aspects) {
+  for (const aspect of nameAspects) {
     const trade = ASPECTS[aspect].trade;
     if (trade) claim("trade", trade, "name", 0.65, `Begriff "${aspect}" im Namen`);
   }
   for (const range of ranges) {
     const rangeTrade = range.trades[0];
     if (rangeTrade) claim("trade", rangeTrade, "hierarchy", 0.75, `Gruppenbereich "${range.text}"`);
+    // Der Gruppenbereich nennt das Thema aller seiner GAs; die Objektgroesse einer einzelnen GA spricht nicht dagegen.
     for (const aspect of range.aspects) {
       const trade = ASPECTS[aspect].trade;
       if (trade) claim("trade", trade, "hierarchy", 0.55, `Begriff "${aspect}" im Gruppenbereich "${range.text}"`);
@@ -219,9 +264,10 @@ export function analyzeGroupAddress(
   }
   const nameMarker = DIRECTION_MARKERS.find((marker) => name.markers.has(marker));
   if (nameMarker) {
-    claim("direction", nameMarker, "name", nameMarker === "command" ? 0.75 : 0.8, `Kennwort im Namen "${node.ga.name}"`);
+    // "Alarm" sagt, was transportiert wird, nicht wohin; gegen die Verdrahtung (ein Aktor wird gesteuert) traegt es nicht.
+    claim("direction", nameMarker, "name", nameMarker === "status" ? 0.8 : 0.75, `Kennwort im Namen "${node.ga.name}"`);
   } else {
-    const aspectDirection = name.aspects.map((aspect) => ASPECTS[aspect].direction).find((direction) => direction !== undefined);
+    const aspectDirection = nameAspects.map((aspect) => ASPECTS[aspect].direction).find((direction) => direction !== undefined);
     if (aspectDirection) claim("direction", aspectDirection, "name", 0.6, `Begriff im Namen "${node.ga.name}"`);
     for (const range of [...ranges].reverse()) {
       const rangeMarker = DIRECTION_MARKERS.find((marker) => range.markers.has(marker));
@@ -229,7 +275,7 @@ export function analyzeGroupAddress(
         claim("direction", rangeMarker, "hierarchy", 0.65, `Gruppenbereich "${range.text}"`);
         break;
       }
-      const rangeDirection = range.aspects.map((aspect) => ASPECTS[aspect].direction).find((direction) => direction !== undefined);
+      const rangeDirection = sized(range.aspects).map((aspect) => ASPECTS[aspect].direction).find((direction) => direction !== undefined);
       if (rangeDirection) {
         claim("direction", rangeDirection, "hierarchy", 0.55, `Gruppenbereich "${range.text}"`);
         break;
@@ -238,24 +284,36 @@ export function analyzeGroupAddress(
   }
 
   // DPT
-  const sizes = node.comObjectSizes;
-  const fitsSize = (dpt: string): boolean => {
-    const size = graph.loaded.master.dpts.get(dpt)?.sizeInBit;
-    return sizes.size !== 1 || size === undefined || sizes.has(size);
-  };
   const gaDpt = node.ga.dpts[0];
   if (gaDpt) claim("dpt", gaDpt, "ets-ga", 0.95, "DatapointType an der GA");
   const coDpt = comObjectDpt(node);
   if (coDpt) claim("dpt", coDpt, "manufacturer", 0.9, "DPT der verknüpften Kommunikationsobjekte");
-  for (const aspect of name.aspects) {
+  for (const aspect of nameAspects) {
     const dpt = ASPECTS[aspect].dpt;
-    if (dpt && fitsSize(dpt)) claim("dpt", dpt, "name", 0.6, `Begriff "${aspect}" im Namen`);
+    if (dpt) claim("dpt", dpt, "name", 0.6, `Begriff "${aspect}" im Namen`);
+  }
+  // Eine Stoermeldung ohne weiteren Begriff ist ein Alarmbit.
+  if (name.markers.has("alarm") && !nameAspects.some((aspect) => ASPECTS[aspect].dpt !== undefined) && fitsSize(ALARM_DPT)) {
+    claim("dpt", ALARM_DPT, "name", 0.6, `Störmeldung im Namen "${node.ga.name}"`);
   }
   for (const range of ranges) {
     for (const aspect of range.aspects) {
       const dpt = ASPECTS[aspect].dpt;
       if (dpt && fitsSize(dpt)) claim("dpt", dpt, "hierarchy", 0.5, `Begriff "${aspect}" im Gruppenbereich "${range.text}"`);
     }
+  }
+  if (!gaDpt && !coDpt) {
+    const hints = claims
+      .filter((entry) => entry.dimension === "dpt")
+      .sort((a, b) => b.confidence - a.confidence)
+      .map((entry) => entry.value);
+    const objects = node.links.map((link) => ({
+      text: objectText(link),
+      label: link.comObject.functionText ?? link.comObject.text ?? link.comObject.refId,
+      actuator: isActuatorLink(link, graph),
+    }));
+    const inferred = objectDpt(node.comObjectSizes, objects, hints);
+    if (inferred) claim("dpt", inferred.value, "manufacturer", inferred.confidence, inferred.evidence);
   }
   for (const dpt of [gaDpt, coDpt]) {
     const trade = dpt ? DPT_TRADE[dpt] : undefined;
@@ -272,12 +330,19 @@ export function analyzeGroupAddress(
   if (nameRooms.length === 1 && nameRoom) {
     claim("room", nameRoom.spaceId, "name", ROOM_CONFIDENCE[nameRoom.kind], `Raum im Namen "${node.ga.name}"`);
   }
+  // "PhysicsLab 5&6": zwei Raeume im Namen, die Funktion gehoert zum gemeinsamen Bereich, solange das nicht das ganze Gebaeude ist.
+  const common = multiRoomName ? commonSpace(nameRooms, graph) : undefined;
+  if (common && common.type !== "Building") {
+    claim("room", common.id, "name", MULTI_ROOM_CONFIDENCE, `mehrere Räume im Namen "${node.ga.name}", gemeinsamer Bereich "${common.name}"`);
+  }
   let multiRoomRange = false;
   for (const range of [...ranges].reverse()) {
     const rangeRooms = distinct(range.rooms.matches.map((match) => match.spaceId));
     const first = range.rooms.matches[0];
     if (rangeRooms.length === 1 && first) {
-      claim("room", first.spaceId, "hierarchy", ROOM_CONFIDENCE[first.kind] - RANGE_PENALTY, `Gruppenbereich "${range.text}"`);
+      // Ein Bereich statt eines Raums ("Circulation Ground & Upper") ist nur ein grober Rahmen und ueberstimmt keinen Raum im Namen.
+      const area = !ROOM_LIKE.has(graph.spaces.get(first.spaceId)?.space.type ?? "");
+      claim("room", first.spaceId, "hierarchy", ROOM_CONFIDENCE[first.kind] - RANGE_PENALTY - (area ? AREA_PENALTY : 0), `Gruppenbereich "${range.text}"`);
       break;
     }
     if (rangeRooms.length > 1) {
@@ -296,14 +361,19 @@ export function analyzeGroupAddress(
   const deviceRoom = deviceRooms[0];
   const outdoor = anyMarker("outdoor");
   if (deviceRooms.length === 1 && deviceRoom && !outdoor) {
-    // Raumregler sitzen im geregelten Raum, Taster oft nebenan.
-    const confidence = tradeGuess === "hvac" ? 0.8 : 0.5;
+    // Raumregler sitzen meist im geregelten Raum, Taster oft nebenan; ein Raum im Namen wiegt schwerer.
+    const confidence = tradeGuess === "hvac" ? 0.7 : 0.5;
     claim("room", deviceRoom, "device-location", confidence, "Einbauort der verknüpften Bedien- und Sensorgeräte");
   }
   const central = anyMarker("central");
-  if (central && !claims.some((entry) => entry.dimension === "room" && entry.source !== "hierarchy")) {
-    const buildings = graph.loaded.project.spaces.filter((space) => space.type === "Building");
-    if (buildings.length === 1 && buildings[0]) claim("room", buildings[0].id, "name", 0.6, "Zentralfunktion, gilt für das Gebäude");
+  const buildings = graph.loaded.project.spaces.filter((space) => space.type === "Building");
+  const building = buildings.length === 1 ? buildings[0] : undefined;
+  if (central && building && !claims.some((entry) => entry.dimension === "room" && entry.source !== "hierarchy")) {
+    claim("room", building.id, "name", 0.6, "Zentralfunktion, gilt für das Gebäude");
+  }
+  // Ohne jeden Raumhinweis liegt das Thing auf Gebaeudeebene; das ist weniger genau, aber nicht falsch und braucht keine Rueckfrage.
+  if (building && !outdoor && !claims.some((entry) => entry.dimension === "room")) {
+    claim("room", building.id, "default", BUILDING_FALLBACK_CONFIDENCE, "kein Raum in Name, Gruppenbereich oder Einbauort; gilt für das Gebäude");
   }
 
   return {
@@ -316,8 +386,49 @@ export function analyzeGroupAddress(
     multiRoomName,
     multiRoomRange,
     label: name.label,
+    objectAspects: objectAspects(node, graph),
     claims,
   };
+}
+
+/** Funktionstexte der Herstellerobjekte, die eine Aufgabe eindeutig benennen; Sperre vor Praesenz ("Presence block"). */
+const OBJECT_ASPECTS: readonly (readonly [RegExp, Aspect])[] = [
+  [/(disable|enable|block|sperr|freigab)/, "lock"],
+  [/(presence|pr(ä|ae)senz|occupan|anwesenheit)/, "presence"],
+  [/(actuating value|continuous variable|control value|stellgr(ö|oe)|stellwert)/, "valve"],
+  [/(forced|zwang)/, "forced"],
+  [/(summer|sommer)/, "summer"],
+  [/(text indication|textmeldung|text message)/, "text"],
+  [/(counter|z(ä|ae)hlerstand|impulsz(ä|ae)hler)/, "counter"],
+];
+
+function objectAspects(node: GaNode, graph: ProjectGraph): Aspect[] {
+  const links = node.links.filter((link) => !isNeutral(link));
+  const ordered = [...links.filter((link) => isActuatorLink(link, graph)), ...links.filter((link) => !isActuatorLink(link, graph))];
+  const result: Aspect[] = [];
+  for (const link of ordered) {
+    const text = objectText(link);
+    const hit = OBJECT_ASPECTS.find(([pattern]) => pattern.test(text));
+    if (hit && !result.includes(hit[1])) result.push(hit[1]);
+  }
+  return result;
+}
+
+/** Naechster gemeinsamer Vorfahr mehrerer Raeume in der Gebaeudestruktur. */
+function commonSpace(ids: readonly string[], graph: ProjectGraph): Space | undefined {
+  const chain = (id: string): Space[] => {
+    const result: Space[] = [];
+    let current = graph.spaces.get(id)?.space;
+    while (current) {
+      result.push(current);
+      current = current.parentId ? graph.spaces.get(current.parentId)?.space : undefined;
+    }
+    return result;
+  };
+  const [head, ...rest] = ids.map(chain);
+  if (!head) return undefined;
+  // Der Raum selbst zaehlt nicht: Liegt einer im anderen, ist der aeussere der gemeinsame Bereich.
+  return head.find((space) => rest.every((other) => other.some((entry) => entry.id === space.id)));
 }
 
 export function isCabinet(link: GaLink, graph: ProjectGraph): boolean {

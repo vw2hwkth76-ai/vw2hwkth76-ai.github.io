@@ -137,3 +137,39 @@ werden müssen. Formulierungen bleiben herstellerneutral.
 - **Strenger Modus ist streng.** Im Musterprojekt kommen die Richtungen aus
   Namen (Konfidenz unter 0,85); übrig bleiben 20 von 70 Things. Bestätigen
   in der Werkstatt hebt das an.
+
+## Befunde am Schulprojekt (ETS3-Zeit)
+
+Erstes Projekt, das nicht beim Bau des Vokabulars dabei war; vorher 39 %
+TD-fertig, 555 Rückfragen.
+
+- **Kein einziger DPT im Projekt**, weder an GAs noch an Objekten. Die
+  Herstellerdaten tragen aber immer Größe und Funktionstext, oft eine
+  EIS-Angabe. Daraus lässt sich der DPT deterministisch ableiten, mit der
+  Größe als hartem Filter. Ein allgemeiner Text ("Schalten" eines
+  Binäreingangs) überlässt den Untertyp dem Namen ("ExtractFault" ist 1.005).
+- **Objekttexte entscheiden die Richtung besser als Flags.** Platzhalter
+  einer Visualisierung ("1 byte (3)") zählen nicht, Stellgrößen eines
+  Reglers sind Zustand, Störungstexte machen daraus eine Meldung. Ein
+  Messwert bleibt Zustand, auch wenn ein Aktor ihn verwertet.
+- **Raumnamen sind Verwaltungsnamen** ("Physics Lab2G (line1)",
+  "Circulaton First Floor"), GA-Namen Kurzformen ("PhysLab2G",
+  "Corridor_..._First"). Der Abgleich zerlegt beide gleich und kennt Kürzel,
+  Synonyme, Geschossbuchstaben und Tippfehler. Ein anderer
+  Geschossbuchstabe an der Nummer gilt nur, wenn es keinen passenden Raum
+  gibt.
+- **"Window" ist im Licht ein Ort**, keine Funktion: "Window_Switch" ist die
+  Fensterreihe, kein Fensterkontakt. Bei der Heizung bleibt der
+  Fensterkontakt Teil des Raum-Things.
+- **Der Begriff muss zur Größe passen.** "Power_Status" mit 1 Bit ist keine
+  Leistung, "Brightness" mit 9.004 kein Dimmwert. Rollen prüfen deshalb den
+  Haupttyp und fallen auf die nächste Deutung zurück.
+- **Drittes Schema "Ort / Gewerk".** Style ist "Gewerk / Funktion", das
+  Musterprojekt "Gewerk / Raum", das Schulprojekt "Ort / Gewerk". Dort
+  nennen die Namen nur Einzelfunktionen ("Summer_Mode", "Damper_Text"); das
+  Raumklima entsteht aus Raumgerät und Gruppenbereich.
+- **Zwei Zugänge sind kein zweites Thing.** Klappenwert vom Raumtaster und
+  Klappenwert am Aktor haben dieselbe Rolle; das ist keine Strukturfrage.
+- **Gold-Standard mit Ermessen.** Stellgröße des Reglers als Zustand,
+  Störungen als Meldung, Präsenz-Trigger als Zustand, Zentrallichter als
+  eigene Things: Das sind vertretbare Festlegungen, keine Fakten.

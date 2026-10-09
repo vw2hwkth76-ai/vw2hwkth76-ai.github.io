@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { parseGold } from "../src/bench/gold.ts";
 import { RECOGNITION_PREDICTORS } from "../src/bench/recognition-predictor.ts";
+import { readiness } from "../src/bench/readiness.ts";
 import { accuracy, score } from "../src/bench/score.ts";
 import { loadKnxProject } from "../src/ets/load.ts";
 import { buildGraph, type ProjectGraph } from "../src/graph/evidence-graph.ts";
@@ -46,6 +47,19 @@ describe("Erkennung ohne ETS-Funktionen", () => {
     // 0/0/12 entscheidet der Objekttext ("Status der Jalousie fuer Anzeige"), 0/0/13 hat keine Verknuepfung.
     expect(result.dimensions.direction.correct).toBe(16);
     expect(result.dimensions.direction.wrong).toBe(0);
+  });
+
+  it.skipIf(!hasFixture("privat/schule.knxproj"))("haelt die Werte am Schulprojekt ohne DPT-Angaben (nur lokal)", async () => {
+    const graph = await graphOf("privat/schule.knxproj");
+    const result = score(graph, gold("privat/schule.gold.json"), WITH_ETS);
+    expect(accuracy(result.dimensions.room)).toBeGreaterThanOrEqual(0.97);
+    expect(accuracy(result.dimensions.direction)).toBeGreaterThanOrEqual(0.98);
+    expect(accuracy(result.dimensions.dpt)).toBeGreaterThanOrEqual(0.99);
+    expect(result.dimensions.dpt.wrong).toBe(0);
+    const ready = readiness(analyzeProject(graph, { useEtsFunctions: true }), gold("privat/schule.gold.json"));
+    expect(ready.ready / ready.groupAddresses).toBeGreaterThanOrEqual(0.95);
+    expect(ready.bundling?.precision).toBeGreaterThanOrEqual(0.97);
+    expect(ready.bundling?.recall).toBeGreaterThanOrEqual(0.9);
   });
 
   it.skipIf(!hasFixture("privat/musterprojekt-ets6.knxproj"))("haelt die Werte am Musterprojekt (Trainingsprojekt, ets2td: 85 / 92 / 71 / 68 %)", async () => {

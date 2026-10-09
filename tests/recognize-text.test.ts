@@ -30,6 +30,18 @@ const GERMAN = new RoomMatcher([
 ]);
 const ENGLISH = new RoomMatcher([space("lr", "Living room"), space("n1", "Nursery 1"), space("n2", "Nursery 2"), space("bath", "Bath room"), space("tb", "Terrace/Balcony")]);
 
+/** Struktur wie in aelteren Schulprojekten: Raumnummer mit Geschossbuchstabe, Verwaltungszusatz in Klammern, Tippfehler. */
+const SCHOOL = new RoomMatcher([
+  space("p1", "Physics Lab1G (line1)"),
+  space("p2", "Physics Lab2G (line1)"),
+  space("pc", "Circulation Physics 1&2G (line1)"),
+  space("a1", "Art Lab1F (line1)"),
+  space("a8", "Art Lab8G (line4)"),
+  space("tg", "Toilets Ground"),
+  space("cf", "Circulaton First Floor"),
+  space("store", "Dark Room/ Art Store"),
+]);
+
 const rooms = (matcher: RoomMatcher, name: string): string[] => matcher.findRooms(tokenize(name)).matches.map((match) => match.spaceId).sort();
 
 describe("tokenize", () => {
@@ -38,11 +50,25 @@ describe("tokenize", () => {
     expect(tokenize("SollTemp").map((token) => token.norm)).toEqual(["soll", "temp"]);
     expect(tokenize("Licht1 Küche").map((token) => token.norm)).toEqual(["licht", "1", "kueche"]);
     expect(tokenize("Betriebsm. Kompf.Zentral").map((token) => token.norm)).toEqual(["betriebsm", "kompf", "zentral"]);
+    expect(tokenize("Physlab2G_PIRDisable").map((token) => token.norm)).toEqual(["physlab", "2", "g", "pir", "disable"]);
+    expect(tokenize("BIQ").map((token) => token.norm)).toEqual(["biq"]);
   });
 });
 
 describe("findWords", () => {
   const info = (name: string) => findWords(tokenize(name)).map((hit) => hit.info);
+  it("kennt Stoerungen, Belegung, Klappen und Luftqualitaet", () => {
+    expect(info("Toilet_ExtractFault")).toEqual([{ trade: "hvac" }, { marker: "alarm" }]);
+    expect(info("Extractfault")).toEqual([{ trade: "hvac", marker: "alarm" }]);
+    // Mehrwortbegriffe zuerst, dann Einzelwoerter.
+    expect(info("Dali_Short_Circuit_Status").map((entry) => entry.marker ?? entry.trade)).toEqual(["alarm", "lighting", "status"]);
+    expect(info("Lab_Occupied")).toContainEqual({ aspect: "presence" });
+    expect(info("Damper_Value")).toEqual([{ aspect: "damper", trade: "hvac" }, { aspect: "value" }]);
+    expect(info("Air quality sensor")).toContainEqual({ aspect: "airQuality", trade: "hvac" });
+    expect(info("Heating / cooling")).toEqual([{ aspect: "heatCool", trade: "hvac" }]);
+    expect(info("PIRDisable")).toEqual([{ aspect: "presence" }, { aspect: "lock" }]);
+  });
+
   it("erkennt Marker, Gewerke und Aspekte", () => {
     expect(info("Licht A RM Küche")).toEqual([{ trade: "lighting" }, { marker: "status" }]);
     expect(info("Rolladen 1 Position RM")).toEqual([{ trade: "shading" }, { aspect: "position" }, { marker: "status" }]);
@@ -84,6 +110,32 @@ describe("RoomMatcher", () => {
     expect(rooms(ENGLISH, "Living room Desk light")).toEqual(["lr"]);
     expect(rooms(ENGLISH, "Bath room Window movement")).toEqual(["bath"]);
     expect(rooms(ENGLISH, "Terrace/Balcony Wall light")).toEqual(["tb"]);
+  });
+
+  it("gleicht Raumnamen mit Nummer, Geschossbuchstabe und Kuerzeln ab", () => {
+    expect(rooms(SCHOOL, "PhysLab2G_Window_Switch")).toEqual(["p2"]);
+    expect(rooms(SCHOOL, "Physics_Lab1G_Temperature")).toEqual(["p1"]);
+    expect(rooms(SCHOOL, "Art_Lab1F_Damper_Value")).toEqual(["a1"]);
+    // Der Flur zu beiden Laboren erklaert mehr vom Namen als ein einzelnes Labor.
+    expect(rooms(SCHOOL, "Fault_Corridor_PhysLab_1&2")).toEqual(["pc"]);
+    expect(rooms(SCHOOL, "Fault_Corridor_PhysLab_1&2_b")).toEqual(["pc"]);
+  });
+
+  it("kennt Synonyme, Geschosswoerter und Tippfehler im Raumnamen", () => {
+    expect(rooms(SCHOOL, "Ground_Staff_WC")).toEqual(["tg"]);
+    expect(rooms(SCHOOL, "First_Floor_Corridor_West")).toEqual(["cf"]);
+    expect(rooms(SCHOOL, "Corridor_PhysLab_1&2_Ground")).toEqual(["pc"]);
+  });
+
+  it("nennt bei Aufzaehlungen beide Raeume und widerspricht keinem Geschossbuchstaben", () => {
+    expect(rooms(SCHOOL, "PhysicsLab 1&2_ECG_Error")).toEqual(["p1", "p2"]);
+    // "Lab8F" gibt es nicht, "Lab8G" schon: der Tippfehler wird schwach zugeordnet; gibt es beide, gewinnt der exakte.
+    expect(SCHOOL.findRooms(tokenize("Art_Lab8F_Airquality")).matches.map((match) => [match.spaceId, match.kind])).toEqual([["a8", "mismatch"]]);
+    expect(rooms(new RoomMatcher([space("a8g", "Art Lab8G"), space("a8f", "Art Lab8F")]), "Art_Lab8F_Airquality")).toEqual(["a8f"]);
+    expect(rooms(SCHOOL, "PhyslabX_Trigger")).toEqual([]);
+    expect(rooms(SCHOOL, "Physlab2G_Airquality_Sensor")).toEqual(["p2"]);
+    // Ein Kuerzel allein ("Art" im Lager) reicht nicht.
+    expect(rooms(SCHOOL, "Art_Extract_Fault")).toEqual([]);
   });
 
   it("findet Etagen nur exakt", () => {
