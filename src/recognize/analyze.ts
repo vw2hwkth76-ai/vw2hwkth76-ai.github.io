@@ -7,6 +7,7 @@ import type { Claim, ClaimDimension, ClaimSource } from "./claims.ts";
 import { type Aspect, ASPECTS, FILLER_WORDS, findWords, type Marker, splitKnown, type Trade, type WordHit } from "./lexicon.ts";
 import type { CompiledProfile } from "./profile.ts";
 import { type RoomFinding, type RoomMatchKind, RoomMatcher } from "./rooms.ts";
+import { matchSchema, type SchemaMatch } from "./schema.ts";
 import { labelOf, type Token, tokenize } from "./text.ts";
 
 export interface NameAnalysis {
@@ -51,6 +52,8 @@ export interface GaAnalysis {
   readonly label: string;
   /** Aspekte aus den Texten der verknuepften Objekte, Aktorobjekte zuerst; Rueckfall, wenn der Name nichts sagt. */
   readonly objectAspects: readonly Aspect[];
+  /** Was das bestaetigte Namensschema mit Aufbau aus dem Namen liest; fehlt ohne Schema oder ohne Treffer. */
+  readonly schema: SchemaMatch | undefined;
   readonly claims: Claim[];
 }
 
@@ -206,7 +209,11 @@ export function analyzeGroupAddress(
   matcher: RoomMatcher,
   options: AnalyzeOptions,
 ): GaAnalysis {
-  const name = analyzeName(node.ga.name, matcher, options.profile);
+  const schema = options.profile?.schema ? matchSchema(options.profile.schema, node.ga.name) : undefined;
+  const plain = analyzeName(node.ga.name, matcher, options.profile);
+  // Begriffe aus dem Schema gehen den Woertern im Namen vor; sie stehen fuer Rollen und DPT zuerst.
+  const name: NameAnalysis =
+    schema && schema.aspects.length > 0 ? { ...plain, aspects: [...schema.aspects, ...plain.aspects.filter((aspect) => !schema.aspects.includes(aspect))] } : plain;
   const ranges = node.ranges.map((range) => analyzeName(range.name, matcher, options.profile));
   const anyMarker = (marker: Marker) => name.markers.has(marker) || ranges.some((range) => range.markers.has(marker));
   const claims: Claim[] = [];
@@ -236,6 +243,20 @@ export function analyzeGroupAddress(
 
   // Namensschema des Integrators
   const schemaName = options.profile?.name ?? "Namensschema";
+  if (schema) {
+    const where = `${schemaName}, Muster ${schema.pattern + 1}: ${schema.detail}`;
+    if (schema.roomId) claim("room", schema.roomId, "schema", SCHEMA_CONFIDENCE, where);
+    if (schema.trade) claim("trade", schema.trade, "schema", SCHEMA_CONFIDENCE, where);
+    if (schema.direction) claim("direction", schema.direction, "schema", SCHEMA_CONFIDENCE, where);
+    const typed = schema.aspects.filter((aspect) => ASPECTS[aspect].dpt !== undefined);
+    for (const aspect of typed.length > 0 ? typed : schema.aspects) {
+      const dpt = ASPECTS[aspect].dpt ?? ASPECTS[aspect].bareDpt;
+      if (!dpt || !fitsSize(dpt)) continue;
+      // Schema und Objektgroesse sind zwei unabhaengige Belege; der Begriff allein bleibt ein Vorschlag.
+      const sizeKnown = sizes.size === 1;
+      claim("dpt", dpt, "schema", sizeKnown ? 0.88 : 0.75, `${where}; Begriff "${aspect}"${sizeKnown ? " passt zur Objektgröße" : ""}`);
+    }
+  }
   for (const source of [name, ...ranges]) {
     const where = source === name ? "im Namen" : `im Gruppenbereich "${source.text}"`;
     const weight = source === name ? 0 : 0.05;
@@ -247,7 +268,7 @@ export function analyzeGroupAddress(
     for (const aspect of source.profile.aspects) {
       const info = ASPECTS[aspect];
       if (info.direction && !marker) claim("direction", info.direction, "profile", 0.8 - weight, `${schemaName}: Aspekt "${aspect}" ${where}`);
-      if (info.dpt) claim("dpt", info.dpt, "profile", 0.75 - weight, `${schemaName}: Aspekt "${aspect}" ${where}`);
+      if (info.dpt && fitsSize(info.dpt)) claim("dpt", info.dpt, "profile", 0.75 - weight, `${schemaName}: Aspekt "${aspect}" ${where}`);
     }
   }
 
@@ -445,8 +466,26 @@ export function analyzeGroupAddress(
     multiRoomRange,
     label: name.label,
     objectAspects: objectAspects(node, graph),
-    claims,
+    schema,
+    claims: schema ? withoutSuperseded(claims, schema) : claims,
   };
+}
+
+/**
+ * Ein bestaetigtes Schema mit Aufbau 0,92: Es schlaegt die Namensheuristik, die schwache Verdrahtung
+ * (0,76) ohne Rueckfrage, und verliert mit Rueckfrage gegen starke Verdrahtung (0,93) und ETS-Angaben.
+ */
+const SCHEMA_CONFIDENCE = 0.92;
+/** Belege, die nur aus dem Namen geraten sind; das bestaetigte Schema ist die bessere Lesart desselben Namens. */
+const NAME_SOURCES: ReadonlySet<ClaimSource> = new Set(["name", "hierarchy", "pairing", "family", "default", "profile"]);
+
+/** Belege der Namensheuristik fuer Dimensionen, die das Schema entscheidet, fallen weg. */
+export function withoutSuperseded(claims: readonly Claim[], schema: SchemaMatch): Claim[] {
+  const decided = new Set<ClaimDimension>();
+  if (schema.roomId) decided.add("room");
+  if (schema.trade) decided.add("trade");
+  if (schema.direction) decided.add("direction");
+  return claims.filter((claim) => !(decided.has(claim.dimension) && NAME_SOURCES.has(claim.source)));
 }
 
 /** Funktionstexte der Herstellerobjekte, die eine Aufgabe eindeutig benennen; Sperre vor Praesenz ("Presence block"). */

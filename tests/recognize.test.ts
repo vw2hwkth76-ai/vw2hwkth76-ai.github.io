@@ -7,6 +7,7 @@ import { loadKnxProject } from "../src/ets/load.ts";
 import { buildGraph, type GaNode, type ProjectGraph } from "../src/graph/evidence-graph.ts";
 import { analyzeGroupAddress, type GaAnalysis } from "../src/recognize/analyze.ts";
 import { decide } from "../src/recognize/claims.ts";
+import { compileProfile, parseProfile } from "../src/recognize/profile.ts";
 import { RoomMatcher } from "../src/recognize/rooms.ts";
 import { analyzeProject, type ProjectAnalysis } from "../src/recognize/pipeline.ts";
 import type { Thing } from "../src/recognize/things.ts";
@@ -112,7 +113,23 @@ describe("Erkennung ohne ETS-Funktionen", () => {
     expect(result.dimensions.direction.wrong).toBeLessThanOrEqual(11);
     expect(result.dimensions.dpt.wrong).toBe(0);
     const ready = readiness(analyzeProject(graph, { useEtsFunctions: true }), goldE);
-    expect(ready.readyWrong).toBeLessThanOrEqual(8);
+    expect(ready.readyWrong).toBeLessThanOrEqual(3);
+  });
+
+  it.skipIf(!hasFixture("privat/projekt-e.namensschema.json"))("liest mit bestaetigtem Schema alles fest und buendelt wie der Errichter (nur lokal)", async () => {
+    const graph = await graphOf("privat/projekt-e.knxproj");
+    const goldE = gold("privat/projekt-e.gold.json");
+    const parsed = parseProfile(JSON.parse(new TextDecoder().decode(readFixture("privat/projekt-e.namensschema.json"))) as unknown);
+    if (!parsed.ok) throw new Error(parsed.errors.join("; "));
+    const options = { useEtsFunctions: true, profile: compileProfile(parsed.profile, graph.loaded.project.spaces) };
+    const analysis = analyzeProject(graph, options);
+    const ready = readiness(analysis, goldE);
+    expect(ready.readyWrong).toBe(0);
+    expect(ready.ready / ready.groupAddresses).toBeGreaterThanOrEqual(0.96);
+    expect(ready.firm / ready.groupAddresses).toBeGreaterThanOrEqual(0.85);
+    expect(ready.bundling).toEqual({ precision: 1, recall: 1 });
+    expect(analysis.things).toHaveLength(33);
+    expect(analysis.questions.length).toBeLessThanOrEqual(4);
   });
 
   it.skipIf(!hasFixture("privat/musterprojekt-ets6.knxproj"))("haelt die Werte am Musterprojekt (Trainingsprojekt, ets2td: 85 / 92 / 71 / 68 %)", async () => {

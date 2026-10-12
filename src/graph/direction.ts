@@ -137,7 +137,8 @@ function wiringDirection(node: GaNode, graph: ProjectGraph): DirectionEvidence |
   // Der Eingang eines Geraets, das empfaengt (Betriebsart am Raumregler), ist ein Befehlsziel wie ein Aktorausgang.
   const inputs = links.filter((link) => {
     const text = objectText(link);
-    return !actuator(link) && link.receives && INPUT_WORDS.test(text) && !INPUT_CHANNEL.test(text) && !IN_OUT_WORDS.test(text);
+    // Ein Eingang, der selbst sendet, gleicht ab (Master und Slave zweier Melder); gesteuert wird er nicht.
+    return !actuator(link) && link.receives && !link.sends && INPUT_WORDS.test(text) && !INPUT_CHANNEL.test(text) && !IN_OUT_WORDS.test(text);
   });
   const automationInputs = actuatorLinks.filter(
     (link) => link.receives && !link.sends && objectText(link).split(" / ").some((part) => ACTUATOR_INPUT.test(part.trim())),
@@ -150,7 +151,8 @@ function wiringDirection(node: GaNode, graph: ProjectGraph): DirectionEvidence |
   }
   // Ein Sensor, dessen Messwert ein Aktor verwertet (Raumtemperatur an den Heizungsaktor), bleibt ein Zustand.
   const sensors = links.filter((link) => link.sends && !actuator(link) && MEASUREMENT_WORDS.test(objectText(link)) && !OPERATOR_WORDS.test(objectText(link)));
-  if (sensors.length > 0 && targets.length > 0 && sources.length === 0) {
+  // Das Ziel muss ein anderes Objekt sein; ein Parameter-Eingang verwertet nicht seinen eigenen Wert.
+  if (sensors.length > 0 && targets.some((link) => !sensors.includes(link)) && sources.length === 0) {
     return result("status", `Sensor meldet, Aktor verwertet: ${sensors.map(describe).join(", ")}`, sensors);
   }
   const feeding = links.filter((link) => link.sends && !actuator(link));

@@ -1,6 +1,7 @@
 import type { Space } from "../ets/model.ts";
 import { isRecord } from "../util/guards.ts";
 import { type Aspect, isAspect, isMarker, isTrade, type Marker, type Trade } from "./lexicon.ts";
+import { type CompiledSchema, compileSchema, EMPTY_SCHEMA, type NamingSchema, parseSchema } from "./schema.ts";
 import { normalizeText } from "./text.ts";
 
 /**
@@ -10,6 +11,8 @@ import { normalizeText } from "./text.ts";
  */
 
 export const PROFILE_FORMAT = "knx-td-namensschema-1";
+/** Mit Aufbau: Muster, Bedeutung der Gruppenwerte, Regeln; die Kuerzeltabelle bleibt Teil davon. */
+export const PROFILE_FORMAT_V2 = "knx-td-namensschema-2";
 
 export interface ProfileEntry {
   /** Kuerzel wie geschrieben, verglichen ohne Gross/Klein und Umlaute: "L", "LD", "LR", "RM". */
@@ -24,9 +27,10 @@ export interface ProfileEntry {
 }
 
 export interface NamingProfile {
-  readonly format: typeof PROFILE_FORMAT;
+  readonly format: typeof PROFILE_FORMAT | typeof PROFILE_FORMAT_V2;
   readonly name: string;
   readonly entries: readonly ProfileEntry[];
+  readonly schema: NamingSchema;
 }
 
 export interface CompiledEntry {
@@ -37,22 +41,30 @@ export interface CompiledEntry {
 export interface CompiledProfile {
   readonly name: string;
   readonly tokens: ReadonlyMap<string, CompiledEntry>;
+  /** Muster des Schemas; fehlt bei einer reinen Kuerzeltabelle. */
+  readonly schema: CompiledSchema | undefined;
   readonly warnings: readonly string[];
 }
 
 const MAX_ENTRIES = 2000;
 const MAX_TEXT = 80;
 
-export type ProfileResult = { ok: true; profile: NamingProfile } | { ok: false; errors: string[] };
+export type ProfileResult = { ok: true; profile: NamingProfile; warnings: string[] } | { ok: false; errors: string[] };
 
 /** Prueft ein Profil aus einer Datei oder einem KI-Vorschlag; nichts wird stillschweigend uebernommen. */
 export function parseProfile(json: unknown): ProfileResult {
   const errors: string[] = [];
+  const warnings: string[] = [];
   if (!isRecord(json)) return { ok: false, errors: ["Profil: erwartet ein JSON-Objekt."] };
-  if (json["format"] !== PROFILE_FORMAT) errors.push(`Profil: Feld "format" muss "${PROFILE_FORMAT}" sein.`);
+  const format = json["format"];
+  const v2 = format === PROFILE_FORMAT_V2;
+  if (format !== PROFILE_FORMAT && !v2) errors.push(`Profil: Feld "format" muss "${PROFILE_FORMAT}" oder "${PROFILE_FORMAT_V2}" sein.`);
   const name = typeof json["name"] === "string" ? json["name"].slice(0, MAX_TEXT) : "";
-  const raw = json["entries"];
+  // Im Format 2 ist die Kuerzeltabelle optional; das Muster allein kann genuegen.
+  const raw = json["entries"] ?? (v2 ? [] : undefined);
   if (!Array.isArray(raw)) return { ok: false, errors: [...errors, 'Profil: Feld "entries" fehlt oder ist keine Liste.'] };
+  const schema = v2 ? parseSchema(json, errors, warnings) : EMPTY_SCHEMA;
+  if (v2 && schema.patterns.length === 0 && raw.length === 0 && errors.length === 0) errors.push("Schema: weder Muster noch Kürzel.");
   if (raw.length > MAX_ENTRIES) errors.push(`Profil: höchstens ${MAX_ENTRIES} Einträge.`);
 
   const entries: ProfileEntry[] = [];
@@ -101,7 +113,7 @@ export function parseProfile(json: unknown): ProfileResult {
     seen.set(key, index);
     entries.push(entry);
   });
-  return errors.length > 0 ? { ok: false, errors } : { ok: true, profile: { format: PROFILE_FORMAT, name, entries } };
+  return errors.length > 0 ? { ok: false, errors } : { ok: true, profile: { format: v2 ? PROFILE_FORMAT_V2 : PROFILE_FORMAT, name, entries, schema }, warnings };
 }
 
 /** Bindet Raumnamen an die Raeume des Projekts. Unbekannte Raeume werden gemeldet, nicht geraten. */
@@ -117,7 +129,8 @@ export function compileProfile(profile: NamingProfile, spaces: readonly Space[])
     }
     tokens.set(normalizeText(entry.token), { entry, roomId });
   }
-  return { name: profile.name, tokens, warnings };
+  const schema = profile.schema.patterns.length > 0 ? compileSchema(profile.schema, spaces) : undefined;
+  return { name: profile.name, tokens, schema, warnings };
 }
 
 export interface UnknownCode {

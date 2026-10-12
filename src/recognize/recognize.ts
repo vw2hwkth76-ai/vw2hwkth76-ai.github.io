@@ -1,13 +1,13 @@
 import { isActuatorLink, isNeutral } from "../graph/direction.ts";
 import type { ProjectGraph } from "../graph/evidence-graph.ts";
-import { type AnalyzeOptions, analyzeGroupAddress, type GaAnalysis, isCabinet } from "./analyze.ts";
+import { type AnalyzeOptions, analyzeGroupAddress, type GaAnalysis, isCabinet, withoutSuperseded } from "./analyze.ts";
 import { type Claim, type ClaimDimension, type Decision, decide } from "./claims.ts";
 import { type Aspect, FILLER_WORDS } from "./lexicon.ts";
 import { RoomMatcher } from "./rooms.ts";
 
 export const DECISION_DIMENSIONS: readonly ClaimDimension[] = ["room", "trade", "direction", "dpt"];
 
-export type BundleSource = "ets-function" | "channel" | "family" | "single";
+export type BundleSource = "ets-function" | "schema" | "channel" | "family" | "single";
 
 export interface ThingDraft {
   readonly key: string;
@@ -43,6 +43,19 @@ export function recognize(graph: ProjectGraph, options: AnalyzeOptions = { useEt
   applyPairs(analyses);
   applyConventions(analyses);
   applyCentralDirection(analyses);
+  // Paare und Zentralfunktionen sind Namensheuristik; wo das Schema entscheidet, gilt das Schema.
+  for (const analysis of analyses) {
+    if (!analysis.schema) continue;
+    const kept = withoutSuperseded(analysis.claims, analysis.schema);
+    analysis.claims.splice(0, analysis.claims.length, ...kept);
+  }
+  // Thing laut Schema; eine ETS-Funktion geht vor, wenn sie zaehlt.
+  const schemaThing = new Map<string, string>();
+  for (const analysis of analyses) {
+    if (!analysis.schema || (options.useEtsFunctions && analysis.node.functions.length > 0)) continue;
+    schemaThing.set(analysis.node.ga.id, analysis.schema.thingKey);
+  }
+  const free = (id: string): boolean => !schemaThing.has(id);
 
   // Erste Entscheidung, damit Familien Raum und Gewerk kennen.
   const first = new Map(analyses.map((analysis) => [analysis.node.ga.id, decideAll(analysis.claims)]));
@@ -73,7 +86,7 @@ export function recognize(graph: ProjectGraph, options: AnalyzeOptions = { useEt
     const id = analysis.node.ga.id;
     families.add(id);
     const fn = options.useEtsFunctions ? analysis.node.functions[0]?.function.id : undefined;
-    const key = fn ? `fn:${fn}` : `fam:${familyKey(analysis)}`;
+    const key = fn ? `fn:${fn}` : (schemaThing.get(id) ?? `fam:${familyKey(analysis)}`);
     const list = groups.get(key) ?? [];
     list.push(id);
     groups.set(key, list);
@@ -85,7 +98,7 @@ export function recognize(graph: ProjectGraph, options: AnalyzeOptions = { useEt
   // sie verbindet die Kanaele nicht zu einem Thing.
   const byChannel = new Map<string, string[]>();
   for (const analysis of analyses) {
-    if (options.useEtsFunctions && analysis.node.functions.length > 0) continue;
+    if ((options.useEtsFunctions && analysis.node.functions.length > 0) || !free(analysis.node.ga.id)) continue;
     const channels = new Set(
       analysis.node.links
         .filter((link) => link.comObject.channel && STRONG_CHANNEL_SOURCES.has(link.comObject.channel.source) && isCabinet(link, graph))
@@ -108,7 +121,7 @@ export function recognize(graph: ProjectGraph, options: AnalyzeOptions = { useEt
   // auch wenn die Namen nur die Einzelfunktion nennen ("Summer_Mode", "Basic_Setpoint").
   const byRoomDevice = new Map<string, string[]>();
   for (const analysis of analyses) {
-    if (options.useEtsFunctions && analysis.node.functions.length > 0) continue;
+    if ((options.useEtsFunctions && analysis.node.functions.length > 0) || !free(analysis.node.ga.id)) continue;
     const decided = first.get(analysis.node.ga.id);
     const room = decided?.room.winner?.value;
     // Gebaeudeebene heisst Zentralfunktion; ein Geschoss oder Bereich ("Kueche/Essen") ist dagegen eine Zone.
@@ -129,7 +142,14 @@ export function recognize(graph: ProjectGraph, options: AnalyzeOptions = { useEt
       if (analysis) subsystems.set(id, climateSide(analysis));
     }
   }
-  bundleRoomSubsystems(analyses, families, first, graph, options, subsystems);
+  bundleRoomSubsystems(
+    analyses.filter((analysis) => free(analysis.node.ga.id)),
+    families,
+    first,
+    graph,
+    options,
+    subsystems,
+  );
 
   propagateWithinFamilies(analyses, families, first);
 
@@ -348,9 +368,14 @@ function buildThings(
   const things: ThingDraft[] = [];
   for (const [key, members] of groups) {
     const etsFunction = options.useEtsFunctions ? members.find((member) => member.analysis.node.functions[0])?.analysis.node.functions[0]?.function : undefined;
+    const schemaLabels = new Set(members.map((member) => member.analysis.schema?.thingLabel));
+    const bySchema = !etsFunction && members.every((member) => member.analysis.schema !== undefined);
+    const schemaLabel = bySchema && schemaLabels.size === 1 ? [...schemaLabels][0] : undefined;
     const source: BundleSource = etsFunction
       ? "ets-function"
-      : members.length === 1
+      : bySchema
+        ? "schema"
+        : members.length === 1
         ? "single"
         : members.some((member) => channelMembers.has(member.analysis.node.ga.id))
           ? "channel"
@@ -360,9 +385,10 @@ function buildThings(
     const kinds = new Set(members.map((member) => subsystems.get(member.analysis.node.ga.id)));
     const kind = kinds.size === 1 ? [...kinds][0] : undefined;
     const climateLabel = members.length > 1 && roomName && kind ? `${roomName} ${SUBSYSTEM_WORDS[language][kind]}` : undefined;
+    const fromSchema = schemaLabel ? [roomName, schemaLabel].filter((part) => part).join(" ") : undefined;
     things.push({
       key,
-      label: etsFunction?.name ?? climateLabel ?? familyLabel(members) ?? members[0]?.analysis.node.ga.name ?? key,
+      label: etsFunction?.name ?? fromSchema ?? climateLabel ?? familyLabel(members) ?? members[0]?.analysis.node.ga.name ?? key,
       source,
       groupAddressIds: members.map((member) => member.analysis.node.ga.id),
       trade: mostCommon(members.map((member) => member.decisions.trade.winner?.value).filter((value) => value !== undefined)),

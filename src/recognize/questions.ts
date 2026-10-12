@@ -100,7 +100,8 @@ export function collectQuestions(recognition: Recognition, things: readonly Thin
   // Gleiches Muster doppelter Rollen in mehreren Things (vier Klimazonen mit denselben Objekten) ist eine Frage.
   const structures = new Map<string, { thing: Thing; role: string; gaIds: string[] }[]>();
   for (const thing of things) {
-    if (thing.draft.outOfUse) continue;
+    // Ein bestaetigtes Schema legt das Thing fest; zwei Werte derselben Rolle sind dann gewollt (Wert und Konstantlicht).
+    if (thing.draft.outOfUse || thing.draft.source === "schema") continue;
     // Befehl und Rueckmeldung derselben Rolle sind ein Paar; nur gleiche Rolle mit gleicher Richtung ist verdaechtig.
     const byRole = new Map<string, string[]>();
     for (const [gaId, role] of thing.roles) {

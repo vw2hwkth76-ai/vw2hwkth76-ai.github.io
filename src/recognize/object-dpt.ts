@@ -99,6 +99,9 @@ const UNIQUE_BY_SIZE: Readonly<Record<number, string>> = {
 
 const TEXT_CONFIDENCE = 0.85;
 const EIS_CONFIDENCE = 0.8;
+/** Der Haupttyp aus einer eindeutigen Groesse ist kein Raten: 1 Bit ist immer DPT 1, das Datenschema damit sicher. */
+const SIZE_MAIN_CONFIDENCE = 0.9;
+/** Mit Untertyp aus dem Namen; der Untertyp ist dann nur so gut wie der Name. */
 const SIZE_CONFIDENCE = 0.8;
 /** 1 Byte ist meist DPT 5, kann aber auch DPT 6, 17 oder 20 sein: nur als schwacher Vorschlag unter der Konfliktschwelle. */
 const BYTE_DEFAULT_CONFIDENCE = 0.55;
@@ -164,8 +167,8 @@ export function objectDpt(sizes: ReadonlySet<number>, objects: readonly ObjectIn
     const hint = hints.find((dpt) => dptMainNumber(dpt) === main);
     return {
       value: hint ?? unique,
-      confidence: SIZE_CONFIDENCE,
-      evidence: hint ? `Objektgröße ${bits} Bit, Untertyp aus dem Namen` : `Objektgröße ${bits} Bit`,
+      confidence: hint && hint !== unique ? SIZE_CONFIDENCE : SIZE_MAIN_CONFIDENCE,
+      evidence: hint ? `Objektgröße ${bits} Bit, Untertyp aus dem Namen` : `Objektgröße ${bits} Bit legt den Haupttyp fest`,
     };
   }
   if (bits === 8 && hints.length === 0) {

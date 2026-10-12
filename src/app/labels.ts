@@ -13,6 +13,7 @@ export const SOURCE_LABEL: Readonly<Record<ClaimSource, string>> = {
   "ets-wiring": "Verdrahtung",
   manufacturer: "Herstellerdaten",
   profile: "Namensschema",
+  schema: "Namensschema (Aufbau)",
   name: "Name",
   hierarchy: "Gruppenbereich",
   "device-location": "Gerätestandort",
@@ -126,6 +127,7 @@ export function dptLabel(dpt: string, master: MasterData): string {
 
 export const BUNDLE_LABEL: Readonly<Record<string, string>> = {
   "ets-function": "ETS-Funktion",
+  schema: "Namensschema",
   channel: "Aktorkanal",
   family: "Namensfamilie",
   single: "Einzelne GA",

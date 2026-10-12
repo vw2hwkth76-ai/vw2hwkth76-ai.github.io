@@ -22,7 +22,7 @@ const CASES: readonly { project: string; gold: string; profile?: string }[] = [
   { project: "fixtures/privat/schule.knxproj", gold: "fixtures/privat/schule.gold.json" },
   { project: "fixtures/privat/projekt-c.zip", gold: "fixtures/privat/projekt-c.gold.json" },
   { project: "fixtures/privat/projekt-d.zip", gold: "fixtures/privat/projekt-d.gold.json" },
-  { project: "fixtures/privat/projekt-e.knxproj", gold: "fixtures/privat/projekt-e.gold.json" },
+  { project: "fixtures/privat/projekt-e.knxproj", gold: "fixtures/privat/projekt-e.gold.json", profile: "fixtures/privat/projekt-e.namensschema.json" },
 ];
 
 const showErrors = process.argv.includes("--fehler");
@@ -36,17 +36,18 @@ for (const entry of CASES) {
   const graph = buildGraph(await loadKnxProject(readFileSync(entry.project)));
   const gold = parseGold(JSON.parse(readFileSync(entry.gold, "utf-8")) as unknown);
   const predictors = [...BASELINE_PREDICTORS, ...RECOGNITION_PREDICTORS];
-  if (entry.profile !== undefined) {
-    const parsed = parseProfile(JSON.parse(readFileSync(entry.profile, "utf-8")) as unknown);
-    if (!parsed.ok) throw new Error(parsed.errors.join("\n"));
-    const profile = compileProfile(parsed.profile, graph.loaded.project.spaces);
-    predictors.push(recognitionPredictor("profil-ohne-ets", "Erkennung mit Namensschema, ohne ETS-Funktionen", () => ({ useEtsFunctions: false, profile })));
-  }
-  for (const predictor of predictors) scores.push(score(graph, gold, predictor));
   const variants: [string, AnalyzeOptions][] = [
     ["erkennung", { useEtsFunctions: true }],
     ["erkennung-ohne-ets", { useEtsFunctions: false }],
   ];
+  if (entry.profile !== undefined && existsSync(entry.profile)) {
+    const parsed = parseProfile(JSON.parse(readFileSync(entry.profile, "utf-8")) as unknown);
+    if (!parsed.ok) throw new Error(parsed.errors.join("\n"));
+    const profile = compileProfile(parsed.profile, graph.loaded.project.spaces);
+    predictors.push(recognitionPredictor("profil-ohne-ets", "Erkennung mit Namensschema, ohne ETS-Funktionen", () => ({ useEtsFunctions: false, profile })));
+    variants.push(["profil-ohne-ets", { useEtsFunctions: false, profile }]);
+  }
+  for (const predictor of predictors) scores.push(score(graph, gold, predictor));
   for (const [id, options] of variants) ready.push({ project: gold.project, predictor: id, result: readiness(analyzeProject(graph, options), gold) });
 }
 
