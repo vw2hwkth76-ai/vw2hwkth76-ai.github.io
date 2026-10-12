@@ -247,3 +247,68 @@ nicht richtig.
   "Betriebsm. Kompf.") haben keine Objektgröße. Ein Begriff ohne eigenen Typ
   ist dann ein Bit, eine Szene eine Szenennummer, aber nur, wenn kein anderer
   Begriff im Namen einen Typ nennt. 47 auf 6 Rückfragen.
+
+## Befunde an Projekt E und Namensschema mit Aufbau
+
+Ein kleines Büroprojekt mit strengem Schema
+(`Etage.Raum.Gewerk-Art-Funktion[-Kanal][.Gerät.Kanal]`). Alle GAs liegen in
+einem einzigen Gruppenbereich mit Standardnamen, die ganze Struktur steckt im
+Namen. Blind 91 % "fertig", davon 182 falsch.
+
+- **Die Etage verdrängte den Raum.** Seit Etagen als Ort zählen, gewann
+  "Upper Floor" gegen "Office1" bei gleicher Länge. Jetzt verdrängen Etage und
+  Gebäude keinen Raum im selben Namen. Eine Raumnummer weit hinter dem
+  Raumwort zählt schwächer ("Office2 ... Gateway #1" ist nicht Office1).
+- **Ersatzregeln der Verdrahtung waren so stark wie echte Belege.** "Nur
+  Empfänger" und "lesbarer Sender ohne Aktor" zählten 0,93 wie ein
+  Aktorausgang. Jetzt zählen sie 0,76: über einem bloßen Begriff im Namen
+  (0,6), unter einem Kennwort (0,8). Die Grenze ist am Schulprojekt geeicht.
+  Mit 0,7 erzeugte sie dort 35 neue Rückfragen; eine Regel "lesbar und
+  beschreibbar ist einstellbar" verwechselte Raumfühler-Sollwerte mit
+  Parametern und flog wieder raus.
+- **Eingänge eines Aktors für seine Automatik** ("Presence", "Sun",
+  "Heating" am Jalousieaktor) sind verwertete Zustände. Ein Objekt ist nie
+  zugleich Sensor und Ziel, ein sendender Eingang ist Abgleich zwischen
+  Meldern.
+- **Haupttyp aus eindeutiger Größe gilt als fest** (0,9). 1 Bit ist immer
+  DPT 1, das Datenschema der TD damit sicher. Ein Untertyp, der nur aus dem
+  Namen kommt, bleibt bei 0,8.
+
+### LLM-Experiment
+
+Gefragt war, ob ein LLM das Projekt besser liest als die Regeln.
+
+1. **Kürzeltabelle (Format 1), von mir geschrieben:** kein Gewinn, die Richtung
+   sogar schlechter. Raumcodes wie "Office1" zerfallen in zwei Wörter, und
+   "SET" als Befehl überstimmte Stellgrößen des Reglers. Der Wert des Schemas
+   liegt hier im Aufbau, nicht in den Kürzeln.
+2. **Aufbau (Format 2), von mir geschrieben:** alle 201 GAs gedeckt, 33 Things
+   wie im Gold-Standard. Gold und Schema stammen aber aus derselben Lesart;
+   das ist kein Test.
+3. **Aufbau von einem unabhängigen LLM, das nur den Prompt sah:** Muster
+   deckt alle 201 GAs inklusive Tippfehlern. Raum und Richtung lesen sich wie
+   bei mir, 0 falsche, 97 % fertig und richtig. Einziger Unterschied:
+   Raumregler und Fancoil als ein Thing (Präzision der Bündelung 63 %). Das
+   ist eine Lesart, kein Fehler. Entschieden ist: zwei Things, wie Gerät und
+   Brick es trennen.
+4. **Was der Prompt braucht:** erlaubte Begriffe als Liste (das LLM erfand
+   "brightness" und "fault"), Beschriftung in der Sprache der Namen, eine
+   Gruppe "room" mit ETS-Raumnamen oder Raumkürzel mit Zuordnung. Bei großen
+   Projekten nur Beispiele je Namensform; die Prüfung läuft danach über alle
+   GAs.
+
+### Entscheidungen
+
+- **Kopieren statt API.** Die App bleibt ohne Netzzugriff (CSP, keine
+  Schlüssel in einer öffentlichen Seite). Der Mensch kopiert den Prompt in
+  ein LLM seiner Wahl und fügt die Antwort ein. Das Ergebnis ist eine
+  Schema-Datei, kein LLM-Aufruf je Analyse. Gemessen wird reproduzierbar gegen
+  die gespeicherte Datei.
+- **Bestätigt heißt fest, außer bei Widerspruch.** Ein Schema gilt erst nach
+  "Übernehmen". Es belegt mit 0,92, ersetzt die Namensheuristik, schlägt
+  schwache Verdrahtung ohne Rückfrage und verliert mit Rückfrage gegen starke
+  Verdrahtung (0,93) und ETS-Angaben (die Kühl-Stellgröße in Projekt E: Name
+  "SET", der Regler sendet).
+- **Schema-Things sind gesetzt:** keine Strukturfragen darin, andere
+  Bündelungsregeln lassen ihre GAs in Ruhe. ETS-Funktionen gehen weiterhin
+  vor.

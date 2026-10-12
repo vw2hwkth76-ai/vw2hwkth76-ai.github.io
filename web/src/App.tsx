@@ -24,6 +24,7 @@ import { GaView } from "./views/GaView.tsx";
 import { OverviewView } from "./views/OverviewView.tsx";
 import { PasswordModal } from "./views/PasswordModal.tsx";
 import { QuestionsView } from "./views/QuestionsView.tsx";
+import { SchemaStepView } from "./views/SchemaStepView.tsx";
 import { SchemaView } from "./views/SchemaView.tsx";
 import { type ProjectSource, StartView } from "./views/StartView.tsx";
 import { TdView } from "./views/TdView.tsx";
@@ -36,6 +37,8 @@ type Phase =
   | { readonly kind: "start"; readonly error?: WorkerError }
   | { readonly kind: "opening"; readonly fileName: string }
   | { readonly kind: "password"; readonly fileName: string; readonly wrong: boolean }
+  /** Schritt 2 nach dem Import: Namensschema vorschlagen lassen, laden oder ueberspringen. */
+  | { readonly kind: "schema" }
   | { readonly kind: "ready" };
 
 const NAV: readonly { readonly view: ViewId; readonly label: string; readonly icon: ComponentType }[] = [
@@ -125,9 +128,14 @@ export function App(): ReactNode {
         setFocusGa(undefined);
         setFocusThing(undefined);
         setProject(opened);
-        setState(stored === EMPTY_STATE && next.preset ? next.preset : stored);
-        setPhase({ kind: "ready" });
-        navigate("uebersicht");
+        const initial = stored === EMPTY_STATE && next.preset ? next.preset : stored;
+        setState(initial);
+        if (initial.schemaChecked) {
+          setPhase({ kind: "ready" });
+          navigate("uebersicht");
+        } else {
+          setPhase({ kind: "schema" });
+        }
       } catch (error) {
         const failure = toFailure(error);
         if (failure.code === "password-required" || failure.code === "password-wrong") {
@@ -231,6 +239,7 @@ export function App(): ReactNode {
       setUseEtsFunctions: (value) => setState((current) => ({ ...current, useEtsFunctions: value })),
       setTdOptions: (options) => setState((current) => ({ ...current, td: options })),
       replaceState: (next) => setState(next),
+      openSchemaStep: () => setPhase({ kind: "schema" }),
       openGa: (gaId) => {
         setFocusGa(gaId);
         if (gaId !== undefined) navigate("gruppenadressen");
@@ -309,7 +318,20 @@ export function App(): ReactNode {
         ) : null}
       </Header>
       <main id="main" className={`ws-main${ready ? " ws-main--nav" : ""}`} tabIndex={-1}>
-        {ready ? (
+        {phase.kind === "schema" && project ? (
+          <SchemaStepView
+            client={client}
+            project={project}
+            state={state}
+            current={result}
+            onDone={(profile) => {
+              setState((current) => ({ ...current, profile, schemaChecked: true }));
+              setPhase({ kind: "ready" });
+              navigate("uebersicht");
+            }}
+            onCancel={close}
+          />
+        ) : ready ? (
           workspace ? (
             <WorkspaceContext.Provider value={workspace}>
               <CurrentView view={view} />

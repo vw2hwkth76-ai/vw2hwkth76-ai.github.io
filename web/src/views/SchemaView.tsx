@@ -3,7 +3,7 @@ import { Button, IconButton, InlineNotification, Select, SelectItem, TextInput }
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { ASPECT_LABEL, MARKER_LABEL, TRADE_LABEL } from "../../../src/app/labels.ts";
 import { isRecord } from "../../../src/util/guards.ts";
-import { PROFILE_FORMAT, parseProfile } from "../../../src/recognize/profile.ts";
+import { PROFILE_FORMAT, PROFILE_FORMAT_V2, parseProfile, profileJson } from "../../../src/recognize/profile.ts";
 import { count, fileStem } from "../format.ts";
 import { download } from "../storage.ts";
 import { useWorkspace } from "../workspace.ts";
@@ -21,16 +21,25 @@ interface DraftEntry {
 interface Draft {
   readonly name: string;
   readonly entries: readonly DraftEntry[];
+  /** Aufbau-Teil eines Schemas im Format 2 (Muster, Werte, Regeln); hier nur angezeigt, bearbeitet wird er im Schritt Namensschema. */
+  readonly schema: Readonly<Record<string, unknown>> | undefined;
 }
+
+const SCHEMA_KEYS = ["aufbau", "patterns", "values", "rules"] as const;
 
 const EMPTY_VALUES: Record<Field, string> = { trade: "", aspect: "", marker: "", room: "", label: "" };
 let nextKey = 1;
 
 function toDraft(profile: unknown): Draft {
-  if (!isRecord(profile)) return { name: "", entries: [] };
+  if (!isRecord(profile)) return { name: "", entries: [], schema: undefined };
   const entries = Array.isArray(profile["entries"]) ? profile["entries"] : [];
+  const schema =
+    profile["format"] === PROFILE_FORMAT_V2 && Array.isArray(profile["patterns"]) && profile["patterns"].length > 0
+      ? Object.fromEntries(SCHEMA_KEYS.filter((key) => profile[key] !== undefined).map((key) => [key, profile[key]]))
+      : undefined;
   return {
     name: typeof profile["name"] === "string" ? profile["name"] : "",
+    schema,
     entries: entries.filter(isRecord).map((entry) => {
       const values = { ...EMPTY_VALUES };
       for (const field of FIELDS) {
@@ -43,10 +52,11 @@ function toDraft(profile: unknown): Draft {
 }
 
 function toProfile(draft: Draft): unknown {
-  if (draft.entries.length === 0) return undefined;
+  if (draft.entries.length === 0 && !draft.schema) return undefined;
   return {
-    format: PROFILE_FORMAT,
+    format: draft.schema ? PROFILE_FORMAT_V2 : PROFILE_FORMAT,
     name: draft.name.trim() || "Namensschema",
+    ...draft.schema,
     entries: draft.entries.map((entry) => ({
       token: entry.token.trim(),
       ...Object.fromEntries(FIELDS.filter((field) => entry.values[field].trim() !== "").map((field) => [field, entry.values[field].trim()])),
@@ -79,7 +89,7 @@ export function SchemaView(): ReactNode {
   apply.current = workspace.setProfile;
   useEffect(() => {
     if (parsed && !parsed.ok) return;
-    const next = parsed?.ok ? parsed.profile : undefined;
+    const next = parsed?.ok ? profileJson(parsed.profile) : undefined;
     if (JSON.stringify(next) === JSON.stringify(committed.current)) return;
     const timer = window.setTimeout(() => {
       committed.current = next;
@@ -105,7 +115,7 @@ export function SchemaView(): ReactNode {
         return;
       }
       setImportError(undefined);
-      setDraft(toDraft(result.profile));
+      setDraft(toDraft(profileJson(result.profile)));
     } catch (error) {
       setImportError(`Keine gültige JSON-Datei (${error instanceof Error ? error.message : String(error)}).`);
     }
@@ -117,8 +127,8 @@ export function SchemaView(): ReactNode {
         <div>
           <h1>Namensschema</h1>
           <p>
-            Die Kürzeltabelle eines Integrators, zum Beispiel "L" für Licht oder "WZ" für Wohnzimmer. Sie gilt über Projekte hinweg und steht als bestätigte
-            Regel über jeder Namensheuristik, aber unter ETS-Angaben und Verdrahtung.
+            Wie ein Errichter benennt: der Aufbau der Namen (Muster) und eine Kürzeltabelle, zum Beispiel "L" für Licht oder "WZ" für Wohnzimmer. Es gilt
+            über Projekte hinweg und steht als bestätigte Regel über jeder Namensheuristik, aber unter ETS-Angaben und starker Verdrahtung.
           </p>
         </div>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
@@ -133,6 +143,9 @@ export function SchemaView(): ReactNode {
               event.target.value = "";
             }}
           />
+          <Button kind="primary" size="md" onClick={workspace.openSchemaStep}>
+            {draft.schema ? "Aufbau neu vorschlagen lassen" : "Aufbau vorschlagen lassen"}
+          </Button>
           <Button kind="tertiary" size="md" renderIcon={Upload} onClick={() => fileInput.current?.click()}>
             Schema laden
           </Button>
@@ -141,7 +154,7 @@ export function SchemaView(): ReactNode {
             size="md"
             disabled={!parsed?.ok}
             onClick={() => {
-              if (parsed?.ok) download(`${fileStem(parsed.profile.name)}.namensschema.json`, JSON.stringify(parsed.profile, null, 2));
+              if (parsed?.ok) download(`${fileStem(parsed.profile.name)}.namensschema.json`, JSON.stringify(profileJson(parsed.profile), null, 2));
             }}
           >
             Schema speichern
@@ -164,6 +177,21 @@ export function SchemaView(): ReactNode {
       {snapshot.profileWarnings.map((warning) => (
         <InlineNotification key={warning} kind="info" lowContrast hideCloseButton title="Hinweis" subtitle={warning} />
       ))}
+
+      {draft.schema ? (
+        <section className="ws-section" aria-labelledby="schema-structure">
+          <h2 id="schema-structure">Aufbau</h2>
+          <p>
+            {typeof draft.schema["aufbau"] === "string" && draft.schema["aufbau"] !== "" ? draft.schema["aufbau"] : "Muster ohne Beschreibung."}{" "}
+            {count(Array.isArray(draft.schema["patterns"]) ? draft.schema["patterns"].length : 0)} Muster,{" "}
+            {count(isRecord(draft.schema["values"]) ? Object.values(draft.schema["values"]).reduce<number>((sum, table) => sum + (isRecord(table) ? Object.keys(table).length : 0), 0) : 0)} Werte,{" "}
+            {count(Array.isArray(draft.schema["rules"]) ? draft.schema["rules"].length : 0)} Ausnahmen.
+          </p>
+          <Button kind="ghost" size="sm" renderIcon={TrashCan} onClick={() => setDraft((current) => ({ ...current, schema: undefined }))}>
+            Aufbau entfernen
+          </Button>
+        </section>
+      ) : null}
 
       <div className="ws-schema">
         <section aria-labelledby="schema-entries">

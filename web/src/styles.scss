@@ -1055,3 +1055,123 @@ body {
     animation-duration: 0.01ms !important;
   }
 }
+
+// Schritt 2: Namensschema
+
+.ws-step {
+  .ws-step__kicker {
+    @include type.type-style('label-01');
+    margin: 0 0 $spacing-02;
+    color: $text-secondary;
+  }
+
+  .ws-step__actions,
+  .ws-step__row,
+  .ws-step__finish {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-03;
+  }
+
+  .ws-step__row {
+    margin-block: $spacing-04;
+  }
+
+  .ws-step__finish {
+    margin-top: $spacing-08;
+  }
+
+  .ws-step__ways {
+    display: grid;
+    align-items: start;
+    gap: $spacing-06;
+
+    @media (min-width: 66rem) {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    }
+  }
+
+  .ws-step__panel {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-04;
+    padding: $spacing-06;
+    background: $layer-01;
+    border-top: 2px solid $border-interactive;
+
+    h2 {
+      @include type.type-style('productive-heading-02');
+    }
+
+    > p {
+      @include type.type-style('body-01');
+      max-width: 68ch;
+      color: $text-secondary;
+    }
+
+    .cds--inline-notification {
+      max-width: none;
+    }
+  }
+
+  .ws-step__list {
+    @include type.type-style('body-01');
+    display: grid;
+    gap: $spacing-03;
+    margin-bottom: $spacing-04;
+    padding-left: $spacing-05;
+    list-style: disc;
+  }
+
+  .ws-step__regex {
+    @include type.type-style('code-01');
+    display: block;
+    margin-top: $spacing-02;
+    overflow-wrap: anywhere;
+    color: $text-secondary;
+  }
+
+  .ws-step__warnings summary {
+    @include type.type-style('body-01');
+    margin-block: $spacing-04;
+    cursor: pointer;
+    color: $link-primary;
+  }
+
+  .ws-step__tables {
+    display: grid;
+    align-items: start;
+    gap: $spacing-06;
+
+    @media (min-width: 66rem) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .ws-step__table {
+    width: 100%;
+
+    caption {
+      @include type.type-style('heading-compact-01');
+      padding-bottom: $spacing-03;
+      text-align: left;
+    }
+
+    td:first-child,
+    th:first-child {
+      width: 3rem;
+    }
+  }
+
+  .ws-figures--compare {
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+
+    dd {
+      white-space: nowrap;
+    }
+  }
+
+  .ws-compare__before {
+    color: $text-secondary;
+  }
+}

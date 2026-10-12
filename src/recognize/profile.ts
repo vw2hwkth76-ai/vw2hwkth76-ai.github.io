@@ -1,7 +1,7 @@
 import type { Space } from "../ets/model.ts";
 import { isRecord } from "../util/guards.ts";
 import { type Aspect, isAspect, isMarker, isTrade, type Marker, type Trade } from "./lexicon.ts";
-import { type CompiledSchema, compileSchema, EMPTY_SCHEMA, type NamingSchema, parseSchema } from "./schema.ts";
+import { type CompiledSchema, compileSchema, EMPTY_SCHEMA, type NamingSchema, parseSchema, schemaJson } from "./schema.ts";
 import { normalizeText } from "./text.ts";
 
 /**
@@ -114,6 +114,17 @@ export function parseProfile(json: unknown): ProfileResult {
     entries.push(entry);
   });
   return errors.length > 0 ? { ok: false, errors } : { ok: true, profile: { format: v2 ? PROFILE_FORMAT_V2 : PROFILE_FORMAT, name, entries, schema }, warnings };
+}
+
+/** Dateiform eines geprueften Profils; parseProfile liest sie unveraendert wieder. */
+export function profileJson(profile: NamingProfile): Record<string, unknown> {
+  const withSchema = profile.schema.patterns.length > 0;
+  return {
+    format: withSchema ? PROFILE_FORMAT_V2 : PROFILE_FORMAT,
+    name: profile.name,
+    ...(withSchema ? schemaJson(profile.schema) : {}),
+    entries: profile.entries,
+  };
 }
 
 /** Bindet Raumnamen an die Raeume des Projekts. Unbekannte Raeume werden gemeldet, nicht geraten. */

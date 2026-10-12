@@ -42,6 +42,8 @@ export interface Workspace {
   setUseEtsFunctions(value: boolean): void;
   setTdOptions(options: TdOptions): void;
   replaceState(state: ProjectState): void;
+  /** Zurueck zum Schritt "Namensschema" mit Vorschlag und Live-Effekt. */
+  openSchemaStep(): void;
   openGa(gaId: string | undefined): void;
   openThing(thingKey: string | undefined): void;
   navigate(view: ViewId): void;

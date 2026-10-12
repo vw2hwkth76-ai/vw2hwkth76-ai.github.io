@@ -57,6 +57,12 @@ const MAX_VALUES = 2000;
 const MAX_TEXT = 80;
 const MAX_DESCRIPTION = 1000;
 
+/**
+ * Wiederholte Gruppe, die selbst auf eine Wiederholung endet ("(a+)+", "(\\w*)*"): Ursache
+ * katastrophalen Backtrackings. Die Analyse laeuft im Browser; ein solches Muster wuerde sie einfrieren.
+ */
+const NESTED_QUANTIFIER = /[+*]\)[+*{]/;
+
 /** Namen der benannten Gruppen eines Musters, in Reihenfolge. */
 export function groupNames(source: string): string[] {
   return [...source.matchAll(/\(\?<([A-Za-z_][A-Za-z0-9_]*)>/g)].map((match) => match[1] ?? "");
@@ -129,6 +135,10 @@ export function parseSchema(json: Record<string, unknown>, errors: string[], war
         errors.push(`${at}: Regex ungültig (${problem}).`);
         return;
       }
+      if (NESTED_QUANTIFIER.test(regex)) {
+        errors.push(`${at}: verschachtelte Wiederholung wie "(a+)+"; solche Muster können die Analyse sehr lange blockieren.`);
+        return;
+      }
       const groups = groupNames(regex);
       if (groups.length === 0) {
         errors.push(`${at}: Regex ohne benannte Gruppen.`);
@@ -181,8 +191,8 @@ export function parseSchema(json: Record<string, unknown>, errors: string[], war
         return;
       }
       const problem = compiles(item["match"], "");
-      if (problem) {
-        errors.push(`${at}: Regex ungültig (${problem}).`);
+      if (problem || NESTED_QUANTIFIER.test(item["match"])) {
+        errors.push(`${at}: Regex ungültig (${problem ?? "verschachtelte Wiederholung"}).`);
         return;
       }
       const meaning = parseMeaning(item, at, warnings);
@@ -367,4 +377,14 @@ export function schemaCoverage(schema: CompiledSchema, names: readonly string[])
     if (room && !found.roomId) unknownRooms.add(room);
   }
   return { perPattern, unmatched, unmatchedExamples, unknownRooms: [...unknownRooms].slice(0, 20), things: things.size };
+}
+
+/** Dateiform des Aufbau-Teils, wie ihn parseSchema wieder liest. */
+export function schemaJson(schema: NamingSchema): Record<string, unknown> {
+  return {
+    ...(schema.description ? { aufbau: schema.description } : {}),
+    patterns: schema.patterns.map((pattern) => ({ regex: pattern.regex, ...(pattern.ignoreCase ? { ignoreCase: true } : {}), thing: pattern.thing })),
+    values: schema.values,
+    rules: schema.rules,
+  };
 }

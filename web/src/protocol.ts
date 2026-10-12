@@ -44,7 +44,19 @@ export interface TdZipRequest {
   readonly toolVersion: string;
 }
 
-export type Request = OpenRequest | AnalyzeRequest | DetailRequest | ReportRequest | TdRequest | TdZipRequest;
+export interface SchemaPromptRequest {
+  readonly type: "schema-prompt";
+  readonly maskPersons: boolean;
+}
+
+/** Prueft ein vorgeschlagenes Schema am geladenen Projekt, ohne den Projektstand zu aendern. */
+export interface SchemaPreviewRequest {
+  readonly type: "schema-preview";
+  readonly profile: unknown;
+  readonly useEtsFunctions: boolean;
+}
+
+export type Request = OpenRequest | AnalyzeRequest | DetailRequest | ReportRequest | TdRequest | TdZipRequest | SchemaPromptRequest | SchemaPreviewRequest;
 
 export interface OpenResult {
   readonly key: string;
@@ -73,6 +85,44 @@ export interface TdResult extends Omit<TdBundle, "files"> {
   readonly milliseconds: number;
 }
 
+export interface SchemaPromptResult {
+  readonly text: string;
+  readonly groupAddresses: number;
+  readonly included: number;
+  readonly masked: number;
+}
+
+/** Kennzahlen einer Erkennung, fuer den Vergleich mit und ohne Schema. */
+export interface PreviewFigures {
+  /** GAs in Benutzung. */
+  readonly groupAddresses: number;
+  readonly ready: number;
+  readonly firm: number;
+  readonly things: number;
+  readonly questions: number;
+}
+
+export type SchemaPreviewResult =
+  | { readonly ok: false; readonly errors: readonly string[] }
+  | {
+      readonly ok: true;
+      /** Kanonische Dateiform; so wird es uebernommen und gespeichert. */
+      readonly profile: unknown;
+      readonly name: string;
+      readonly description: string;
+      readonly warnings: readonly string[];
+      readonly patterns: readonly { readonly regex: string; readonly matched: number }[];
+      readonly unmatched: number;
+      readonly unmatchedExamples: readonly string[];
+      readonly unknownRooms: readonly string[];
+      readonly values: readonly { readonly group: string; readonly value: string; readonly meaning: string }[];
+      readonly rules: readonly { readonly match: string; readonly meaning: string; readonly why: string | undefined }[];
+      readonly entries: number;
+      readonly before: PreviewFigures;
+      readonly after: PreviewFigures;
+      readonly milliseconds: number;
+    };
+
 export interface ResultOf {
   readonly open: OpenResult;
   readonly analyze: AnalyzeResult;
@@ -80,6 +130,8 @@ export interface ResultOf {
   readonly report: ReportResult;
   readonly td: TdResult;
   readonly "td-zip": ArrayBuffer;
+  readonly "schema-prompt": SchemaPromptResult;
+  readonly "schema-preview": SchemaPreviewResult;
 }
 
 export interface WorkerError {

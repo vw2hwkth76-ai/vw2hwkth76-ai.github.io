@@ -18,9 +18,11 @@ export interface ProjectState {
   readonly useEtsFunctions: boolean;
   /** Ausgabeoptionen der Thing Descriptions; aendern nichts an der Erkennung. */
   readonly td: TdOptions;
+  /** Schritt "Namensschema" nach dem Import ist erledigt, mit oder ohne Schema. */
+  readonly schemaChecked: boolean;
 }
 
-export const EMPTY_STATE: ProjectState = { reviews: {}, profile: undefined, useEtsFunctions: true, td: DEFAULT_TD_OPTIONS };
+export const EMPTY_STATE: ProjectState = { reviews: {}, profile: undefined, useEtsFunctions: true, td: DEFAULT_TD_OPTIONS, schemaChecked: false };
 
 function parseTdOptions(json: unknown): TdOptions {
   if (!isRecord(json)) return DEFAULT_TD_OPTIONS;
@@ -45,7 +47,10 @@ export function parseState(json: unknown): ProjectState | undefined {
     }
     if (Object.keys(clean).length > 0) reviews[gaId] = clean;
   }
-  return { reviews, profile: json["profile"] ?? undefined, useEtsFunctions: json["useEtsFunctions"] !== false, td: parseTdOptions(json["td"]) };
+  const profile = json["profile"] ?? undefined;
+  // Aeltere Staende ohne das Feld: Wer schon ein Schema oder Antworten hat, ist ueber den Schritt hinaus.
+  const schemaChecked = json["schemaChecked"] === true || profile !== undefined || Object.keys(reviews).length > 0;
+  return { reviews, profile, useEtsFunctions: json["useEtsFunctions"] !== false, td: parseTdOptions(json["td"]), schemaChecked };
 }
 
 export function loadState(key: string): ProjectState {

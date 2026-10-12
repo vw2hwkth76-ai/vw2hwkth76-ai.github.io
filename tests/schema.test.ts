@@ -4,7 +4,7 @@ import type { Space } from "../src/ets/model.ts";
 import { buildGraph, type ProjectGraph } from "../src/graph/evidence-graph.ts";
 import { decide } from "../src/recognize/claims.ts";
 import { analyzeProject } from "../src/recognize/pipeline.ts";
-import { compileProfile, PROFILE_FORMAT_V2, parseProfile } from "../src/recognize/profile.ts";
+import { compileProfile, PROFILE_FORMAT_V2, parseProfile, profileJson } from "../src/recognize/profile.ts";
 import { compileSchema, matchSchema, parseSchema, schemaCoverage } from "../src/recognize/schema.ts";
 import { buildSchemaPrompt, extractJson } from "../src/recognize/schema-prompt.ts";
 import { readFixture } from "./helpers.ts";
@@ -98,6 +98,24 @@ describe("Namensschema mit Aufbau", () => {
     if (!parsed.ok) return;
     expect(parsed.warnings).toEqual(['Wert "function=Value": unbekannter Begriff "brightness" ignoriert.']);
     expect(parsed.profile.schema.values["function"]?.["Value"]).toEqual({ label: "Helligkeit" });
+  });
+
+  it("lehnt Muster ab, die den Browser blockieren koennten", () => {
+    const result = parseProfile({ format: PROFILE_FORMAT_V2, patterns: [{ regex: "^(?<room>(a+)+)$" }] });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors[0]).toMatch(/verschachtelte Wiederholung/);
+  });
+
+  it("schreibt das gepruefte Schema so, dass es sich unveraendert wieder liest", () => {
+    const first = parseProfile(OFFICE);
+    if (!first.ok) throw new Error(first.errors.join("; "));
+    const json = profileJson(first.profile);
+    expect(json["format"]).toBe(PROFILE_FORMAT_V2);
+    const second = parseProfile(json);
+    expect(second.ok && second.profile).toEqual(first.profile);
+    // Eine reine Kuerzeltabelle bleibt Format 1.
+    const table = parseProfile({ format: "knx-td-namensschema-1", name: "t", entries: [{ token: "L", trade: "lighting" }] });
+    expect(table.ok && profileJson(table.profile)["format"]).toBe("knx-td-namensschema-1");
   });
 
   it("holt das JSON aus einer Antwort mit Codezaun", () => {

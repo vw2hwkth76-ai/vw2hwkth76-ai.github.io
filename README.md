@@ -91,12 +91,27 @@ stillen Entscheidung.
   KNX-Funktionstypen (FT-1, FT-6, FT-7, FT-9, FT-10) mit den KNX-Rollen
   (SwitchOnOff, InfoOnOff, DimmingControl, ...), ergänzt um Rollen ohne Norm
   (ComfortMode, HeatingStatus, ...).
-- **Namensschema** je Integrator als Kürzeltabelle
-  (`knx-td-namensschema-1`, Beispiel `fixtures/oeffentlich/demoprojekt.namensschema.json`):
-  "L" bedeutet Licht, "LR" den Raum Living room, "RM" eine Rückmeldung. Es gilt als bestätigte Regel,
-  unter ETS-Angaben und Verdrahtung, über jeder Namensheuristik. Häufige
-  Kürzel ohne Bedeutung werden mit Beispielen und DPT-Hinweisen gelistet,
-  als Vorlage für das Profil und später für den KI-Vorschlag.
+- **Namensschema** je Errichter, in zwei Stufen:
+  - Kürzeltabelle (`knx-td-namensschema-1`, Beispiel
+    `fixtures/oeffentlich/demoprojekt.namensschema.json`): "L" bedeutet
+    Licht, "LR" den Raum Living room, "RM" eine Rückmeldung.
+  - Aufbau (`knx-td-namensschema-2`): Muster mit benannten Gruppen lesen den
+    ganzen Namen ("Etage.Raum.Gewerk-Art-Funktion-Kanal"), eine Tabelle sagt,
+    was die Werte bedeuten (Gewerk, Richtung, Begriff, Raumkürzel,
+    Anzeigename), Regeln fassen Ausnahmen. Die Gruppen unter "thing"
+    bestimmen, welche GAs ein Thing bilden.
+  - Bestätigt belegt das Schema Raum, Gewerk und Richtung mit 0,92: Es
+    ersetzt die Namensheuristik und schlägt die schwachen Ersatzregeln der
+    Verdrahtung. Widerspricht starke Verdrahtung oder eine ETS-Angabe,
+    gewinnt diese, mit Rückfrage. Ungültige Muster (auch solche mit
+    verschachtelten Wiederholungen, die den Browser blockieren könnten)
+    werden abgelehnt, unbekannte Begriffe mit Hinweis ignoriert.
+- **Verdrahtung mit Belegstärke:** Was ein Aktor oder ein eindeutiger
+  Objekttext belegt, zählt 0,93. Ersatzregeln ("nur Empfänger", "lesbarer
+  Sender ohne Aktor") zählen 0,76: Ein Kennwort im Namen ("Status", "STA")
+  gewinnt dann, ein bloßer Begriff nicht. Eingänge eines Aktors für seine
+  Automatik ("Output A / Presence") sind verwertete Zustände, keine
+  gesteuerten Ausgänge.
 - **Raumnummern:** "A0101B057_..." trifft den Raum "02_L1/B/057_..."; Räume
   ohne Nummerncode über Kurzformen ("CORZ1" für "Corridor_Zone1"). Gibt es
   denselben Raumnamen in mehreren Gebäuden, entscheidet das Gebäude, das der
@@ -117,6 +132,18 @@ stillen Entscheidung.
   Unterordner oder mit einer `.knxproj` darin), als entpackter Ordner oder
   Beispielprojekt; geschützte ETS5- und ETS6-Projekte mit Passwortdialog.
   Die Analyse läuft in einem Web Worker.
+- **Schritt 2, Namensschema**, direkt nach dem Import und überspringbar:
+  - Prompt für ein LLM kopieren. Er enthält nur Gebäudestruktur, GA-Namen,
+    Gruppenbereiche, DPT und verknüpfte Objekte. Personennamen sind
+    ersetzt, große Projekte erscheinen als Beispiele je Namensform.
+  - Die Antwort einfügen oder ein gespeichertes Schema laden. Die App prüft
+    sie an allen GAs: Abdeckung je Muster, nicht gelesene Beispiele,
+    unbekannte Räume.
+  - Werte und Ausnahmen lassen sich einzeln abwählen. Der Vergleich ohne
+    und mit Schema (TD-fertig, fest belegt, Things, Rückfragen) rechnet
+    sofort neu.
+  - Übernehmen, speichern oder ohne Schema weiter. Die App selbst schickt
+    nichts an ein LLM.
 - **Übersicht:** Kennzahlen, Anteil entschiedener Werte je Dimension nach
   Belegstärke, Trefferquote gegen die eigenen Bestätigungen, Hinweise aus
   dem Projekt. Schalter, ob ETS-Funktionen als Beleg zählen.
@@ -126,8 +153,8 @@ stillen Entscheidung.
   Begründung, die verknüpften Kommunikationsobjekte mit Flags und Kanal, und
   nimmt Bestätigungen und Korrekturen an.
 - **Things, Rückfragen, Namensschema** (Kürzeltabelle bearbeiten, unbekannte
-  Kürzel übernehmen, laden und speichern) und **Export** (Analysebericht,
-  Kurzfassung, Projektstand, Gold-Standard).
+  Kürzel übernehmen, Aufbau neu vorschlagen lassen, laden und speichern) und
+  **Export** (Analysebericht, Kurzfassung, Projektstand, Gold-Standard).
 
 ### Eigene Projekte durchlaufen lassen
 
@@ -192,6 +219,8 @@ Vorgänger, in Klammern die Werte von `ets2td`.
 | Schulprojekt (ETS3-Zeit, lokal, kein DPT im Projekt) | 97,5 % | – | 99,1 % | 99,6 % |
 | Projekt C (Gewerbebau, 6 % der GAs verknüpft, kein DPT) | 100 % (4,7) | – | 98,2 % (58,2) | 97,2 % (59,1) |
 | Projekt D (Wohnhaus, portugiesisch benannt, ein Drittel Platzhalter) | 100 % | – | 98,5 % | 100 % |
+| Projekt E (Büro, englisch, strenges Schema, alles in einem Bereich) | 100 % (blind 0,5) | – | 92,5 % (blind 85,6) | 96,8 % |
+| Projekt E mit bestätigtem Namensschema | 100 % | – | 100 % | 96,8 % |
 
 Dazu misst der Benchmark, wie viel ohne Rückfrage in Thing Descriptions
 geht: Anteil der GAs in Benutzung (ohne stillgelegte), die in einem Thing
@@ -210,10 +239,14 @@ die Soll-Things des Gold-Standards gemessen.
 | Projekt C nach Anpassung | 72,6 % | 0 | 16 | 100 % | 99,8 % |
 | Projekt D (lokal), blind gemessen | 68,1 % von 395 | 81 | 219 | 26,1 % | 43,3 % |
 | Projekt D nach Anpassung | 98,5 % von 259 (136 stillgelegt) | 0 | 9 | 100 % | 93,5 % |
+| Projekt E (lokal), blind gemessen | 91,0 % | 182 | 15 | 54,0 % | 24,6 % |
+| Projekt E nach Anpassung, ohne Schema | 89,6 % | 3 | 18 | 53,6 % | 24,8 % |
+| Projekt E mit Namensschema, eigene Lesart | 97,0 % | 0 | 4 | 100 % | 100 % |
+| Projekt E mit Namensschema eines LLM, nur mit dem Prompt | 97,0 % | 0 | 4 | 62,6 % | 100 % |
 
 Einordnung:
 
-- **Musterprojekt, Schulprojekt, Projekt C und Projekt D sind
+- **Musterprojekt, Schulprojekt und die Projekte C bis E sind
   Trainingsmaterial**, kein Test: Vokabular und Regeln sind beim Blick auf
   genau diese Projekte entstanden. Belastbar sind nur die Blindmessungen an
   jeweils ungesehenen Projekten.
@@ -226,6 +259,20 @@ Einordnung:
   wie "Ausgang/Eingang" als Eingang galten und Etagen nicht als Ort. Blind
   fertig heißt also nicht blind richtig; deshalb die Spalte "davon falsch".
   Nach der Anpassung ist Projekt D wie Schule und Projekt C Trainingsmaterial.
+- **Projekt E** hat ein strenges Schema
+  (`Etage.Raum.Gewerk-Art-Funktion-Kanal`), alle GAs liegen in einem
+  einzigen Gruppenbereich. Blind waren 91 % "fertig", aber 182 davon
+  falsch: Die Etage im Namen verdrängte den Raum. Nach der Korrektur, ohne
+  Schema, sind 88 % fertig und richtig. Die Bündelung bleibt ohne Schema
+  schwach (115 Things statt 33), weil die Namen gleichartige Funktionen
+  nicht verraten.
+- **Mit Schema** sind es 97 % fertig und richtig, 88 % fest belegt, 33 Things,
+  Bündelung 100/100. Im Modus "nur fest belegte" wird kein Thing mehr
+  übersprungen (blind 43 von 120).
+- **Ein LLM, das nur den Prompt sah,** hat ein Muster geliefert, das alle 201
+  GAs abdeckt, und Raum und Richtung genauso gelesen. Die geringere Präzision
+  der Bündelung hat eine Ursache: Es fasste Raumregler und Fancoil zu einem
+  Thing zusammen. Im Schritt 2 lässt sich das mit einem Häkchen trennen.
 - Seit Projekt D zählen stillgelegte GAs nicht mehr im Nenner. Beim
   Musterprojekt macht das 69,1 auf 74,0 % aus, den Rest bis 97,2 % die
   Bit-Regel für unverknüpfte Heizungs-GAs.
@@ -271,6 +318,11 @@ Projektpasswörter werden nur zum Entschlüsseln verwendet und nicht gespeichert
   Quellen erlaubt, und `npm run pruefe-build` prüft das in der CI.
 - Bestätigungen und Namensschema liegen je Projekt im `localStorage` dieses
   Browsers und lassen sich unter Export löschen.
+- Der Prompt für den Schema-Vorschlag enthält GA-Namen, Gruppenbereiche und
+  Raumnamen, keine Projekt-, Kunden- oder Errichterangaben; Anreden mit
+  Namen ("Dr. ...", "Frau ...") werden standardmäßig ersetzt. Wer ihn in ein
+  LLM einfügt, übermittelt ihn an dessen Anbieter. Bei Kundenprojekten nur
+  mit Auftragsverarbeitungsvertrag.
 - `.npmrc` schaltet Installationsskripte ab; Carbon und IBM Plex würden
   sonst beim `npm install` Nutzungsdaten an IBM senden.
 - Der Analysebericht enthält keinen Projektnamen und keine GUID, aber GA-,

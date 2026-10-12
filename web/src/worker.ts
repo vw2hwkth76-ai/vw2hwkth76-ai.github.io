@@ -8,10 +8,25 @@ import { loadKnxProject } from "../../src/ets/load.ts";
 import { buildGraph, type ProjectGraph } from "../../src/graph/evidence-graph.ts";
 import type { ClaimDimension } from "../../src/recognize/claims.ts";
 import { analyzeProject, type ProjectAnalysis } from "../../src/recognize/pipeline.ts";
-import { compileProfile, type NamingProfile, parseProfile } from "../../src/recognize/profile.ts";
+import { readiness } from "../../src/bench/readiness.ts";
+import { ASPECT_LABEL, DIRECTION_LABEL, TRADE_LABEL } from "../../src/app/labels.ts";
+import { compileProfile, type NamingProfile, parseProfile, profileJson } from "../../src/recognize/profile.ts";
+import { type SchemaMeaning, schemaCoverage } from "../../src/recognize/schema.ts";
+import { buildSchemaPrompt } from "../../src/recognize/schema-prompt.ts";
 import { buildThingDescriptions, type TdBundle, type TdOptions } from "../../src/td/render.ts";
 import { XmlError } from "../../src/xml/sax.ts";
-import type { AnalyzeResult, OpenResult, ReportResult, Request, Response, TdResult, WorkerError } from "./protocol.ts";
+import type {
+  AnalyzeResult,
+  OpenResult,
+  PreviewFigures,
+  ReportResult,
+  Request,
+  Response,
+  SchemaPreviewResult,
+  SchemaPromptResult,
+  TdResult,
+  WorkerError,
+} from "./protocol.ts";
 
 declare const self: DedicatedWorkerGlobalScope;
 
@@ -52,6 +67,28 @@ function readme(bundle: TdBundle, options: TdOptions, toolVersion: string): stri
   ].join("\n");
 }
 
+function figures(result: ProjectAnalysis): PreviewFigures {
+  const ready = readiness(result);
+  return { groupAddresses: ready.groupAddresses, ready: ready.ready, firm: ready.firm, things: ready.things, questions: ready.questions };
+}
+
+/** Bedeutung eines Schema-Werts in Worten, fuer die Liste vor der Bestaetigung. */
+function describeMeaning(meaning: SchemaMeaning): string {
+  return [
+    meaning.trade ? TRADE_LABEL[meaning.trade] : undefined,
+    meaning.direction ? DIRECTION_LABEL[meaning.direction] : undefined,
+    meaning.aspect ? ASPECT_LABEL[meaning.aspect] : undefined,
+    meaning.room ? `Raum ${meaning.room}` : undefined,
+    meaning.label ? `"${meaning.label}"` : undefined,
+    meaning.thing ? `Thing wie ${meaning.thing}` : undefined,
+  ]
+    .filter((part) => part !== undefined)
+    .join(", ");
+}
+
+/** Erkennung ohne Schema fuer den Vergleich; haengt nur vom ETS-Schalter ab. */
+let plain: { useEtsFunctions: boolean; figures: PreviewFigures } | undefined;
+
 async function handle(request: Request): Promise<unknown> {
   switch (request.type) {
     case "open": {
@@ -60,6 +97,7 @@ async function handle(request: Request): Promise<unknown> {
       analysis = undefined;
       last = undefined;
       baseline = undefined;
+      plain = undefined;
       tdCache = undefined;
       const loaded = await loadKnxProject(new Uint8Array(request.data), request.password === undefined ? {} : { password: request.password });
       graph = buildGraph(loaded);
@@ -123,6 +161,45 @@ async function handle(request: Request): Promise<unknown> {
       for (const file of bundle.files) entries[file.path] = strToU8(`${JSON.stringify(file.json, null, 2)}\n`);
       const zip = zipSync(entries, { level: 6, mtime: new Date("2026-01-01T00:00:00Z") });
       return transfer(zip.buffer);
+    }
+    case "schema-prompt": {
+      if (!graph) throw new Error("Kein Projekt geladen.");
+      const prompt = buildSchemaPrompt(graph, { maskPersons: request.maskPersons });
+      const result: SchemaPromptResult = { text: prompt.text, groupAddresses: prompt.groupAddresses, included: prompt.included, masked: prompt.masked };
+      return result;
+    }
+    case "schema-preview": {
+      if (!graph) throw new Error("Kein Projekt geladen.");
+      const started = performance.now();
+      const parsed = parseProfile(request.profile);
+      if (!parsed.ok) return { ok: false, errors: parsed.errors } satisfies SchemaPreviewResult;
+      const compiled = compileProfile(parsed.profile, graph.loaded.project.spaces);
+      if (plain?.useEtsFunctions !== request.useEtsFunctions) {
+        plain = { useEtsFunctions: request.useEtsFunctions, figures: figures(analyzeProject(graph, { useEtsFunctions: request.useEtsFunctions })) };
+      }
+      const after = figures(analyzeProject(graph, { useEtsFunctions: request.useEtsFunctions, profile: compiled }));
+      const coverage = compiled.schema ? schemaCoverage(compiled.schema, graph.groupAddresses.map((node) => node.ga.name)) : undefined;
+      const { schema } = parsed.profile;
+      const result: SchemaPreviewResult = {
+        ok: true,
+        profile: profileJson(parsed.profile),
+        name: parsed.profile.name,
+        description: schema.description,
+        warnings: [...parsed.warnings, ...compiled.warnings],
+        patterns: schema.patterns.map((pattern, index) => ({ regex: pattern.regex, matched: coverage?.perPattern[index] ?? 0 })),
+        unmatched: coverage?.unmatched ?? graph.groupAddresses.length,
+        unmatchedExamples: coverage?.unmatchedExamples ?? [],
+        unknownRooms: coverage?.unknownRooms ?? [],
+        values: Object.entries(schema.values).flatMap(([group, table]) =>
+          Object.entries(table).map(([value, meaning]) => ({ group, value, meaning: describeMeaning(meaning) })),
+        ),
+        rules: schema.rules.map((rule) => ({ match: rule.match, meaning: describeMeaning(rule), why: rule.why })),
+        entries: parsed.profile.entries.length,
+        before: plain.figures,
+        after,
+        milliseconds: Math.round(performance.now() - started),
+      };
+      return result;
     }
     case "report": {
       if (!analysis || !graph || !last) throw new Error("Noch keine Analyse vorhanden.");
