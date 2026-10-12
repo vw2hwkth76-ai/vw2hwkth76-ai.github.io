@@ -173,7 +173,8 @@ export class RoomMatcher {
     };
     // Gebaeude zaehlen erst, wenn es mehrere gibt; dann nennt der Gruppenbereich oft, welches gemeint ist.
     const buildings = spaces.filter((space) => space.type === "Building");
-    const types = buildings.length > 1 ? new Set([...ROOM_TYPES, "Building"]) : ROOM_TYPES;
+    // Geschosse zaehlen auch: "Exterior" ist in manchen Projekten ein Geschoss; ein Raum im selben Namen gewinnt spaeter.
+    const types = new Set([...ROOM_TYPES, "Floor", ...(buildings.length > 1 ? ["Building"] : [])]);
     const rooms = spaces.filter((space) => types.has(space.type)).map(candidate).filter((entry) => entry.parts.length > 0);
     this.#rooms = withCommonWords(rooms);
     this.#floors = spaces.filter((space) => space.type === "Floor").map(candidate).filter((entry) => entry.parts.length > 0);

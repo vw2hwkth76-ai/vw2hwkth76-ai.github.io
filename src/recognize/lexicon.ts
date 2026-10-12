@@ -77,6 +77,8 @@ export interface AspectInfo {
   readonly direction: Direction | undefined;
   readonly dpt: string | undefined;
   readonly trade: Trade | undefined;
+  /** Datenpunkttyp nur, wenn kein anderer Begriff einen nennt: "Heizen" allein ist ein Bit, "Heizen Stellwert" nicht. */
+  readonly bareDpt?: string;
 }
 
 export const ASPECTS: Readonly<Record<Aspect, AspectInfo>> = {
@@ -90,11 +92,12 @@ export const ASPECTS: Readonly<Record<Aspect, AspectInfo>> = {
   temperature: { direction: "status", dpt: "DPST-9-1", trade: "hvac" },
   setpoint: { direction: "command", dpt: "DPST-9-1", trade: "hvac" },
   mode: { direction: "command", dpt: "DPST-20-102", trade: "hvac" },
-  modeComfort: { direction: "command", dpt: undefined, trade: "hvac" },
-  modeNight: { direction: "command", dpt: undefined, trade: "hvac" },
-  modeFrost: { direction: "command", dpt: undefined, trade: "hvac" },
-  modeStandby: { direction: "command", dpt: undefined, trade: "hvac" },
-  heat: { direction: "command", dpt: undefined, trade: "hvac" },
+  // Getrennte GAs fuer Komfort, Nacht, Frost und Standby sind in KNX Bits; welcher 1.xxx, sagt erst das Objekt.
+  modeComfort: { direction: "command", dpt: undefined, trade: "hvac", bareDpt: "DPT-1" },
+  modeNight: { direction: "command", dpt: undefined, trade: "hvac", bareDpt: "DPT-1" },
+  modeFrost: { direction: "command", dpt: undefined, trade: "hvac", bareDpt: "DPT-1" },
+  modeStandby: { direction: "command", dpt: undefined, trade: "hvac", bareDpt: "DPT-1" },
+  heat: { direction: "command", dpt: undefined, trade: "hvac", bareDpt: "DPT-1" },
   valve: { direction: "status", dpt: "DPST-5-1", trade: "hvac" },
   window: { direction: "status", dpt: "DPST-1-19", trade: undefined },
   presence: { direction: "status", dpt: "DPST-1-18", trade: "monitoring" },
@@ -106,7 +109,8 @@ export const ASPECTS: Readonly<Record<Aspect, AspectInfo>> = {
   operating: { direction: "status", dpt: "DPST-1-2", trade: "system" },
   reset: { direction: "command", dpt: "DPST-1-15", trade: "system" },
   lock: { direction: "command", dpt: "DPST-1-3", trade: undefined },
-  scene: { direction: "command", dpt: undefined, trade: "scene" },
+  // Szenen werden ueblich per Szenennummer abgerufen (17.001); 18.001 mit Lernbit liefert das Objekt, wenn es verknuepft ist.
+  scene: { direction: "command", dpt: undefined, trade: "scene", bareDpt: "DPST-17-1" },
   energy: { direction: "status", dpt: "DPST-13-13", trade: "metering" },
   power: { direction: "status", dpt: "DPST-14-56", trade: "metering" },
   damper: { direction: "command", dpt: "DPST-5-1", trade: "hvac" },
@@ -143,20 +147,25 @@ function add(info: WordInfo, list: string, mode: "word" | "prefix" | "suffix" | 
 }
 
 add({ marker: "status" }, "rm rueckmeldung rueckm rueck status stat sta feedback fb state info ist istwert actual current aktuell aktueller aktuelle zustand messwert");
-add({ marker: "command" }, "soll cmd befehl set");
+// Portugiesisch und Spanisch: "st" vor dem Namen ist die Rueckmeldung ("st luz quarto"), "estado" der Zustand.
+add({ marker: "status" }, "st");
+add({ marker: "command" }, "soll cmd befehl set comando control");
 add({ marker: "alarm" }, "alarm alarme alert alerts warnung warning feuer fire brand rauch smoke stoerung stoer fault failure fehler error ueberlast overload ausgeloest sabotage leckage leck einbruch panik ausfall kurzschluss");
 add({ marker: "alarm" }, "fault", "suffix");
 add({ marker: "status", aspect: "errorCode" }, "fehlercode errorcode");
 add({ aspect: "heatingDemand", trade: "hvac" }, "heizanforderung waermeanforderung");
 add({ aspect: "coolingDemand", trade: "hvac" }, "kuehlanforderung");
 add({ marker: "alarm" }, "alarm stoermeldung", "suffix");
-add({ marker: "central" }, "zentral central zentrale gesamt global");
-add({ marker: "outOfUse" }, "unbenutzt stillgelegt unused spare reserve dummy");
-add({ marker: "outdoor" }, "aussen outdoor outside aussenanlage aussenbereich", "prefix");
+add({ marker: "central" }, "zentral central zentrale gesamt global geral");
+add({ marker: "outOfUse" }, "unbenutzt stillgelegt unused spare reserve dummy reserva riserva");
+add({ marker: "outdoor" }, "aussen outdoor outside aussenanlage aussenbereich exterior", "prefix");
 
 add({ trade: "lighting" }, "licht light lights leuchte leuchten lampe lamp beleuchtung lighting spot spots downlight led dali dimmer stripe", "both");
+add({ trade: "lighting" }, "iluminacao luz luzes candeeiro sanca aplique", "both");
 add({ trade: "shading" }, "rollladen rolladen rollo jalousie jalousien raffstore raffstoren markise markiese beschattung sonnenschutz blind blinds shutter shutters shade shading awning vorhang behang", "both");
+add({ trade: "shading" }, "estore estores toldo toldos persiana persianas tela", "both");
 add({ trade: "hvac" }, "heizung heating hzg kuehlen kuehlung cooling klima hvac lueftung ventilation luefter fan radiator heizkoerper fussbodenheizung fbh thermostat rtr rtc extract abluft zuluft exhaust fume", "both");
+add({ trade: "hvac" }, "climatizacao aquecimento arrefecimento ventilacao fancoil", "both");
 add({ trade: "hvac", aspect: "heat" }, "heizen heat heiz", "prefix");
 add({ trade: "monitoring" }, "ueberwachung monitoring sicherheit security wetter weather melder", "both");
 add({ trade: "metering" }, "zaehler zaehlerstand verbrauch meter metering kwh", "both");
@@ -167,7 +176,7 @@ add({ aspect: "switch" }, "schalten schalt switching switch onoff");
 add({ aspect: "dim" }, "dimmen dimming dim");
 add({ aspect: "value", trade: "lighting" }, "helligkeit brightness dimmwert");
 add({ aspect: "value" }, "wert value absolut");
-add({ aspect: "move" }, "lang langzeit langzeitbetrieb fahren movement move updown aufab");
+add({ aspect: "move" }, "lang langzeit langzeitbetrieb fahren movement move updown aufab subir descer mov");
 add({ aspect: "step" }, "kurz kurzzeit kurzzeitbetrieb step stop stopp schritt");
 add({ aspect: "position" }, "position pos hoehe height behangposition");
 add({ aspect: "slat" }, "lamelle lamellen slat slats lamellenposition");
@@ -212,6 +221,10 @@ const PHRASES: readonly { readonly words: readonly string[]; readonly info: Word
   { words: ["window", "contact"], info: { aspect: "window" } },
   { words: ["auf", "ab"], info: { aspect: "move" } },
   { words: ["up", "down"], info: { aspect: "move" } },
+  // "Control value" ist die Stellgroesse eines Reglers, kein Befehl.
+  { words: ["control", "value"], info: { aspect: "valve" } },
+  // "s_d": subir/descer
+  { words: ["s", "d"], info: { aspect: "move" } },
   { words: ["ein", "aus"], info: { aspect: "switch" } },
   { words: ["on", "off"], info: { aspect: "switch" } },
   { words: ["building", "protection"], info: { aspect: "modeFrost" } },

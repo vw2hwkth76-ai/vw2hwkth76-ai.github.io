@@ -208,3 +208,42 @@ auf ein neues übertragen.
   keine Größe. Ohne Kodierung lässt sich keine TD schreiben; diese GAs
   bleiben offen, statt geraten zu werden.
 
+
+## Befunde an Projekt D (Wohnhaus, blind gemessen)
+
+Zuerst ohne Anpassung gemessen: 68,1 % TD-fertig, 219 Rückfragen. Die
+Regeln aus Schule und Projekt C trugen also schon deutlich weiter als bei
+Projekt C (3,8 %). Gegen den Gold-Standard waren aber 81 der TD-fertigen
+GAs falsch (77 Richtungen, 12 Räume) und die Bündelung nur zu 26 % präzise.
+Seitdem misst der Benchmark "davon falsch" mit: Fertig heißt entschieden,
+nicht richtig.
+
+- **Ein Drittel Platzhalter.** 136 von 395 GAs heißen "." oder "Reserva".
+  Sie sind stillgelegt: kein Thing, keine Rückfrage, nicht im Nenner.
+- **Ein Sensor sendet einen Messwert.** Ein Taster, der auf den Eingang
+  eines Raumreglers sendet, galt als Sensor, dessen Wert ein Aktor verwertet,
+  und sein Befehl damit als Rückmeldung. Als Sensor zählt jetzt nur, wer
+  Temperatur, Feuchte, Helligkeit, Wind, CO2 oder Zählerstände sendet; die
+  Objektbeschriftung "Ausgang/Eingang" ist kein Eingang.
+- **Eingangskanal ist nicht Eingang.** "Input A" eines Binäreingangs meldet,
+  auch mit Schreib-Flag. Das fiel erst als Regression am Schulprojekt auf
+  (5 auf 32 falsche Richtungen); der Benchmark über alle Projekte hat sie
+  gefangen, bevor sie eingecheckt war.
+- **Zentral-GAs kleben Kanäle zusammen.** Eine "Estores geral"-GA liegt auf
+  allen Rollladenkanälen; über den Aktorkanal gebündelt wurde daraus ein
+  Thing über das halbe Haus. Über den Kanal bündeln jetzt nur GAs, die auf
+  genau einem Kanal liegen.
+- **Etagen als Ort.** "Estores Piso 1 geral" nennt keinen Raum, aber die
+  Etage. Nennt ein Name Raum und Etage, gilt der Raum.
+- **Portugiesisch brauchte nur Wörter.** Zerlegung, Kennwörter und Regeln
+  waren sprachunabhängig genug; es fehlten Begriffe wie Luz, Estores, Toldo,
+  Climatização, St (Rückmeldung), Comando, Subir/Descer, Geral.
+- **Doppelte Rollen nach Muster.** 29 Strukturfragen waren dasselbe Muster
+  in vielen Things; jetzt eine Frage je Muster.
+- **Gold-Standard korrigiert.** Der Gold-Standard ist von Hand erstellt; zwei
+  Einträge waren uneinheitlich: Handbetrieb des Fancoils ist eine
+  Rückmeldung, ein Filteralarm eine Meldung.
+- **Nebenbei am Musterprojekt:** Unverknüpfte Heizungs-GAs ("heizen",
+  "Betriebsm. Kompf.") haben keine Objektgröße. Ein Begriff ohne eigenen Typ
+  ist dann ein Bit, eine Szene eine Szenennummer, aber nur, wenn kein anderer
+  Begriff im Namen einen Typ nennt. 47 auf 6 Rückfragen.

@@ -72,11 +72,18 @@ export function isNeutral(link: GaLink): boolean {
 
 /** Meldet einen Zustand oder Messwert. */
 const STATUS_WORDS =
-  /\b(status|actual|measured|indicat\w*|feedback|report|surveillance|counter value|physical value|sensor|input|output presence|presence output|occupancy|trigger|eingang|anwesenheit|meldung)\b|(r(ü|ue)ckmeld|istwert|messwert|z(ä|ae)hlerstand)/;
+  /\b(status|actual|measured|indicat\w*|feedback|report|surveillance|counter value|physical value|sensor|output presence|presence output|occupancy|trigger|anwesenheit|meldung)\b|(r(ü|ue)ckmeld|istwert|messwert|z(ä|ae)hlerstand)/;
+/** Ein Eingang meldet, was an ihm anliegt; "Ausgang/Eingang" an einem Taster ist dagegen nur die Beschriftung des Objekts. */
+const INPUT_WORDS = /\b(input|eingang)\b/;
+/** Ein Eingangskanal ("Input A", "Eingang 3") ist ein Sensor, auch mit Schreib-Flag. */
+const INPUT_CHANNEL = /\b(input|eingang)\s+([a-z]|\d+)\b/;
+const IN_OUT_WORDS = /\b(output|ausgang)\b|in-\/out|ein-\/aus/;
+/** Messwerte, die ein Sensor sendet und ein Aktor verwertet (Raumtemperatur an den Heizungsaktor). */
+const MEASUREMENT_WORDS = /(measured|messwert|istwert|actual|temperatur|humidity|feuchte|brightness|helligkeit|\blux\b|wind|co2|ppm|counter|z(ä|ae)hl)/;
 /** Meldet eine Stoerung. */
 const ALARM_WORDS = /\b(failure|fault|error|alarm|short circuit|mains failure|st(ö|oe)rung|fehler|kurzschluss|netzausfall)\b/;
 /** Stellgroesse eines Reglers: ein berechneter Zustand, kein Bedienbefehl. */
-const CONTROLLER_WORDS = /(control value|continuous variable|continous|actuating value|control circuit|stellgr(ö|oe)(ss|ß)e|stellwert)/;
+const CONTROLLER_WORDS = /(control value|continuous variable|continous|actuating value|control circuit|stellgr(ö|oe)(ss|ß)e|stellwert|fan ?coil step|fan stage|l(ü|ue)fterstufe)/;
 /** Bediengeraet, das Befehle sendet. */
 const OPERATOR_WORDS = /\b(push button|taster|value transmitter|wertgeber|switch object|switching|schalten|dimming|dimmen|output light|brighter|darker|heller|dunkler)\b/;
 const ACTUATOR_PRODUCT = /(actuator|aktor|drive|antrieb|dali|gateway|dimmer|i\/o unit)/i;
@@ -107,19 +114,32 @@ function wiringDirection(node: GaNode, graph: ProjectGraph): DirectionEvidence |
     return { value: alarm ? "alarm" : value, source: "ets-wiring", detail: alarm ? `${detail}; Störung laut Objekttext` : detail };
   };
 
-  const reportsState = (link: GaLink): boolean => STATUS_WORDS.test(objectText(link)) || ALARM_WORDS.test(objectText(link));
+  const reportsState = (link: GaLink): boolean => {
+    const text = objectText(link);
+    return (
+      STATUS_WORDS.test(text) ||
+      ALARM_WORDS.test(text) ||
+      INPUT_CHANNEL.test(text) ||
+      (INPUT_WORDS.test(text) && !IN_OUT_WORDS.test(text) && !link.receives)
+    );
+  };
   // Aktorobjekte: reine Sender melden Zustaende, Eingaenge ebenfalls; Ausgaenge mit Schreib-Flag werden gesteuert,
   // auch wenn sie zusaetzlich senden (Rueckmeldung ueber dasselbe Objekt).
   const actuatorLinks = links.filter(actuator);
   const sources = actuatorLinks.filter((link) => link.sends && (!link.receives || reportsState(link)));
-  const targets = actuatorLinks.filter((link) => link.receives && !reportsState(link));
+  // Der Eingang eines Geraets, das empfaengt (Betriebsart am Raumregler), ist ein Befehlsziel wie ein Aktorausgang.
+  const inputs = links.filter((link) => {
+    const text = objectText(link);
+    return !actuator(link) && link.receives && INPUT_WORDS.test(text) && !INPUT_CHANNEL.test(text) && !IN_OUT_WORDS.test(text);
+  });
+  const targets = [...actuatorLinks.filter((link) => link.receives && !reportsState(link)), ...inputs];
   const controllers = links.filter((link) => link.sends && !actuator(link) && CONTROLLER_WORDS.test(objectText(link)));
 
   if (controllers.length > 0 && targets.length > 0) {
     return result("status", `Stellgröße eines Reglers: ${controllers.map(describe).join(", ")}`, controllers);
   }
   // Ein Sensor, dessen Messwert ein Aktor verwertet (Raumtemperatur an den Heizungsaktor), bleibt ein Zustand.
-  const sensors = links.filter((link) => link.sends && !actuator(link) && reportsState(link) && !OPERATOR_WORDS.test(objectText(link)));
+  const sensors = links.filter((link) => link.sends && !actuator(link) && MEASUREMENT_WORDS.test(objectText(link)) && !OPERATOR_WORDS.test(objectText(link)));
   if (sensors.length > 0 && targets.length > 0 && sources.length === 0) {
     return result("status", `Sensor meldet, Aktor verwertet: ${sensors.map(describe).join(", ")}`, sensors);
   }

@@ -53,9 +53,13 @@ Name, Einbauort der Bediengeräte, Gruppenhierarchie, Familie. Liegen zwei
 Belege zu dicht beieinander, wird daraus eine Rückfrage statt einer
 stillen Entscheidung.
 
-- **Vokabular** deutsch und englisch mit Komposita ("Küchenfenster" ergibt
-  Raum Küche und Fensterkontakt), Kennwörtern für Rückmeldung, Befehl,
-  Alarm, Zentral und stillgelegt.
+- **Vokabular** deutsch und englisch, Grundwortschatz portugiesisch
+  ("Estores", "Luz", "St" für Rückmeldung), mit Komposita ("Küchenfenster"
+  ergibt Raum Küche und Fensterkontakt), Kennwörtern für Rückmeldung,
+  Befehl, Alarm, Zentral und stillgelegt.
+- **Stillgelegt** sind Platzhalter ohne Buchstaben und Ziffern (".", "--")
+  und Reserve-GAs ("Reserve", "Reserva"): kein Thing, keine Rückfrage, nicht
+  im Nenner der Kennzahlen.
 - **Raumabgleich** gegen die ETS-Räume: exakt, Abkürzung ("Bad",
   "Schlafzim."), Kompositum, Initialen ("LR", "WZ"), Mehrwort ("Living
   room"). Raumnamen werden zerlegt wie GA-Namen ("PhysLab2G" trifft
@@ -63,16 +67,27 @@ stillen Entscheidung.
   (Corridor/Circulation, WC/Toilets), Geschossbuchstabe hinter der Nummer
   (G/Ground, F/First), Tippfehler. Nennt ein Name mehrere Räume
   ("Lab 5&6"), gilt der gemeinsame Bereich; ohne jeden Hinweis das Gebäude.
+  Etagen zählen als Ort, wenn der Name keinen Raum nennt ("Estores Piso 1
+  geral"); nennt er Raum und Etage, gilt der Raum.
 - **DPT aus den Herstellerobjekten**, wenn weder GA noch Objekt einen DPT
   tragen (ältere Herstellerdaten): Die Objektgröße legt den Haupttyp fest,
   wo sie eindeutig ist (1 Bit ist DPT 1), Objekttext und EIS-Angabe den
   Untertyp ("Output presence" 1.018, "EIS 5" DPT 9). Kein Text gilt gegen
-  die Größe.
+  die Größe. Ohne verknüpfte Objekte ist ein Begriff ohne eigenen Typ ein
+  Bit ("Heizen", "Betriebsm. Komfort"), eine Szene eine Szenennummer
+  (17.001), aber nur, wenn kein anderer Begriff im Namen einen Typ nennt
+  ("Heizen Stellwert" bleibt 5.001).
+- **Richtung aus der Verdrahtung:** Ein Eingangskanal ("Input A",
+  "Eingang 3") meldet, auch mit Schreib-Flag; der Eingang eines
+  empfangenden Geräts (Betriebsart am Raumregler) ist ein Befehlsziel; die
+  Objektbeschriftung "Ausgang/Eingang" ist keins von beidem.
 - **Things** aus ETS-Funktion, Aktorkanal, Raumgerät und Namensfamilie.
   Heizungs- und Lüftungs-GAs eines Raums am selben Regler oder Antrieb im
   Raum sind ein Thing; beim Schema "Ort / Gewerk" ("Ground Floor /
   Heating") auch ohne gemeinsames Gerät, solange keine zwei Ausgänge
-  dieselbe Aufgabe haben. Getypt nach den
+  dieselbe Aufgabe haben. Über den Aktorkanal bündeln nur GAs, die auf
+  genau einem Kanal liegen; eine Zentral-GA auf zehn Kanälen klebt sie
+  nicht zusammen. Getypt nach den
   KNX-Funktionstypen (FT-1, FT-6, FT-7, FT-9, FT-10) mit den KNX-Rollen
   (SwitchOnOff, InfoOnOff, DimmingControl, ...), ergänzt um Rollen ohne Norm
   (ComfortMode, HeatingStatus, ...).
@@ -92,8 +107,9 @@ stillen Entscheidung.
   Objekt-DPT belegen, gilt für die unverknüpften, solange sie sich einig sind.
 - **Rückfragen** für Widersprüche, Mehrdeutigkeiten, fehlende Werte und
   doppelte Rollen, je Funktion statt je GA: Fehlt der DPT bei 49 gleichartigen
-  GAs, ist das eine Frage, und die Antwort gilt für alle. Mehrdeutige Begriffe
-  ("Wert", "Position") ohne Kennwort werden bewusst nicht geraten.
+  GAs, ist das eine Frage, und die Antwort gilt für alle. Dasselbe Muster
+  doppelter Rollen in vielen Things ist ebenfalls eine Frage. Mehrdeutige
+  Begriffe ("Wert", "Position") ohne Kennwort werden bewusst nicht geraten.
 
 ## Oberfläche (Schritt 3)
 
@@ -175,34 +191,49 @@ Vorgänger, in Klammern die Werte von `ets2td`.
 | Musterprojekt (ETS6, lokal) | 100 % (85,0) | 86,5 % (91,9) | 100 % (71,1) | 100 % (67,6) |
 | Schulprojekt (ETS3-Zeit, lokal, kein DPT im Projekt) | 97,5 % | – | 99,1 % | 99,6 % |
 | Projekt C (Gewerbebau, 6 % der GAs verknüpft, kein DPT) | 100 % (4,7) | – | 98,2 % (58,2) | 97,2 % (59,1) |
+| Projekt D (Wohnhaus, portugiesisch benannt, ein Drittel Platzhalter) | 100 % | – | 98,5 % | 100 % |
 
 Dazu misst der Benchmark, wie viel ohne Rückfrage in Thing Descriptions
-geht: Anteil der GAs, die in einem Thing liegen, Richtung und DPT
-entschieden haben und keine offene Rückfrage tragen; die Bündelung paarweise
-gegen die Soll-Things des Gold-Standards.
+geht: Anteil der GAs in Benutzung (ohne stillgelegte), die in einem Thing
+liegen, Richtung und DPT entschieden haben und keine offene Rückfrage
+tragen. "Davon falsch" zählt die TD-fertigen GAs, bei denen Raum, Richtung
+oder DPT dem Gold-Standard widerspricht. Die Bündelung wird paarweise gegen
+die Soll-Things des Gold-Standards gemessen.
 
-| Projekt | TD-fertig ohne Rückfrage | Rückfragen | Bündelung Präzision | Bündelung Vollständigkeit |
-|---|---|---|---|---|
-| Style | 100 % | 0 | – | – |
-| Demoprojekt | 89,5 % | 2 | – | – |
-| Musterprojekt (lokal) | 69,1 % | 47 | – | – |
-| Schulprojekt (lokal) | 99,7 % (vorher 39,1) | 7 (555) | 98,9 % (57,8) | 93,1 % (22,9) |
-| Projekt C (lokal), blind gemessen | 3,8 % | 842 | 95,4 % | 9,9 % |
-| Projekt C nach Anpassung | 72,6 % | 28 | 100 % | 99,8 % |
+| Projekt | TD-fertig ohne Rückfrage | davon falsch | Rückfragen | Bündelung Präzision | Bündelung Vollständigkeit |
+|---|---|---|---|---|---|
+| Style | 100 % | 0 | 0 | – | – |
+| Demoprojekt | 89,5 % | 0 | 2 | – | – |
+| Musterprojekt (lokal) | 97,2 % (vorher 69,1) | 0 | 6 (47) | – | – |
+| Schulprojekt (lokal) | 99,7 % (vorher 39,1) | 17 | 7 (555) | 98,9 % (57,8) | 93,1 % (22,9) |
+| Projekt C (lokal), blind gemessen | 3,8 % | – | 842 | 95,4 % | 9,9 % |
+| Projekt C nach Anpassung | 72,6 % | 0 | 16 | 100 % | 99,8 % |
+| Projekt D (lokal), blind gemessen | 68,1 % von 395 | 81 | 219 | 26,1 % | 43,3 % |
+| Projekt D nach Anpassung | 98,5 % von 259 (136 stillgelegt) | 0 | 9 | 100 % | 93,5 % |
 
 Einordnung:
 
-- Das **Musterprojekt und das Schulprojekt sind Trainingsmaterial**, kein
-  Test: Vokabular und Regeln sind beim Blick auf genau diese Projekte
-  entstanden. Belastbar werden die Zahlen erst an ungesehenen Projekten.
+- **Musterprojekt, Schulprojekt, Projekt C und Projekt D sind
+  Trainingsmaterial**, kein Test: Vokabular und Regeln sind beim Blick auf
+  genau diese Projekte entstanden. Belastbar sind nur die Blindmessungen an
+  jeweils ungesehenen Projekten.
 - Bei Projekt C fehlt für gut ein Viertel der GAs jeder Beleg zur Kodierung
   (herstellereigene 3- und 4-Byte-Objekte ohne DPT, unverknüpfte
   Reglerfunktionen). Das bleibt bewusst eine Rückfrage, je Funktion eine.
+- **Projekt D blind** ist der erste Test, bei dem die Regeln aus Schule und
+  Projekt C schon trugen: 68 % TD-fertig statt 3,8 % bei Projekt C. Aber
+  81 dieser GAs waren falsch (77 Richtungen, 12 Räume), weil Objekttexte
+  wie "Ausgang/Eingang" als Eingang galten und Etagen nicht als Ort. Blind
+  fertig heißt also nicht blind richtig; deshalb die Spalte "davon falsch".
+  Nach der Anpassung ist Projekt D wie Schule und Projekt C Trainingsmaterial.
+- Seit Projekt D zählen stillgelegte GAs nicht mehr im Nenner. Beim
+  Musterprojekt macht das 69,1 auf 74,0 % aus, den Rest bis 97,2 % die
+  Bit-Regel für unverknüpfte Heizungs-GAs.
 - "TD-fertig" heißt entschieden, nicht fehlerfrei: Beim Schulprojekt liegen
-  einige Things auf Gebäude- oder Bereichsebene, wo kein Raum erkennbar war,
-  und manche DPTs sind nur im Haupttyp bekannt (1 Bit ohne Untertyp).
-- Die fehlenden Richtungen sind ausschließlich mehrdeutige Fälle ohne
-  Kennwort, falsche Richtungen gibt es in keinem Projekt.
+  13 Things auf Bereichsebene statt im Flurraum, 5 Richtungen sind falsch
+  (Präsenz-Trigger, Betriebsart, Zähler), und manche DPTs sind nur im
+  Haupttyp bekannt (1 Bit ohne Untertyp).
+- Die übrigen fehlenden Richtungen sind mehrdeutige Fälle ohne Kennwort.
 - Die Funktionsnamen im Demoprojekt sind Kurzcodes ("L LR", "LD LR"); die
   löst kein Vokabular, sondern das Namensschema bzw. der KI-Schritt.
 - Mit ETS-Funktionen gewinnt die Verdrahtung gegen vertauschte ETS-Rollen

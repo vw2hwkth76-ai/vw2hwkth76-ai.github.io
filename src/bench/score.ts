@@ -56,6 +56,12 @@ function partial(dimension: Dimension, expected: string, actual: string): boolea
   return false;
 }
 
+/** Urteil ueber einen Wert gegen den Gold-Standard, wie es score() zaehlt. */
+export function judge(dimension: Dimension, expected: string, actual: string): "correct" | "partial" | "wrong" {
+  if (equal(dimension, expected, actual)) return "correct";
+  return partial(dimension, expected, actual) ? "partial" : "wrong";
+}
+
 export function score(graph: ProjectGraph, gold: GoldStandard, predictor: Predictor): Score {
   const dimensions = Object.fromEntries(
     DIMENSIONS.map((dimension) => [dimension, { rated: 0, correct: 0, partial: 0, wrong: 0, missing: 0, bySource: {} }]),
@@ -74,9 +80,9 @@ export function score(graph: ProjectGraph, gold: GoldStandard, predictor: Predic
       result.rated++;
       if (!prediction) {
         result.missing++;
-      } else if (equal(dimension, expected, prediction.value)) {
+      } else if (judge(dimension, expected, prediction.value) === "correct") {
         result.correct++;
-      } else if (partial(dimension, expected, prediction.value)) {
+      } else if (judge(dimension, expected, prediction.value) === "partial") {
         result.partial++;
       } else {
         result.wrong++;

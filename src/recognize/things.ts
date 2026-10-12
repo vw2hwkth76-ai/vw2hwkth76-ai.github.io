@@ -187,6 +187,7 @@ const ROLES: Readonly<Partial<Record<Trade | "any", Partial<Record<Aspect, RoleR
 const DPT_ASPECT: Readonly<Record<string, Aspect>> = {
   "DPST-1-1": "switch",
   "DPST-1-8": "move",
+  "DPST-5-1": "position",
   "DPST-1-7": "step",
   "DPST-3-7": "dim",
   "DPST-9-1": "temperature",

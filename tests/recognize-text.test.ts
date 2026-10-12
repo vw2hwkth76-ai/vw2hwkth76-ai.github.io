@@ -95,6 +95,15 @@ describe("findWords", () => {
     expect(info("KNX SV in Betrieb")).toContainEqual({ aspect: "operating" });
   });
 
+  it("kennt portugiesische Bezeichnungen", () => {
+    expect(info("Estores geral descer")).toEqual([{ trade: "shading" }, { marker: "central" }, { aspect: "move" }]);
+    expect(info("Toldo mov")).toEqual([{ trade: "shading" }, { aspect: "move" }]);
+    expect(info("St Luz cozinha")).toEqual([{ marker: "status" }, { trade: "lighting" }]);
+    expect(info("Candeeiro sala comando")).toEqual([{ trade: "lighting" }, { marker: "command" }]);
+    expect(info("Climatizacao Quarto 1")).toEqual([{ trade: "hvac" }]);
+    expect(info("Reserva")).toEqual([{ marker: "outOfUse" }]);
+  });
+
   it("zerlegt Komposita in Grund- und Bestimmungswort", () => {
     expect(info("Küchenfenster 1")).toEqual([{ aspect: "window" }]);
     expect(info("Hintergrundbeleuchtung")).toEqual([{ trade: "lighting" }]);
@@ -174,6 +183,18 @@ describe("RoomMatcher", () => {
     // "Site", "Level", "Area" stehen in jedem Gebaeudenamen; "1&2" macht den Unterschied.
     expect(rooms(CAMPUS, "Level 1 Area 1&2")).toEqual(["a12"]);
     expect(rooms(CAMPUS, "Level 1 Area 7")).toEqual(["a7"]);
+  });
+
+  it("nimmt Etagen als Ort, wenn der Name keinen Raum nennt", () => {
+    const house = new RoomMatcher([
+      space("h", "Haus", "Building"),
+      space("p0", "Piso 0", "Floor", "h"),
+      space("p1", "Piso 1", "Floor", "h"),
+      space("sala", "Sala", "Room", "p0"),
+    ]);
+    expect(rooms(house, "Estores Piso 1 geral")).toEqual(["p1"]);
+    // Raum und Etage zugleich: Die Analyse behaelt nur den Raum, der Matcher nennt beide.
+    expect(rooms(house, "Luz Sala Piso 0")).toEqual(["p0", "sala"]);
   });
 
   it("findet Etagen nur exakt", () => {

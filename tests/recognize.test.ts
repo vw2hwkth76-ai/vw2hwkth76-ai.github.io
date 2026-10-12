@@ -4,7 +4,10 @@ import { RECOGNITION_PREDICTORS } from "../src/bench/recognition-predictor.ts";
 import { readiness } from "../src/bench/readiness.ts";
 import { accuracy, score } from "../src/bench/score.ts";
 import { loadKnxProject } from "../src/ets/load.ts";
-import { buildGraph, type ProjectGraph } from "../src/graph/evidence-graph.ts";
+import { buildGraph, type GaNode, type ProjectGraph } from "../src/graph/evidence-graph.ts";
+import { analyzeGroupAddress, type GaAnalysis } from "../src/recognize/analyze.ts";
+import { decide } from "../src/recognize/claims.ts";
+import { RoomMatcher } from "../src/recognize/rooms.ts";
 import { analyzeProject, type ProjectAnalysis } from "../src/recognize/pipeline.ts";
 import type { Thing } from "../src/recognize/things.ts";
 import { hasFixture, readFixture } from "./helpers.ts";
@@ -81,6 +84,25 @@ describe("Erkennung ohne ETS-Funktionen", () => {
     expect(analysis.questions.some((question) => question.groupAddressIds.length >= 49)).toBe(true);
   });
 
+  it.skipIf(!hasFixture("privat/projekt-d.zip"))("haelt die Werte am Projekt mit Platzhaltern und Etagen als Ort (nur lokal)", async () => {
+    const graph = await graphOf("privat/projekt-d.zip");
+    const goldD = gold("privat/projekt-d.gold.json");
+    const result = score(graph, goldD, WITH_ETS);
+    expect(accuracy(result.dimensions.room)).toBe(1);
+    expect(result.dimensions.direction.wrong).toBe(0);
+    expect(accuracy(result.dimensions.direction)).toBeGreaterThanOrEqual(0.98);
+    expect(accuracy(result.dimensions.dpt)).toBe(1);
+    const analysis = analyzeProject(graph, { useEtsFunctions: true });
+    const ready = readiness(analysis, goldD);
+    // Platzhalter (".", "Reserva") zaehlen nicht mit.
+    expect(ready.outOfUse).toBeGreaterThanOrEqual(130);
+    expect(ready.ready / ready.groupAddresses).toBeGreaterThanOrEqual(0.97);
+    // Zentral-GAs auf mehreren Kanaelen kleben die Kanaele nicht zusammen.
+    expect(ready.bundling?.precision).toBe(1);
+    expect(ready.bundling?.recall).toBeGreaterThanOrEqual(0.93);
+    expect(analysis.questions.length).toBeLessThanOrEqual(12);
+  });
+
   it.skipIf(!hasFixture("privat/musterprojekt-ets6.knxproj"))("haelt die Werte am Musterprojekt (Trainingsprojekt, ets2td: 85 / 92 / 71 / 68 %)", async () => {
     const graph = await graphOf("privat/musterprojekt-ets6.knxproj");
     const result = score(graph, gold("privat/musterprojekt-ets6.gold.json"), WITHOUT_ETS);
@@ -101,6 +123,53 @@ describe("Erkennung ohne ETS-Funktionen", () => {
       "3/2/8": "TempRoomSetpoint",
     });
     expect(thingOf(analysis, graph, "3/5/8").draft.roomId).toBe(thingOf(analysis, graph, "3/5/13").draft.roomId);
+    // Unverknuepfte Heizungs-GAs ("Betriebsm. Kompf.", "heizen") sind Bits, keine offene Frage.
+    const ready = readiness(analysis, gold("privat/musterprojekt-ets6.gold.json"));
+    expect(ready.ready / ready.groupAddresses).toBeGreaterThanOrEqual(0.95);
+    expect(analysis.questions.length).toBeLessThanOrEqual(8);
+  });
+});
+
+describe("Einzelne GA ohne verknuepfte Objekte", () => {
+  /** Unverknuepfte GA des Demoprojekts mit anderem Namen und Gruppenbereich. */
+  const analyze = (name: string, range?: string): GaAnalysis => {
+    const base = demo.groupAddresses.find((entry) => entry.ga.text === "0/0/10");
+    if (!base) throw new Error("0/0/10 fehlt");
+    const template = base.ranges[0];
+    const node: GaNode = {
+      ...base,
+      ga: { ...base.ga, name, dpts: [] },
+      ranges: range && template ? [{ ...template, name: range }] : [],
+      functions: [],
+      links: [],
+      comObjectDpts: new Map(),
+      comObjectSizes: new Set(),
+    };
+    return analyzeGroupAddress(node, demo, new RoomMatcher(demo.loaded.project.spaces), { useEtsFunctions: false });
+  };
+  const dpt = (analysis: GaAnalysis) => decide(analysis.claims, "dpt");
+
+  it("liest einen Betriebsmodus oder Heizen allein als Bit", () => {
+    expect(dpt(analyze("Betriebsm. Kompf.")).winner?.value).toBe("DPT-1");
+    expect(dpt(analyze("heizen")).winner?.value).toBe("DPT-1");
+    expect(dpt(analyze("Szene Abend")).winner?.value).toBe("DPST-17-1");
+    // Unter "Heizen" ist eine Rueckmeldung ohne weiteren Begriff ebenfalls ein Bit, aber nur schwach belegt.
+    expect(dpt(analyze("Status", "Heizen")).winner).toMatchObject({ value: "DPT-1", source: "hierarchy" });
+  });
+
+  it("laesst einen Begriff mit eigenem Datenpunkttyp vorgehen, ohne Widerspruch", () => {
+    const valve = dpt(analyze("Heizen Stellwert"));
+    expect(valve.winner?.value).toBe("DPST-5-1");
+    expect(valve.conflict).toBeUndefined();
+    expect(dpt(analyze("Ist-Temperatur", "Heizen")).winner?.value).toBe("DPST-9-1");
+  });
+
+  it("legt Platzhalter und Reserve still", () => {
+    expect(analyze(".").outOfUse).toBe(true);
+    expect(analyze("--").outOfUse).toBe(true);
+    expect(analyze("Reserva 3").outOfUse).toBe(true);
+    expect(analyze("Reserve").outOfUse).toBe(true);
+    expect(analyze("Luz sala").outOfUse).toBe(false);
   });
 });
 

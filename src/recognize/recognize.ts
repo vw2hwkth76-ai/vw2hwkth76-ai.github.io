@@ -81,16 +81,18 @@ export function recognize(graph: ProjectGraph, options: AnalyzeOptions = { useEt
   for (const members of groups.values()) for (const id of members.slice(1)) families.union(members[0] ?? id, id);
 
   // Aktorkanal: GAs am selben Ausgang gehoeren zu einem Thing, auch wenn die Namen auseinanderlaufen.
+  // Eine GA an mehreren Kanaelen ist ein Zentral- oder Gruppenbefehl ("Luz geral", "Kanal 2+7");
+  // sie verbindet die Kanaele nicht zu einem Thing.
   const byChannel = new Map<string, string[]>();
   for (const analysis of analyses) {
     if (options.useEtsFunctions && analysis.node.functions.length > 0) continue;
-    for (const link of analysis.node.links) {
-      const channel = link.comObject.channel;
-      if (!channel || !STRONG_CHANNEL_SOURCES.has(channel.source) || !isCabinet(link, graph)) continue;
-      const list = byChannel.get(channel.key) ?? [];
-      list.push(analysis.node.ga.id);
-      byChannel.set(channel.key, list);
-    }
+    const channels = new Set(
+      analysis.node.links
+        .filter((link) => link.comObject.channel && STRONG_CHANNEL_SOURCES.has(link.comObject.channel.source) && isCabinet(link, graph))
+        .map((link) => link.comObject.channel?.key ?? ""),
+    );
+    if (channels.size !== 1) continue;
+    for (const key of channels) byChannel.set(key, [...(byChannel.get(key) ?? []), analysis.node.ga.id]);
   }
   for (const members of byChannel.values()) {
     const tradeOf = (id: string): string | undefined => first.get(id)?.trade.winner?.value;
@@ -109,7 +111,8 @@ export function recognize(graph: ProjectGraph, options: AnalyzeOptions = { useEt
     if (options.useEtsFunctions && analysis.node.functions.length > 0) continue;
     const decided = first.get(analysis.node.ga.id);
     const room = decided?.room.winner?.value;
-    if (decided?.trade.winner?.value !== "hvac" || !room || !ROOM_TYPES.has(graph.spaces.get(room)?.space.type ?? "")) continue;
+    // Gebaeudeebene heisst Zentralfunktion; ein Geschoss oder Bereich ("Kueche/Essen") ist dagegen eine Zone.
+    if (decided?.trade.winner?.value !== "hvac" || !room || graph.spaces.get(room)?.space.type === "Building") continue;
     for (const link of analysis.node.links) {
       if (isCabinet(link, graph) || isNeutral(link)) continue;
       const key = `${link.device.device.id}|${room}|${climateSide(analysis)}`;

@@ -1,5 +1,6 @@
 import type { ProjectAnalysis } from "../recognize/pipeline.ts";
 import type { GoldStandard } from "./gold.ts";
+import { judge } from "./score.ts";
 
 /**
  * Wie viel eines Projekts ohne Rueckfrage in Thing Descriptions geht, und
@@ -9,11 +10,19 @@ import type { GoldStandard } from "./gold.ts";
  */
 
 export interface Readiness {
+  /** GAs in Benutzung; stillgelegte (Platzhalter, Reserve) zaehlen nicht, sie werden nie ein Thing. */
   readonly groupAddresses: number;
+  readonly outOfUse: number;
   /** Nicht stillgelegt, Richtung und DPT entschieden, keine Rueckfrage. */
   readonly ready: number;
   /** Wie ready, zusaetzlich Richtung und DPT mit Konfidenz ab 0,85 oder bestaetigt. */
   readonly firm: number;
+  /**
+   * TD-fertige GAs, bei denen Raum, Richtung oder DPT dem Gold-Standard
+   * widerspricht: fertig heisst entschieden, nicht richtig. Nur mit Gold;
+   * ein DPT mit richtigem Haupttyp zaehlt nicht als falsch.
+   */
+  readonly readyWrong: number | undefined;
   readonly things: number;
   readonly singleThings: number;
   /** Paarweise Genauigkeit und Vollstaendigkeit der Buendelung gegen den Gold-Standard. */
@@ -26,7 +35,9 @@ export function readiness(analysis: ProjectAnalysis, gold?: GoldStandard): Readi
   const asked = new Set(analysis.questions.flatMap((question) => question.groupAddressIds));
   let ready = 0;
   let firm = 0;
+  let readyWrong = 0;
   const entries = analysis.recognition.groupAddresses;
+  const spaces = analysis.recognition.graph.spaces;
   for (const entry of entries) {
     if (entry.analysis.outOfUse || asked.has(entry.analysis.node.ga.id)) continue;
     const direction = entry.decisions.direction.winner;
@@ -35,6 +46,15 @@ export function readiness(analysis: ProjectAnalysis, gold?: GoldStandard): Readi
     ready++;
     const strong = (claim: { source: string; confidence: number }): boolean => claim.source === "review" || claim.confidence >= 0.85;
     if (strong(direction) && strong(dpt)) firm++;
+    const expected = gold?.entries.get(entry.analysis.node.ga.address);
+    if (!expected) continue;
+    const room = entry.decisions.room.winner;
+    const roomName = room ? spaces.get(room.value)?.space.name : undefined;
+    const wrong =
+      (expected.room !== undefined && roomName !== undefined && judge("room", expected.room, roomName) === "wrong") ||
+      (expected.direction !== undefined && judge("direction", expected.direction, direction.value) === "wrong") ||
+      (expected.dpt !== undefined && judge("dpt", expected.dpt, dpt.value) === "wrong");
+    if (wrong) readyWrong++;
   }
 
   let bundling: Readiness["bundling"];
@@ -60,10 +80,13 @@ export function readiness(analysis: ProjectAnalysis, gold?: GoldStandard): Readi
     bundling = { precision: tp + fp === 0 ? 1 : tp / (tp + fp), recall: tp + fn === 0 ? 1 : tp / (tp + fn) };
   }
 
+  const outOfUse = entries.filter((entry) => entry.analysis.outOfUse).length;
   return {
-    groupAddresses: entries.length,
+    groupAddresses: entries.length - outOfUse,
+    outOfUse,
     ready,
     firm,
+    readyWrong: gold ? readyWrong : undefined,
     things: analysis.things.length,
     singleThings: analysis.things.filter((thing) => thing.draft.groupAddressIds.length === 1).length,
     bundling,
@@ -74,12 +97,12 @@ export function readiness(analysis: ProjectAnalysis, gold?: GoldStandard): Readi
 export function formatReadiness(rows: readonly { readonly project: string; readonly predictor: string; readonly result: Readiness }[]): string {
   const percent = (value: number, total: number): string => `${total === 0 ? 0 : ((value / total) * 100).toFixed(1)} %`;
   const lines = [
-    "| Projekt | Verfahren | GAs | TD-fertig ohne Rückfrage | davon fest belegt | Rückfragen | Things | davon mit 1 GA | Bündelung Präzision | Bündelung Vollständigkeit |",
-    "|---|---|---|---|---|---|---|---|---|---|",
+    "| Projekt | Verfahren | GAs in Benutzung | stillgelegt | TD-fertig ohne Rückfrage | davon fest belegt | davon falsch laut Gold | Rückfragen | Things | davon mit 1 GA | Bündelung Präzision | Bündelung Vollständigkeit |",
+    "|---|---|---|---|---|---|---|---|---|---|---|---|",
   ];
   for (const { project, predictor, result } of rows) {
     lines.push(
-      `| ${project} | ${predictor} | ${result.groupAddresses} | ${percent(result.ready, result.groupAddresses)} | ${percent(result.firm, result.groupAddresses)} | ${result.questions} | ${result.things} | ${result.singleThings} | ${result.bundling ? percent(result.bundling.precision, 1) : "–"} | ${result.bundling ? percent(result.bundling.recall, 1) : "–"} |`,
+      `| ${project} | ${predictor} | ${result.groupAddresses} | ${result.outOfUse} | ${percent(result.ready, result.groupAddresses)} | ${percent(result.firm, result.groupAddresses)} | ${result.readyWrong ?? "–"} | ${result.questions} | ${result.things} | ${result.singleThings} | ${result.bundling ? percent(result.bundling.precision, 1) : "–"} | ${result.bundling ? percent(result.bundling.recall, 1) : "–"} |`,
     );
   }
   return lines.join("\n");

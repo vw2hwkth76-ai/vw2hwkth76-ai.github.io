@@ -5,7 +5,7 @@ import { accuracy, score } from "../src/bench/score.ts";
 import { normalizeText } from "../src/bench/normalize.ts";
 import { loadKnxProject } from "../src/ets/load.ts";
 import { directionConflicts, directionEvidence } from "../src/graph/direction.ts";
-import { buildGraph, type GaNode, type ProjectGraph } from "../src/graph/evidence-graph.ts";
+import { buildGraph, type GaLink, type GaNode, type ProjectGraph } from "../src/graph/evidence-graph.ts";
 import { hasFixture, readFixture } from "./helpers.ts";
 
 let demo: ProjectGraph;
@@ -57,6 +57,40 @@ describe("Evidenz-Graph", () => {
     expect(value("0/0/16")).toBe("status");
     expect(value("0/0/17")).toBe("command");
     expect(value("0/0/10")).toBeUndefined();
+  });
+
+  describe("Objekttexte ohne Aktor auf der GA", () => {
+    // Taster aus 0/0/3 als Vorlage fuer Geraete, die kein Aktor sind.
+    const panel = (): GaLink => {
+      const link = node(demo, "0/0/3").links.find((entry) => !entry.device.product?.isRailMounted);
+      if (!link) throw new Error("Taster fehlt");
+      return link;
+    };
+    const object = (text: string, sends: boolean, receives: boolean): GaLink => ({
+      ...panel(),
+      sends,
+      receives,
+      answersRead: false,
+      flagsKnown: true,
+      comObject: { ...panel().comObject, text, functionText: undefined, textDe: undefined, functionTextDe: undefined },
+    });
+    const wiring = (...links: GaLink[]) => directionEvidence({ ...node(demo, "0/0/3"), functions: [], links }, demo).find((entry) => entry.source === "ets-wiring");
+
+    it("liest einen Eingangskanal als Sensor, auch mit Schreib-Flag", () => {
+      expect(wiring(object("Voltage, Input A", true, true))?.value).toBe("status");
+      expect(wiring(object("Eingang 3", true, true))?.value).toBe("status");
+    });
+
+    it("sieht im Eingang eines empfangenden Geraets ein Befehlsziel", () => {
+      expect(wiring(object("Operating mode input", false, true), object("Measured temperature", true, false))?.value).toBe("status");
+      expect(wiring(object("Operating mode input", false, true), object("Switching", true, false))?.value).toBe("command");
+    });
+
+    it("haelt die Beschriftung Ausgang/Eingang nicht fuer einen Eingang", () => {
+      // Ein Messwert an einem Objekt "Output/Input" ist kein Sensor, dessen Wert ein Aktor verwertet.
+      const evidence = wiring(object("Output/Input", true, true), object("Measured temperature", true, false));
+      expect(evidence?.detail ?? "").not.toMatch(/Aktor verwertet/);
+    });
   });
 
   it("meldet, wo ETS-Funktionsrolle und Verdrahtung sich widersprechen", () => {

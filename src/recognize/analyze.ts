@@ -325,15 +325,28 @@ export function analyzeGroupAddress(
     const dpt = ASPECTS[aspect].dpt;
     if (dpt) claim("dpt", dpt, "name", 0.6, `Begriff "${aspect}" im Namen`);
   }
+  const nameHasDpt = nameAspects.some((aspect) => ASPECTS[aspect].dpt !== undefined);
   // Eine Stoermeldung ohne weiteren Begriff ist ein Alarmbit.
-  if (name.markers.has("alarm") && !nameAspects.some((aspect) => ASPECTS[aspect].dpt !== undefined) && fitsSize(ALARM_DPT)) {
+  if (name.markers.has("alarm") && !nameHasDpt && fitsSize(ALARM_DPT)) {
     claim("dpt", ALARM_DPT, "name", 0.6, `Störmeldung im Namen "${node.ga.name}"`);
   }
+  const bare = (aspects: readonly Aspect[]): [Aspect, string] | undefined => {
+    if (aspects.some((aspect) => ASPECTS[aspect].dpt !== undefined)) return undefined;
+    for (const aspect of aspects) {
+      const dpt = ASPECTS[aspect].bareDpt;
+      if (dpt && fitsSize(dpt)) return [aspect, dpt];
+    }
+    return undefined;
+  };
+  const bareName = name.markers.has("alarm") ? undefined : bare(nameAspects);
+  if (bareName) claim("dpt", bareName[1], "name", 0.6, `Begriff "${bareName[0]}" allein im Namen`);
   for (const range of ranges) {
     for (const aspect of range.aspects) {
       const dpt = ASPECTS[aspect].dpt;
       if (dpt && fitsSize(dpt)) claim("dpt", dpt, "hierarchy", 0.5, `Begriff "${aspect}" im Gruppenbereich "${range.text}"`);
     }
+    const bareRange = bare(range.aspects);
+    if (bareRange) claim("dpt", bareRange[1], "hierarchy", 0.45, `Begriff "${bareRange[0]}" im Gruppenbereich "${range.text}"`);
   }
   if (!gaDpt && !coDpt) {
     const hints = claims
@@ -359,7 +372,9 @@ export function analyzeGroupAddress(
   }
   // Gleich benannte Raeume in mehreren Gebaeuden ("Corridor_Zone1"): Der Gruppenbereich sagt, welches Gebaeude gemeint ist.
   const scope = [...ranges].reverse().map((range) => distinct(range.rooms.matches.map((match) => match.spaceId))).find((ids) => ids.length === 1)?.[0];
-  const named = distinct(name.rooms.matches.map((match) => match.spaceId));
+  // Nennt ein Name Geschoss und Raum ("Licht EG Kueche"), gilt der Raum: Bereiche, die einen anderen Treffer enthalten, fallen weg.
+  const found = distinct(name.rooms.matches.map((match) => match.spaceId));
+  const named = found.filter((id) => !found.some((other) => other !== id && isWithin(other, id, graph)));
   const scoped = scope && named.length > 1 ? named.filter((id) => id !== scope && isWithin(id, scope, graph)) : [];
   const nameRooms = scoped.length === 1 ? scoped : named;
   const multiRoomName = nameRooms.length > 1;
@@ -398,7 +413,9 @@ export function analyzeGroupAddress(
   );
   const deviceRoom = deviceRooms[0];
   const outdoor = anyMarker("outdoor");
-  if (deviceRooms.length === 1 && deviceRoom && !outdoor) {
+  // Liegt das Geraet in einem der Raeume, die der Name nennt ("Kueche/Essen"), bestaetigt es die Zone statt ihr zu widersprechen.
+  const insideNamedZone = deviceRoom !== undefined && multiRoomName && nameRooms.includes(deviceRoom);
+  if (deviceRooms.length === 1 && deviceRoom && !outdoor && !insideNamedZone) {
     // Raumregler sitzen meist im geregelten Raum, Taster oft nebenan; ein Raum im Namen wiegt schwerer.
     const confidence = tradeGuess === "hvac" ? 0.7 : 0.5;
     claim("room", deviceRoom, "device-location", confidence, "Einbauort der verknüpften Bedien- und Sensorgeräte");
@@ -419,7 +436,8 @@ export function analyzeGroupAddress(
     name,
     ranges,
     central,
-    outOfUse: anyMarker("outOfUse"),
+    // Ein Name ohne Buchstaben und Ziffern (".") ist ein Platzhalter, keine Funktion.
+    outOfUse: anyMarker("outOfUse") || !/[\p{L}\p{N}]/u.test(node.ga.name),
     outdoor,
     multiRoomName,
     multiRoomRange,

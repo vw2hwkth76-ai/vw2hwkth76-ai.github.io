@@ -97,7 +97,10 @@ export function collectQuestions(recognition: Recognition, things: readonly Thin
     if (!decisions.dpt.winner) questions.push(dptQuestion(entry, label));
   }
 
+  // Gleiches Muster doppelter Rollen in mehreren Things (vier Klimazonen mit denselben Objekten) ist eine Frage.
+  const structures = new Map<string, { thing: Thing; role: string; gaIds: string[] }[]>();
   for (const thing of things) {
+    if (thing.draft.outOfUse) continue;
     // Befehl und Rueckmeldung derselben Rolle sind ein Paar; nur gleiche Rolle mit gleicher Richtung ist verdaechtig.
     const byRole = new Map<string, string[]>();
     for (const [gaId, role] of thing.roles) {
@@ -115,17 +118,32 @@ export function collectQuestions(recognition: Recognition, things: readonly Thin
         return entry ? linkProfile(entry.analysis, recognition.graph) : "none";
       });
       if (new Set(profiles).size === profiles.length) continue;
-      questions.push({
-        id: `${thing.draft.key}:${role}`,
-        kind: "structure",
-        dimension: "role",
-        groupAddressId: undefined,
-        groupAddressIds: [],
-        thingKey: thing.draft.key,
-        message: `"${thing.draft.label}": ${gaIds.length} GAs mit der Rolle ${role}. Gehören sie zu verschiedenen Things?`,
-        suggestions: [],
-      });
+      const pattern = gaIds
+        .map((id) => {
+          const entry = recognition.byGroupAddressId.get(id);
+          return entry ? (functionKey(entry.analysis) ?? id) : id;
+        })
+        .sort()
+        .join("|");
+      const key = `${roleKey}|${pattern}`;
+      structures.set(key, [...(structures.get(key) ?? []), { thing, role, gaIds }]);
     }
+  }
+  for (const [key, members] of structures) {
+    const head = members[0];
+    if (!head) continue;
+    const names = members.map((member) => `"${member.thing.draft.label}"`);
+    const where = members.length === 1 ? (names[0] ?? "") : `${members.length} Things (${names.slice(0, 3).join(", ")}${members.length > 3 ? ", …" : ""})`;
+    questions.push({
+      id: members.length === 1 ? `${head.thing.draft.key}:${head.role}` : `struktur:${key}`,
+      kind: "structure",
+      dimension: "role",
+      groupAddressId: undefined,
+      groupAddressIds: [],
+      thingKey: head.thing.draft.key,
+      message: `${where}: je ${head.gaIds.length} GAs mit der Rolle ${head.role}. Gehören sie zu verschiedenen Things?`,
+      suggestions: [],
+    });
   }
   return groupByFunction(questions, recognition).sort((a, b) => ORDER[a.kind] - ORDER[b.kind] || a.id.localeCompare(b.id));
 }
@@ -170,7 +188,7 @@ function groupByFunction(questions: readonly Question[], recognition: Recognitio
 
 function dptQuestion(entry: GaRecognition, label: string): Question {
   const aspect = aspectOf(entry);
-  const suggested = aspect ? ASPECTS[aspect].dpt : undefined;
+  const suggested = aspect ? (ASPECTS[aspect].dpt ?? ASPECTS[aspect].bareDpt) : undefined;
   const sizes = [...entry.analysis.node.comObjectSizes];
   return {
     id: `${entry.analysis.node.ga.id}:dpt`,
