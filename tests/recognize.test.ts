@@ -103,6 +103,18 @@ describe("Erkennung ohne ETS-Funktionen", () => {
     expect(analysis.questions.length).toBeLessThanOrEqual(12);
   });
 
+  it.skipIf(!hasFixture("privat/projekt-e.knxproj"))("findet Raeume hinter der Etage und laesst Ersatzregeln nicht gegen Kennwoerter gewinnen (nur lokal)", async () => {
+    const graph = await graphOf("privat/projekt-e.knxproj");
+    const goldE = gold("privat/projekt-e.gold.json");
+    const result = score(graph, goldE, WITH_ETS);
+    // Blind: 0,5 % Raum (Etage statt Buero), 23 falsche Richtungen.
+    expect(accuracy(result.dimensions.room)).toBe(1);
+    expect(result.dimensions.direction.wrong).toBeLessThanOrEqual(11);
+    expect(result.dimensions.dpt.wrong).toBe(0);
+    const ready = readiness(analyzeProject(graph, { useEtsFunctions: true }), goldE);
+    expect(ready.readyWrong).toBeLessThanOrEqual(8);
+  });
+
   it.skipIf(!hasFixture("privat/musterprojekt-ets6.knxproj"))("haelt die Werte am Musterprojekt (Trainingsprojekt, ets2td: 85 / 92 / 71 / 68 %)", async () => {
     const graph = await graphOf("privat/musterprojekt-ets6.knxproj");
     const result = score(graph, gold("privat/musterprojekt-ets6.gold.json"), WITHOUT_ETS);

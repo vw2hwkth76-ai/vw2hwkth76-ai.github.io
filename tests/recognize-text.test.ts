@@ -197,6 +197,18 @@ describe("RoomMatcher", () => {
     expect(rooms(house, "Luz Sala Piso 0")).toEqual(["p0", "sala"]);
   });
 
+  it("laesst die Etage keinen Raum im selben Namen verdraengen", () => {
+    const office = new RoomMatcher([
+      space("h", "Haus", "Building"),
+      space("of", "Upper Floor", "Floor", "h"),
+      space("o1", "Office1", "Room", "of"),
+      space("o2", "Office2", "Room", "of"),
+    ]);
+    expect(rooms(office, "Upper Floor.Office1.L-SET-Switch-Zone")).toEqual(["o1", "of"]);
+    // Die "1" im Geraetenamen weit hinten macht daraus nicht Office1.
+    expect(rooms(office, "Upper Floor.Office2.L-STA-LampFault_Gateway #1.Ch 3")).toEqual(["o2", "of"]);
+  });
+
   it("findet Etagen nur exakt", () => {
     expect(GERMAN.findFloors(tokenize("Rolladen UG")).matches.map((match) => match.spaceId)).toEqual(["ug"]);
   });

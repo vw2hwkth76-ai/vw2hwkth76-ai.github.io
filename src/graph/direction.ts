@@ -10,6 +10,8 @@ export interface DirectionEvidence {
   readonly value: Direction;
   readonly source: DirectionSource;
   readonly detail: string;
+  /** Ersatzregel ohne Aktor und ohne sprechenden Objekttext; ein klares Kennwort im Namen wiegt mehr. */
+  readonly weak?: boolean;
 }
 
 /** Richtung der normativen KNX-Datenpunktrollen; Konvention wie im Vorgaenger ets2td. */
@@ -84,6 +86,11 @@ const MEASUREMENT_WORDS = /(measured|messwert|istwert|actual|temperatur|humidity
 const ALARM_WORDS = /\b(failure|fault|error|alarm|short circuit|mains failure|st(ö|oe)rung|fehler|kurzschluss|netzausfall)\b/;
 /** Stellgroesse eines Reglers: ein berechneter Zustand, kein Bedienbefehl. */
 const CONTROLLER_WORDS = /(control value|continuous variable|continous|actuating value|control circuit|stellgr(ö|oe)(ss|ß)e|stellwert|fan ?coil step|fan stage|l(ü|ue)fterstufe)/;
+/**
+ * Eingaenge eines Aktors fuer seine Automatik ("Presence", "Sun", "Heating" am Jalousieaktor): Der Aktor
+ * verwertet einen Zustand, er wird nicht gesteuert. Nur als ganzer Textteil ("Output A / Cooling"); "Control value, Heating" ist ein Ausgang.
+ */
+const ACTUATOR_INPUT = /^(presence|occupancy|sun|wind|rain|frost|heating|cooling|pr(ä|ae)senz|anwesenheit|sonne|regen|heizen|k(ü|ue)hlen)$/;
 /** Bediengeraet, das Befehle sendet. */
 const OPERATOR_WORDS = /\b(push button|taster|value transmitter|wertgeber|switch object|switching|schalten|dimming|dimmen|output light|brighter|darker|heller|dunkler)\b/;
 const ACTUATOR_PRODUCT = /(actuator|aktor|drive|antrieb|dali|gateway|dimmer|i\/o unit)/i;
@@ -106,12 +113,12 @@ function wiringDirection(node: GaNode, graph: ProjectGraph): DirectionEvidence |
   const actuator = (link: GaLink): boolean => isActuatorLink(link, graph);
   const describe = (link: GaLink): string =>
     `${link.device.device.individualAddress ?? link.device.device.id} "${link.comObject.functionText ?? link.comObject.text ?? link.comObject.refId}"`;
-  const result = (value: Direction, detail: string, sources: readonly GaLink[]): DirectionEvidence => {
+  const result = (value: Direction, detail: string, sources: readonly GaLink[], weak = false): DirectionEvidence => {
     // Eine Meldung ist ein Bit; ein Fehlercode in 4 Byte ist ein gemeldeter Wert.
     const alarm =
       value === "status" &&
       sources.some((link) => ALARM_WORDS.test(objectText(link)) && (link.comObject.objectSizeBits === undefined || link.comObject.objectSizeBits <= 1));
-    return { value: alarm ? "alarm" : value, source: "ets-wiring", detail: alarm ? `${detail}; Störung laut Objekttext` : detail };
+    return { value: alarm ? "alarm" : value, source: "ets-wiring", detail: alarm ? `${detail}; Störung laut Objekttext` : detail, ...(weak ? { weak } : {}) };
   };
 
   const reportsState = (link: GaLink): boolean => {
@@ -132,7 +139,10 @@ function wiringDirection(node: GaNode, graph: ProjectGraph): DirectionEvidence |
     const text = objectText(link);
     return !actuator(link) && link.receives && INPUT_WORDS.test(text) && !INPUT_CHANNEL.test(text) && !IN_OUT_WORDS.test(text);
   });
-  const targets = [...actuatorLinks.filter((link) => link.receives && !reportsState(link)), ...inputs];
+  const automationInputs = actuatorLinks.filter(
+    (link) => link.receives && !link.sends && objectText(link).split(" / ").some((part) => ACTUATOR_INPUT.test(part.trim())),
+  );
+  const targets = [...actuatorLinks.filter((link) => link.receives && !reportsState(link) && !automationInputs.includes(link)), ...inputs];
   const controllers = links.filter((link) => link.sends && !actuator(link) && CONTROLLER_WORDS.test(objectText(link)));
 
   if (controllers.length > 0 && targets.length > 0) {
@@ -142,6 +152,10 @@ function wiringDirection(node: GaNode, graph: ProjectGraph): DirectionEvidence |
   const sensors = links.filter((link) => link.sends && !actuator(link) && MEASUREMENT_WORDS.test(objectText(link)) && !OPERATOR_WORDS.test(objectText(link)));
   if (sensors.length > 0 && targets.length > 0 && sources.length === 0) {
     return result("status", `Sensor meldet, Aktor verwertet: ${sensors.map(describe).join(", ")}`, sensors);
+  }
+  const feeding = links.filter((link) => link.sends && !actuator(link));
+  if (automationInputs.length > 0 && targets.length === 0 && sources.length === 0 && feeding.length > 0) {
+    return result("status", `Aktor verwertet den Zustand als Eingang: ${automationInputs.map(describe).join(", ")}`, feeding);
   }
   if (sources.length > 0 && targets.length === 0) return result("status", `Aktor meldet auf der GA: ${sources.map(describe).join(", ")}`, sources);
   if (targets.length > 0 && sources.length === 0) return result("command", `Aktor wird gesteuert: ${targets.map(describe).join(", ")}`, targets);
@@ -154,10 +168,10 @@ function wiringDirection(node: GaNode, graph: ProjectGraph): DirectionEvidence |
   const operating = senders.filter((link) => OPERATOR_WORDS.test(objectText(link)));
   if (operating.length > 0) return result("command", `Bediengerät sendet: ${operating.map(describe).join(", ")}`, operating);
   const readable = senders.filter((link) => link.answersRead);
-  if (readable.length > 0) return result("status", `lesbarer Sender ohne Aktor: ${readable.map(describe).join(", ")}`, readable);
+  if (readable.length > 0) return result("status", `lesbarer Sender ohne Aktor: ${readable.map(describe).join(", ")}`, readable, true);
   const receivers = links.filter((link) => link.receives);
   if (senders.length === 0 && receivers.length > 0) {
-    return result("command", `nur Empfänger, der Wert kommt von außen: ${receivers.map(describe).join(", ")}`, receivers);
+    return result("command", `nur Empfänger, der Wert kommt von außen: ${receivers.map(describe).join(", ")}`, receivers, true);
   }
   return undefined;
 }

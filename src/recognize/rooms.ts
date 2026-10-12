@@ -24,6 +24,8 @@ export interface RoomFinding {
 }
 
 const ROOM_TYPES = new Set(["Room", "Corridor", "Stairway", "Stairs", "BuildingPart", "Space"]);
+/** Orte oberhalb des Raums; sie gelten nur, wenn kein Raum genannt ist. */
+const PLACE_TYPES = new Set(["Floor", "Building"]);
 const GENERIC = new Set(["room", "raum", "zimmer", "bereich", "area", "zone", "floor", "etage", "geschoss", "haus", "house", "the", "und", "and"]);
 const RANK: Readonly<Record<RoomMatchKind, number>> = { code: 4, full: 3, sequence: 3, loose: 2, mismatch: 1, abbreviation: 2, compound: 2, initials: 2, partial: 1 };
 /** Grundwoerter deutscher Raumnamen, aus denen Kuerzel wie "WZ" oder "SZ" entstehen. */
@@ -271,9 +273,18 @@ function match(candidates: readonly Candidate[], tokens: readonly Token[], fuzzy
 
   // Der Sequenzabgleich gewinnt, wenn er mehr vom Namen erklaert als die Einzelworttreffer.
   const sequences = bestSequences(candidates, tokens);
-  const covered = Math.max(0, ...kept.map((entry) => entry.tokens.length));
   const leading = sequences[0];
-  if (!leading || leading.tokens.length <= covered) return result;
+  if (!leading) return result;
+  // Etage oder Gebaeude verdraengen keinen Raum im selben Namen ("Floor.Office1"): beide bleiben, die Auswertung behaelt den Raum.
+  const typeOf = new Map(candidates.map((candidate) => [candidate.space.id, candidate.space.type]));
+  const keptTokens = new Set(kept.flatMap((entry) => entry.tokens));
+  const onlyPlaces = kept.length > 0 && kept.every((entry) => PLACE_TYPES.has(typeOf.get(entry.spaceId) ?? ""));
+  const roomSequences = sequences.filter((entry) => !PLACE_TYPES.has(typeOf.get(entry.spaceId) ?? "") && !entry.tokens.some((index) => keptTokens.has(index)));
+  if (onlyPlaces && roomSequences.length > 0) {
+    return { matches: [...kept, ...roomSequences].sort((a, b) => (a.tokens[0] ?? 0) - (b.tokens[0] ?? 0)), ambiguousTokens: result.ambiguousTokens };
+  }
+  const covered = Math.max(0, ...kept.map((entry) => entry.tokens.length));
+  if (leading.tokens.length <= covered) return result;
   return { matches: sequences.sort((a, b) => (a.tokens[0] ?? 0) - (b.tokens[0] ?? 0)), ambiguousTokens: [] };
 }
 
@@ -291,10 +302,18 @@ function bestSequences(candidates: readonly Candidate[], tokens: readonly Token[
     const kind: RoomMatchKind = hit.mismatch ? "mismatch" : hit.missing > 0 ? "loose" : "sequence";
     found.push({ match: { spaceId: candidate.space.id, tokens: hit.tokens, kind }, missing: hit.missing + (hit.mismatch ? MISMATCH_COST : 0) });
   }
-  const score = (entry: { match: RoomMatch; missing: number }): number => entry.match.tokens.length * 10 - entry.missing;
+  // Eine Raumnummer weit hinter dem Raumwort gehoert meist zu etwas anderem ("Office2 ... Gateway #1" ist nicht Office1).
+  const scattered = (match: RoomMatch): boolean => {
+    const sorted = [...match.tokens].sort((a, b) => a - b);
+    return sorted.some((index, position) => position > 0 && index - (sorted[position - 1] ?? index) > MAX_SEQUENCE_GAP);
+  };
+  const score = (entry: { match: RoomMatch; missing: number }): number => entry.match.tokens.length * 10 - entry.missing - (scattered(entry.match) ? MISMATCH_COST : 0);
   const top = Math.max(...found.map(score));
   return found.filter((entry) => score(entry) === top).map((entry) => entry.match);
 }
+
+/** Groesster Abstand zwischen zwei Teilen eines Raumnamens im GA-Namen; "Lab 1&2" liegt darunter. */
+const MAX_SEQUENCE_GAP = 3;
 
 /** Ein falscher Geschossbuchstabe wiegt schwerer als ein fehlender; ein Raum mehr im Namen wiegt beides auf. */
 const MISMATCH_COST = 5;

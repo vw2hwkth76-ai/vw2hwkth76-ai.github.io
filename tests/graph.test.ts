@@ -86,6 +86,22 @@ describe("Evidenz-Graph", () => {
       expect(wiring(object("Operating mode input", false, true), object("Switching", true, false))?.value).toBe("command");
     });
 
+    it("liest einen Automatik-Eingang am Aktor als verwerteten Zustand", () => {
+      const rail = node(demo, "0/0/3").links.find((entry) => entry.device.product?.isRailMounted);
+      if (!rail) throw new Error("Aktor fehlt");
+      const input = { ...rail, sends: false, receives: true, answersRead: false, flagsKnown: true, comObject: { ...rail.comObject, text: "Output A", functionText: "Presence", textDe: undefined, functionTextDe: undefined } };
+      const evidence = wiring(input, object("P4: movement (master)", true, false));
+      expect(evidence?.value).toBe("status");
+      expect(evidence?.detail).toMatch(/verwertet den Zustand/);
+      // Ohne Sender bleibt es offen: Der Aktor allein sagt nicht, woher der Wert kommt.
+      expect(wiring(input)?.value).toBeUndefined();
+    });
+
+    it("kennzeichnet Ersatzregeln als schwach", () => {
+      expect(wiring(object("Status byte", false, true))).toMatchObject({ value: "command", weak: true });
+      expect(wiring(object("Voltage, Input A", true, true))?.weak).toBeUndefined();
+    });
+
     it("haelt die Beschriftung Ausgang/Eingang nicht fuer einen Eingang", () => {
       // Ein Messwert an einem Objekt "Output/Input" ist kein Sensor, dessen Wert ein Aktor verwertet.
       const evidence = wiring(object("Output/Input", true, true), object("Measured temperature", true, false));

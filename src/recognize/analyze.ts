@@ -79,6 +79,8 @@ const ROOM_CONFIDENCE: Readonly<Record<RoomMatchKind, number>> = {
 };
 const RANGE_PENALTY = 0.15;
 const MULTI_ROOM_CONFIDENCE = 0.75;
+/** Ersatzregel der Verdrahtung ("nur Empfänger", "lesbarer Sender"): unter einem Kennwort im Namen, über einem blossen Begriff. */
+const WEAK_WIRING_CONFIDENCE = 0.76;
 const AREA_PENALTY = 0.15;
 const BUILDING_FALLBACK_CONFIDENCE = 0.4;
 const ROOM_LIKE = new Set(["Room", "Corridor", "Stairway", "Stairs", "Space"]);
@@ -286,7 +288,7 @@ export function analyzeGroupAddress(
       "direction",
       alarm ? "alarm" : evidence.value,
       wiring ? "ets-wiring" : "ets-function",
-      wiring ? 0.93 : 0.9,
+      wiring ? (evidence.weak ? WEAK_WIRING_CONFIDENCE : 0.93) : 0.9,
       alarm ? `${evidence.detail}; Störung laut Name` : evidence.detail,
     );
   }
