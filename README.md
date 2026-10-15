@@ -132,7 +132,9 @@ stillen Entscheidung.
   Unterordner oder mit einer `.knxproj` darin), als entpackter Ordner oder
   Beispielprojekt; geschützte ETS5- und ETS6-Projekte mit Passwortdialog.
   Die Analyse läuft in einem Web Worker.
-- **Schritt 2, Namensschema**, direkt nach dem Import und überspringbar:
+- **Schritt 2, Namensschema**, nach jedem Import und überspringbar; bei einem
+  schon bekannten Projekt ist der gespeicherte Stand vorbelegt und "Weiter
+  wie zuletzt" übernimmt ihn unverändert:
   - Prompt für ein LLM kopieren. Er enthält nur Gebäudestruktur, GA-Namen,
     Gruppenbereiche, DPT und verknüpfte Objekte. Personennamen sind
     ersetzt, große Projekte erscheinen als Beispiele je Namensform.

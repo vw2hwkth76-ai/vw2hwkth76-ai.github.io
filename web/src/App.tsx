@@ -128,14 +128,9 @@ export function App(): ReactNode {
         setFocusGa(undefined);
         setFocusThing(undefined);
         setProject(opened);
-        const initial = stored === EMPTY_STATE && next.preset ? next.preset : stored;
-        setState(initial);
-        if (initial.schemaChecked) {
-          setPhase({ kind: "ready" });
-          navigate("uebersicht");
-        } else {
-          setPhase({ kind: "schema" });
-        }
+        setState(stored === EMPTY_STATE && next.preset ? next.preset : stored);
+        // Das Namensschema kommt nach jedem Import, auch bei bekannten Projekten; dort mit dem gespeicherten Stand vorbelegt.
+        setPhase({ kind: "schema" });
       } catch (error) {
         const failure = toFailure(error);
         if (failure.code === "password-required" || failure.code === "password-wrong") {

@@ -172,6 +172,18 @@ export function StartView(props: Props): ReactNode {
       </section>
 
       <aside className="ws-start__aside" aria-labelledby="start-data">
+        <h2 id="start-flow">So geht es weiter</h2>
+        <ol className="ws-start__flow">
+          <li>
+            <strong>Projekt wählen.</strong> Die Datei wird gelesen und ausgewertet.
+          </li>
+          <li>
+            <strong>Namensschema.</strong> Ein LLM schlägt vor, wie der Errichter seine GAs benennt; du prüfst es, oder überspringst den Schritt.
+          </li>
+          <li>
+            <strong>Ergebnis.</strong> Übersicht, Rückfragen und Thing Descriptions.
+          </li>
+        </ol>
         <h2 id="start-data">Was mit der Datei passiert</h2>
         <ul>
           <li>

@@ -214,6 +214,16 @@ body {
       color: $text-primary;
       font-weight: 600;
     }
+
+    h2:not(:first-child) {
+      margin-top: $spacing-06;
+    }
+
+    .ws-start__flow {
+      margin-bottom: $spacing-04;
+      padding-left: $spacing-05;
+      list-style: decimal;
+    }
   }
 }
 

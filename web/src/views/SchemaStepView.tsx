@@ -177,7 +177,10 @@ export function SchemaStepView({ client, project, state, current, onDone, onCanc
     <div className="ws-page ws-step">
       <header className="ws-page-header">
         <div>
-          <p className="ws-step__kicker">Schritt 2 von 2 · {project.name}</p>
+          <p className="ws-step__kicker">
+            Schritt 2 von 2 · {project.name}
+            {state.schemaChecked ? " · schon einmal geöffnet, gespeicherter Stand ist geladen" : ""}
+          </p>
           <h1>Namensschema</h1>
           <p>
             Wie benennt der Errichter seine Gruppenadressen? Ein bestätigtes Namensschema liest Raum, Gewerk, Richtung und Things aus dem Namen und macht sie
@@ -188,6 +191,11 @@ export function SchemaStepView({ client, project, state, current, onDone, onCanc
           <Button kind="ghost" size="md" onClick={onCancel}>
             Abbrechen
           </Button>
+          {state.schemaChecked ? (
+            <Button kind="tertiary" size="md" onClick={() => onDone(state.profile)}>
+              {state.profile === undefined ? "Weiter wie zuletzt, ohne Schema" : "Weiter wie zuletzt"}
+            </Button>
+          ) : null}
           <Button kind="secondary" size="md" onClick={() => onDone(undefined)}>
             Ohne Schema weiter
           </Button>
