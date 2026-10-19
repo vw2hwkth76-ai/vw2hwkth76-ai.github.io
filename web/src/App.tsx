@@ -160,11 +160,12 @@ export function App(): ReactNode {
 
   // Antworten, Namensschema und ETS-Schalter loesen eine neue Analyse aus; veraltete Antworten werden verworfen.
   const { reviews, profile, useEtsFunctions } = state;
+  const scope = state.scope ?? "all";
   useEffect(() => {
     if (!project) return;
     const id = ++sequence.current;
     setBusy(true);
-    client.call({ type: "analyze", reviews, profile, useEtsFunctions }).then(
+    client.call({ type: "analyze", reviews, profile, useEtsFunctions, scope }).then(
       (next) => {
         if (id !== sequence.current) return;
         setResult(next);
@@ -177,7 +178,7 @@ export function App(): ReactNode {
         setPhase({ kind: "start", error: toFailure(error) });
       },
     );
-  }, [client, project, reviews, profile, useEtsFunctions]);
+  }, [client, project, reviews, profile, useEtsFunctions, scope]);
 
   const lookups = useMemo<Lookups | undefined>(() => {
     if (!result) return undefined;
@@ -232,6 +233,7 @@ export function App(): ReactNode {
         })),
       setProfile: (profile) => setState((current) => ({ ...current, profile })),
       setUseEtsFunctions: (value) => setState((current) => ({ ...current, useEtsFunctions: value })),
+      setScope: (value) => setState((current) => ({ ...current, scope: value })),
       setTdOptions: (options) => setState((current) => ({ ...current, td: options })),
       replaceState: (next) => setState(next),
       openSchemaStep: () => setPhase({ kind: "schema" }),
@@ -319,8 +321,8 @@ export function App(): ReactNode {
             project={project}
             state={state}
             current={result}
-            onDone={(profile) => {
-              setState((current) => ({ ...current, profile, schemaChecked: true }));
+            onDone={(profile, chosenScope) => {
+              setState((current) => ({ ...current, profile, schemaChecked: true, ...(chosenScope ? { scope: chosenScope } : {}) }));
               setPhase({ kind: "ready" });
               navigate("uebersicht");
             }}

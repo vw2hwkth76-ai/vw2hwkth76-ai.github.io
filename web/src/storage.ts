@@ -20,6 +20,8 @@ export interface ProjectState {
   readonly td: TdOptions;
   /** Schritt "Namensschema" nach dem Import ist erledigt, mit oder ohne Schema. */
   readonly schemaChecked: boolean;
+  /** Umfang der Auswertung; fehlt, solange der Nutzer nichts gewaehlt hat (dann "all"). */
+  readonly scope?: "all" | "used";
 }
 
 export const EMPTY_STATE: ProjectState = { reviews: {}, profile: undefined, useEtsFunctions: true, td: DEFAULT_TD_OPTIONS, schemaChecked: false };
@@ -50,7 +52,8 @@ export function parseState(json: unknown): ProjectState | undefined {
   const profile = json["profile"] ?? undefined;
   // Aeltere Staende ohne das Feld: Wer schon ein Schema oder Antworten hat, ist ueber den Schritt hinaus.
   const schemaChecked = json["schemaChecked"] === true || profile !== undefined || Object.keys(reviews).length > 0;
-  return { reviews, profile, useEtsFunctions: json["useEtsFunctions"] !== false, td: parseTdOptions(json["td"]), schemaChecked };
+  const scope = json["scope"] === "used" || json["scope"] === "all" ? json["scope"] : undefined;
+  return { reviews, profile, useEtsFunctions: json["useEtsFunctions"] !== false, td: parseTdOptions(json["td"]), schemaChecked, ...(scope ? { scope } : {}) };
 }
 
 export function loadState(key: string): ProjectState {

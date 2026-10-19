@@ -1,6 +1,7 @@
 import { dptMainNumber } from "../ets/dpt-id.ts";
 import { objectDpt } from "./object-dpt.ts";
 import { directionEvidence, isActuatorLink, isNeutral, objectText } from "../graph/direction.ts";
+import { gaUsage, type Usage } from "../graph/usage.ts";
 import type { Space } from "../ets/model.ts";
 import type { GaLink, GaNode, ProjectGraph } from "../graph/evidence-graph.ts";
 import type { Claim, ClaimDimension, ClaimSource } from "./claims.ts";
@@ -46,6 +47,8 @@ export interface GaAnalysis {
   readonly ranges: readonly NameAnalysis[];
   readonly central: boolean;
   readonly outOfUse: boolean;
+  /** Wofuer die GA im Projekt benutzt wird; "reserve" und "idle" sind bei scope "used" ausser Betrieb. */
+  readonly usage: Usage;
   readonly outdoor: boolean;
   readonly multiRoomName: boolean;
   readonly multiRoomRange: boolean;
@@ -63,6 +66,11 @@ export type Reviews = ReadonlyMap<string, Readonly<Partial<Record<ClaimDimension
 export interface AnalyzeOptions {
   /** false misst die Heuristik so, als gaebe es keine ETS-Funktionen. */
   readonly useEtsFunctions: boolean;
+  /**
+   * Umfang der Auswertung. "used": GAs ohne wirksame Geraeteverknuepfung sind Vorrat (Vorlagenprojekte) und
+   * erzeugen weder Things noch Rueckfragen; nur in Projekten mit Geraeten. Standard "all".
+   */
+  readonly scope?: "all" | "used";
   readonly reviews?: Reviews;
   /** Bestaetigtes Namensschema; seine Kuerzel gehen dem allgemeinen Vokabular vor. */
   readonly profile?: CompiledProfile;
@@ -209,6 +217,7 @@ export function analyzeGroupAddress(
   matcher: RoomMatcher,
   options: AnalyzeOptions,
 ): GaAnalysis {
+  const usage = gaUsage(node);
   const schema = options.profile?.schema ? matchSchema(options.profile.schema, node.ga.name, node.ranges.map((range) => range.name)) : undefined;
   const plain = analyzeName(node.ga.name, matcher, options.profile);
   // Begriffe aus dem Schema gehen den Woertern im Namen vor; sie stehen fuer Rollen und DPT zuerst.
@@ -463,7 +472,9 @@ export function analyzeGroupAddress(
     ranges,
     central,
     // Ein Name ohne Buchstaben und Ziffern (".") ist ein Platzhalter, keine Funktion.
-    outOfUse: anyMarker("outOfUse") || !/[\p{L}\p{N}]/u.test(node.ga.name),
+    // Ein Name ohne Buchstaben und Ziffern (".") ist ein Platzhalter; im Umfang "used" ist auch Vorrat ausser Betrieb.
+    outOfUse: anyMarker("outOfUse") || !/[\p{L}\p{N}]/u.test(node.ga.name) || (options.scope === "used" && usage !== "active" && graph.loaded.project.devices.length > 0),
+    usage,
     outdoor,
     multiRoomName,
     multiRoomRange,

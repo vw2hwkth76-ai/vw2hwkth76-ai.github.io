@@ -40,6 +40,7 @@ export interface Workspace {
   clearReviews(gaIds: readonly string[]): void;
   setProfile(profile: unknown): void;
   setUseEtsFunctions(value: boolean): void;
+  setScope(value: "all" | "used"): void;
   setTdOptions(options: TdOptions): void;
   replaceState(state: ProjectState): void;
   /** Zurueck zum Schritt "Namensschema" mit Vorschlag und Live-Effekt. */

@@ -59,7 +59,7 @@ export function GaInspector({ ga, onClose }: Props): ReactNode {
         ) : null}
         {ga.outOfUse ? (
           <Tag size="sm" type="gray">
-            Stillgelegt
+            {ga.usage === "reserve" ? "Vorrat" : ga.usage === "idle" ? "Verknüpft ohne Funktion" : "Stillgelegt"}
           </Tag>
         ) : null}
         {ga.linked === 0 ? (

@@ -12,6 +12,8 @@ export interface ProjectAnalysis {
   readonly questions: readonly Question[];
   /** Haeufige Kuerzel ohne Bedeutung, Kandidaten fuer das Namensschema. */
   readonly unknownCodes: readonly UnknownCode[];
+  /** Mit welchem Umfang ausgewertet wurde. */
+  readonly scope: "all" | "used";
 }
 
 export function analyzeProject(graph: ProjectGraph, options: AnalyzeOptions = { useEtsFunctions: true }): ProjectAnalysis {
@@ -28,5 +30,5 @@ export function analyzeProject(graph: ProjectGraph, options: AnalyzeOptions = { 
       return { name: analysis.node.ga.name, tokens: analysis.name.tokens, explained, dptMain: dpt ? dptMainNumber(dpt) : undefined };
     }),
   );
-  return { recognition, things, questions: collectQuestions(recognition, things), unknownCodes: codes };
+  return { recognition, things, questions: collectQuestions(recognition, things), unknownCodes: codes, scope: options.scope ?? "all" };
 }

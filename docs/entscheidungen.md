@@ -359,3 +359,28 @@ Jeder Lauf war ein frisches LLM, das nur den Prompt sah. Die Läufe 2 bis 4
 zeigen, dass Fehler im Prompt-Generator teurer waren als Fehler des LLM.
 Es gibt keinen Gold-Standard für dieses Projekt; die Zahlen messen
 Abdeckung und Festigkeit, nicht Richtigkeit.
+
+### Vorlage und Nutzung
+
+Das Projekt ist kein Fehlerfall, sondern eine verbreitete Arbeitsweise: Der
+Errichter importiert eine große GA-Vorlage und verknüpft nur, was ein Haus
+braucht. Ein Haus mit 10 oder 100 Räumen hat dann gleich viele GAs. Die
+unverknüpften sind legitim, nur erzeugen sie in einer Thing Description
+nichts, was ein Gerät tut.
+
+- **Drei Zustände je GA.** In Benutzung: ein Objekt eines Geräts sendet oder
+  empfängt auf ihr (ohne Herstellerdaten genügt die Verknüpfung). Verknüpft
+  ohne Funktion: nur Platzhalterobjekte oder Objekte ohne Sende- und
+  Empfangsflag. Vorrat: mit nichts verknüpft.
+- **Vorlage erkennen.** Hat das Projekt Geräte und ist weniger als die
+  Hälfte der GAs in Benutzung, fragt Schritt 2 nach dem Umfang. Vorgabe:
+  nur in Benutzung. Projekte ohne Geräte (nur Gruppenadressen) fragen nie,
+  weil dort "unverknüpft" nichts aussagt.
+- **Umfang "nur in Benutzung".** Vorrat und verknüpft ohne Funktion gelten
+  als stillgelegt: keine Rückfragen, nicht im Nenner der Kennzahlen, nicht
+  im TD-Export. In der Tabelle bleiben sie sichtbar (Marke "Vorrat").
+  Umschalten geht jederzeit in der Übersicht.
+- **Zahlen für Projekt F.** In Benutzung sind 251 von 5.533 GAs (252 verknüpft, eine als stillgelegt benannt). Ohne
+  Schema: TD-fertig 95,6 %, fest 70,1 %, 22 Rückfragen, 131 Things. Mit dem
+  Schema aus Lauf 4: fest 79,3 %, 110 Things. Mit allen GAs bleiben 445
+  Rückfragen. Projekt E ist unberührt, dort sind alle 201 GAs in Benutzung.

@@ -1,5 +1,5 @@
 import { Copy, Upload } from "@carbon/icons-react";
-import { Button, Checkbox, InlineLoading, InlineNotification, TextArea } from "@carbon/react";
+import { Button, Checkbox, InlineLoading, InlineNotification, RadioButton, RadioButtonGroup, TextArea } from "@carbon/react";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { extractJson } from "../../../src/recognize/schema-prompt.ts";
 import { isRecord } from "../../../src/util/guards.ts";
@@ -14,7 +14,7 @@ interface Props {
   readonly state: ProjectState;
   /** Laufende Erkennung ohne neues Schema; nur fuer die Anzeige, waehrend der Vorschlag fehlt. */
   readonly current: AnalyzeResult | undefined;
-  readonly onDone: (profile: unknown) => void;
+  readonly onDone: (profile: unknown, scope?: "all" | "used") => void;
   readonly onCancel: () => void;
 }
 
@@ -65,6 +65,10 @@ export function SchemaStepView({ client, project, state, current, onDone, onCanc
   const [checking, setChecking] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const sequence = useRef(0);
+  // Vorlagenprojekt: nur ein kleiner Teil der GAs hat ein wirksames Geraet. Vorgabe "nur in Benutzung", der Nutzer entscheidet.
+  const usage = current?.snapshot.usage;
+  const [chosen, setChosen] = useState<"all" | "used" | undefined>(state.scope);
+  const scope: "all" | "used" = chosen ?? (usage?.template ? "used" : "all");
 
   useEffect(() => {
     let active = true;
@@ -82,7 +86,7 @@ export function SchemaStepView({ client, project, state, current, onDone, onCanc
       const id = ++sequence.current;
       setChecking(true);
       try {
-        const result = await client.call({ type: "schema-preview", profile: candidate, useEtsFunctions: state.useEtsFunctions });
+        const result = await client.call({ type: "schema-preview", profile: candidate, useEtsFunctions: state.useEtsFunctions, scope });
         if (id !== sequence.current) return;
         if (!result.ok) {
           setErrors(result.errors);
@@ -102,7 +106,7 @@ export function SchemaStepView({ client, project, state, current, onDone, onCanc
         if (id === sequence.current) setChecking(false);
       }
     },
-    [client, state.useEtsFunctions],
+    [client, state.useEtsFunctions, scope],
   );
 
   // Ein mitgebrachtes Schema (Beispielprojekt, Rueckkehr aus der Ansicht Namensschema) wird gleich geprueft.
@@ -192,15 +196,37 @@ export function SchemaStepView({ client, project, state, current, onDone, onCanc
             Abbrechen
           </Button>
           {state.schemaChecked ? (
-            <Button kind="tertiary" size="md" onClick={() => onDone(state.profile)}>
+            <Button kind="tertiary" size="md" onClick={() => onDone(state.profile, chosen ?? state.scope)}>
               {state.profile === undefined ? "Weiter wie zuletzt, ohne Schema" : "Weiter wie zuletzt"}
             </Button>
           ) : null}
-          <Button kind="secondary" size="md" onClick={() => onDone(undefined)}>
+          <Button kind="secondary" size="md" onClick={() => onDone(undefined, scope)}>
             Ohne Schema weiter
           </Button>
         </div>
       </header>
+
+      {usage?.template ? (
+        <section className="ws-step__usage" aria-labelledby="step-usage">
+          <h2 id="step-usage">Vorlagenprojekt?</h2>
+          <p>
+            Nur {count(usage.active)} von {count(usage.active + usage.idle + usage.reserve)} Gruppenadressen ({share(usage.active, usage.active + usage.idle + usage.reserve)}) sind mit einem Gerät
+            verknüpft, das sendet oder empfängt. Viele Errichter importieren eine große Vorlage und verknüpfen nur, was sie brauchen. Die übrigen GAs sind dann kein Fehler,
+            sondern Vorrat.
+          </p>
+          <RadioButtonGroup
+            legendText="Was soll ausgewertet werden?"
+            name="scope"
+            orientation="vertical"
+            valueSelected={scope}
+            onChange={(value: unknown) => setChosen(value === "all" ? "all" : "used")}
+          >
+            <RadioButton id="scope-used" value="used" labelText={`Nur GAs in Benutzung (${count(usage.active)}), der Rest ist Vorrat: keine Things, keine Rückfragen (empfohlen)`} />
+            <RadioButton id="scope-all" value="all" labelText={`Alle GAs (${count(usage.active + usage.idle + usage.reserve)}), auch ohne Gerät`} />
+          </RadioButtonGroup>
+          <p className="helper">Später unter Übersicht, Erkennung jederzeit änderbar. Vorrat bleibt in der Tabelle sichtbar.</p>
+        </section>
+      ) : null}
 
       <div className="ws-step__ways">
         <section className="ws-step__panel" aria-labelledby="step-llm">
@@ -420,7 +446,7 @@ export function SchemaStepView({ client, project, state, current, onDone, onCanc
           ) : null}
 
           <div className="ws-step__finish">
-            <Button kind="primary" size="lg" disabled={checking} onClick={() => onDone(live.profile)}>
+            <Button kind="primary" size="lg" disabled={checking} onClick={() => onDone(live.profile, scope)}>
               Schema übernehmen
             </Button>
             <Button kind="tertiary" size="lg" onClick={() => download(`${fileStem(live.name || "namensschema")}.namensschema.json`, JSON.stringify(live.profile, null, 2))}>

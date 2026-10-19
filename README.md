@@ -136,6 +136,13 @@ stillen Entscheidung.
   Unterordner oder mit einer `.knxproj` darin), als entpackter Ordner oder
   Beispielprojekt; geschützte ETS5- und ETS6-Projekte mit Passwortdialog.
   Die Analyse läuft in einem Web Worker.
+- **Vorlagenprojekte**: Importiert der Errichter eine große GA-Vorlage und
+  verknüpft nur, was er braucht, sind die meisten GAs ohne Gerät. Hat das
+  Projekt Geräte und ist weniger als die Hälfte der GAs in Benutzung (ein
+  Gerät sendet oder empfängt darauf), fragt Schritt 2 nach dem Umfang;
+  Vorgabe ist "nur in Benutzung". Der Vorrat erzeugt dann keine Things und
+  keine Rückfragen und bleibt in der Tabelle sichtbar. Umschalten geht in der
+  Übersicht.
 - **Schritt 2, Namensschema**, nach jedem Import und überspringbar; bei einem
   schon bekannten Projekt ist der gespeicherte Stand vorbelegt und "Weiter
   wie zuletzt" übernimmt ihn unverändert:

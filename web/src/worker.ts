@@ -89,7 +89,7 @@ function describeMeaning(meaning: SchemaMeaning): string {
 }
 
 /** Erkennung ohne Schema fuer den Vergleich; haengt nur vom ETS-Schalter ab. */
-let plain: { useEtsFunctions: boolean; figures: PreviewFigures } | undefined;
+let plain: { key: string; figures: PreviewFigures } | undefined;
 
 async function handle(request: Request): Promise<unknown> {
   switch (request.type) {
@@ -127,11 +127,11 @@ async function handle(request: Request): Promise<unknown> {
         }
       }
       const reviews = new Map<string, Partial<Record<ClaimDimension, string>>>(Object.entries(request.reviews));
-      const base = { useEtsFunctions: request.useEtsFunctions, ...(profile ? { profile } : {}) };
+      const base = { useEtsFunctions: request.useEtsFunctions, scope: request.scope, ...(profile ? { profile } : {}) };
       analysis = analyzeProject(graph, { ...base, reviews });
       let check: ReviewCheck | undefined;
       if (reviews.size > 0) {
-        const key = JSON.stringify([request.useEtsFunctions, parsedProfile ?? null]);
+        const key = JSON.stringify([request.useEtsFunctions, request.scope, parsedProfile ?? null]);
         if (baseline?.key !== key) baseline = { key, analysis: analyzeProject(graph, base) };
         check = checkReviews(baseline.analysis, reviews);
       }
@@ -176,10 +176,11 @@ async function handle(request: Request): Promise<unknown> {
       const parsed = parseProfile(request.profile);
       if (!parsed.ok) return { ok: false, errors: parsed.errors } satisfies SchemaPreviewResult;
       const compiled = compileProfile(parsed.profile, graph.loaded.project.spaces);
-      if (plain?.useEtsFunctions !== request.useEtsFunctions) {
-        plain = { useEtsFunctions: request.useEtsFunctions, figures: figures(analyzeProject(graph, { useEtsFunctions: request.useEtsFunctions })) };
+      const plainKey = JSON.stringify([request.useEtsFunctions, request.scope]);
+      if (plain?.key !== plainKey) {
+        plain = { key: plainKey, figures: figures(analyzeProject(graph, { useEtsFunctions: request.useEtsFunctions, scope: request.scope })) };
       }
-      const after = figures(analyzeProject(graph, { useEtsFunctions: request.useEtsFunctions, profile: compiled }));
+      const after = figures(analyzeProject(graph, { useEtsFunctions: request.useEtsFunctions, scope: request.scope, profile: compiled }));
       const coverage = compiled.schema ? schemaCoverage(compiled.schema, graph.groupAddresses.map((node) => ({ name: node.ga.name, ranges: node.ranges.map((range) => range.name) }))) : undefined;
       const { schema } = parsed.profile;
       const result: SchemaPreviewResult = {

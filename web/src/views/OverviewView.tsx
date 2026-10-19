@@ -51,7 +51,11 @@ export function OverviewView(): ReactNode {
       </header>
 
       <dl className="ws-figures">
-        <Figure label="Gruppenadressen" value={count(total)} />
+        <Figure
+          label="Gruppenadressen"
+          value={count(total)}
+          note={snapshot.usage.hasDevices ? `${count(snapshot.usage.active)} in Benutzung, ${count(snapshot.usage.idle + snapshot.usage.reserve)} ohne wirksames Gerät` : undefined}
+        />
         <Figure
           label="Geräte"
           value={count(project.counts.devices)}
@@ -63,7 +67,11 @@ export function OverviewView(): ReactNode {
           note={state.useEtsFunctions ? "als Beleg genutzt" : "als Beleg abgeschaltet"}
         />
         <Figure label="Räume und Bereiche" value={count(project.counts.spaces)} />
-        <Figure label="Things" value={count(snapshot.things.length)} />
+        <Figure
+          label="Things"
+          value={count(snapshot.things.filter((thing) => !thing.outOfUse).length)}
+          note={snapshot.things.some((thing) => thing.outOfUse) ? `${count(snapshot.things.filter((thing) => thing.outOfUse).length)} stillgelegt, nicht gezählt` : undefined}
+        />
         <Figure label="Rückfragen" value={count(snapshot.questions.length)} note={conflicts > 0 ? `${count(conflicts)} Widersprüche` : undefined} />
         <Figure label="Bestätigte GAs" value={count(reviewed)} note={total > 0 ? share(reviewed, total) : undefined} />
       </dl>
@@ -188,6 +196,23 @@ export function OverviewView(): ReactNode {
           Ausgeschaltet zeigt sich, was die Erkennung allein aus Namen, Gebäudestruktur, Verdrahtung und Namensschema schafft. Viele Projekte pflegen keine
           ETS-Funktionen.
         </p>
+        {snapshot.usage.hasDevices && snapshot.usage.idle + snapshot.usage.reserve > 0 ? (
+          <div style={{ marginTop: "1.5rem" }}>
+            <Toggle
+              id="nur-in-benutzung"
+              size="sm"
+              labelText="Nur GAs in Benutzung auswerten"
+              labelA="Alle"
+              labelB="Nur in Benutzung"
+              toggled={snapshot.usage.scope === "used"}
+              onToggle={(value) => workspace.setScope(value ? "used" : "all")}
+            />
+            <p className="helper" style={{ marginTop: "0.5rem", maxWidth: "68ch" }}>
+              In Benutzung heißt: Ein Gerät sendet oder empfängt auf der GA. Die übrigen GAs sind Vorrat, zum Beispiel aus einer Vorlage. Sie erzeugen weder Things noch
+              Rückfragen und gehen nicht in die Thing Descriptions, bleiben aber in der Tabelle sichtbar.
+            </p>
+          </div>
+        ) : null}
         {snapshot.profileWarnings.length > 0 || workspace.profileErrors.length > 0 ? (
           <ul className="ws-list" style={{ marginTop: "1rem" }}>
             {[...workspace.profileErrors, ...snapshot.profileWarnings].map((warning) => (

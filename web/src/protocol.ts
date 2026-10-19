@@ -19,6 +19,8 @@ export interface AnalyzeRequest {
   /** Rohes Profil-JSON; der Worker prueft es selbst. */
   readonly profile: unknown;
   readonly useEtsFunctions: boolean;
+  /** Umfang der Auswertung; siehe AnalyzeOptions. */
+  readonly scope: "all" | "used";
 }
 
 export interface DetailRequest {
@@ -54,6 +56,7 @@ export interface SchemaPreviewRequest {
   readonly type: "schema-preview";
   readonly profile: unknown;
   readonly useEtsFunctions: boolean;
+  readonly scope: "all" | "used";
 }
 
 export type Request = OpenRequest | AnalyzeRequest | DetailRequest | ReportRequest | TdRequest | TdZipRequest | SchemaPromptRequest | SchemaPreviewRequest;

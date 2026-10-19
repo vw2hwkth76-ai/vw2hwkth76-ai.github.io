@@ -2,6 +2,7 @@ import type { Severity } from "../diagnostics.ts";
 import type { LoadedProject } from "../ets/load.ts";
 import type { ComObjectFlag } from "../ets/model.ts";
 import type { ProjectGraph } from "../graph/evidence-graph.ts";
+import { looksLikeTemplate, summarizeUsage, type Usage, type UsageSummary } from "../graph/usage.ts";
 import type { Claim, ClaimDimension, ClaimSource, Decision } from "../recognize/claims.ts";
 import type { ProjectAnalysis } from "../recognize/pipeline.ts";
 import type { QuestionKind } from "../recognize/questions.ts";
@@ -40,6 +41,8 @@ export interface GaView {
   readonly role: string | undefined;
   readonly central: boolean;
   readonly outOfUse: boolean;
+  /** Wirksam verknuepft, verknuepft ohne Funktion oder Vorrat; siehe graph/usage.ts. */
+  readonly usage: Usage;
   readonly linked: number;
   readonly readable: boolean | undefined;
   readonly questionIds: readonly string[];
@@ -105,6 +108,8 @@ export interface Snapshot {
   readonly diagnostics: readonly DiagnosticSummary[];
   readonly coverage: Readonly<Record<ClaimDimension, { readonly decided: number; readonly bySource: Readonly<Partial<Record<ClaimSource, number>>> }>>;
   readonly profileWarnings: readonly string[];
+  /** Verteilung der GAs nach Nutzung und ob das Projekt nach einer Vorlage aussieht. */
+  readonly usage: UsageSummary & { readonly template: boolean; readonly scope: "all" | "used" };
 }
 
 export interface ClaimView extends ValueView {
@@ -181,6 +186,11 @@ export function projectKey(loaded: LoadedProject): string {
   return loaded.project.guid ?? `${loaded.project.id}:${loaded.project.name}`;
 }
 
+function usageOf(analysis: ProjectAnalysis): Snapshot["usage"] {
+  const summary = summarizeUsage(analysis.recognition.graph);
+  return { ...summary, template: looksLikeTemplate(summary), scope: analysis.scope };
+}
+
 export function buildSnapshot(analysis: ProjectAnalysis, profileWarnings: readonly string[] = []): Snapshot {
   const { recognition } = analysis;
   const graph = recognition.graph;
@@ -213,6 +223,7 @@ export function buildSnapshot(analysis: ProjectAnalysis, profileWarnings: readon
       role: roleOf.get(ga.id),
       central: entry.analysis.central,
       outOfUse: entry.analysis.outOfUse,
+      usage: entry.analysis.usage,
       linked: entry.analysis.node.links.length,
       readable: entry.analysis.node.readable,
       questionIds: questionsByGa.get(ga.id) ?? [],
@@ -310,6 +321,7 @@ export function buildSnapshot(analysis: ProjectAnalysis, profileWarnings: readon
     diagnostics: [...grouped.values()].sort((a, b) => severityRank(a.severity) - severityRank(b.severity) || b.count - a.count),
     coverage,
     profileWarnings,
+    usage: usageOf(analysis),
   };
 }
 
