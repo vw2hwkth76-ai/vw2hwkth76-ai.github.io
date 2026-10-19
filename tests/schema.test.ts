@@ -5,7 +5,7 @@ import { buildGraph, type ProjectGraph } from "../src/graph/evidence-graph.ts";
 import { decide } from "../src/recognize/claims.ts";
 import { analyzeProject } from "../src/recognize/pipeline.ts";
 import { compileProfile, PROFILE_FORMAT_V2, parseProfile, profileJson } from "../src/recognize/profile.ts";
-import { compileSchema, matchSchema, parseSchema, schemaCoverage } from "../src/recognize/schema.ts";
+import { compileSchema, hasNestedQuantifier, matchSchema, parseSchema, schemaCoverage } from "../src/recognize/schema.ts";
 import { buildSchemaPrompt, extractJson } from "../src/recognize/schema-prompt.ts";
 import { readFixture } from "./helpers.ts";
 
@@ -77,7 +77,7 @@ describe("Namensschema mit Aufbau", () => {
     const { schema } = compiled();
     expect(matchSchema(schema, "Second Floor.Plant.T-STA-Valve")?.roomId).toBe("t2");
     expect(matchSchema(schema, "Ground Floor.Plant.T-STA-Valve")?.roomId).toBeUndefined();
-    const coverage = schemaCoverage(schema, ["First Floor.Office1.L-SET-Dim-ChA", "First Floor.Lobby.L-SET-Switch", "Zentral Aus"]);
+    const coverage = schemaCoverage(schema, ["First Floor.Office1.L-SET-Dim-ChA", "First Floor.Lobby.L-SET-Switch", "Zentral Aus"].map((name) => ({ name, ranges: [] })));
     expect(coverage).toMatchObject({ perPattern: [2], unmatched: 1, unmatchedExamples: ["Zentral Aus"], unknownRooms: ["Lobby"], things: 2 });
   });
 
@@ -98,6 +98,46 @@ describe("Namensschema mit Aufbau", () => {
     if (!parsed.ok) return;
     expect(parsed.warnings).toEqual(['Wert "function=Value": unbekannter Begriff "brightness" ignoriert.']);
     expect(parsed.profile.schema.values["function"]?.["Value"]).toEqual({ label: "Helligkeit" });
+  });
+
+  it("liest die Funktion aus dem Gruppenbereich, wenn der Name nur Raum und Nummer nennt", () => {
+    const { schema } = compiled({
+      patterns: [
+        {
+          regex: "^Licht / (?<funktion>Schalten|Schalten RM|Dimmen) / (?<room>Office1|Office2)(?: (?<kanal>\\d))?$",
+          source: "path",
+          thing: ["room", "kanal"],
+        },
+      ],
+      values: { funktion: { Schalten: { direction: "command", aspect: "switch" }, "Schalten RM": { direction: "status", aspect: "switch" }, Dimmen: { direction: "command", aspect: "dim" } } },
+    });
+    const ranges = ["Licht", "Schalten RM"];
+    const found = matchSchema(schema, "Office1 2", ranges);
+    expect(found).toMatchObject({ roomId: "o1", direction: "status", aspects: ["switch"] });
+    expect(matchSchema(schema, "Office1 2", ["Licht", "Schalten"])?.thingKey).toBe(found?.thingKey);
+    // Ohne Gruppenbereiche liest das Pfad-Muster nichts.
+    expect(matchSchema(schema, "Office1 2")).toBeUndefined();
+  });
+
+  it("liest einen Datenpunkttyp je Wert und prueft seine Schreibweise", () => {
+    const { schema, warnings } = compiled({
+      patterns: [{ regex: "^(?<room>Office\\d) (?<kind>Wert|Ist)$", thing: ["room"] }],
+      values: { kind: { Wert: { dpt: "DPST-5-1" }, Ist: { dpt: "9.001" } } },
+    });
+    expect(matchSchema(schema, "Office1 Wert")?.dpt).toBe("DPST-5-1");
+    expect(matchSchema(schema, "Office1 Ist")?.dpt).toBeUndefined();
+    expect(warnings.some((warning) => warning.includes('"9.001"'))).toBe(true);
+  });
+
+  it("erkennt echte Gefahr, nicht Trenner-Wiederholungen", () => {
+    for (const bad of ["(a+)+", "(\\w*)*", "(?<a>x+)*", "([a-z]+,)*", "(.+)*"]) expect(hasNestedQuantifier(bad)).toBe(true);
+    for (const fine of ["(?<room>\\S+(?: \\S+)*?)", "(?:\\s+\\w+)*", "^(?<r>[A-Za-z]+(?: [A-Za-z]+)*?)(?: (?<n>\\d))?$", "[(a+)+]x"]) expect(hasNestedQuantifier(fine)).toBe(false);
+  });
+
+  it("nimmt bis zu 40 Muster, nicht mehr", () => {
+    const patterns = (count: number) => Array.from({ length: count }, (_, index) => ({ regex: `^(?<a>x${index})$` }));
+    expect(parseProfile({ format: PROFILE_FORMAT_V2, patterns: patterns(40) }).ok).toBe(true);
+    expect(parseProfile({ format: PROFILE_FORMAT_V2, patterns: patterns(41) }).ok).toBe(false);
   });
 
   it("lehnt Muster ab, die den Browser blockieren koennten", () => {
@@ -156,6 +196,32 @@ describe("Namensschema mit Aufbau im Projekt", () => {
     expect(status && decide(status.analysis.claims, "room").winner).toMatchObject({ source: "schema", confidence: 0.92 });
     // "Switching" und "Status" ohne Gewerk und Raum deckt das Muster nicht; sie bleiben bei der Heuristik.
     expect(analysis.recognition.groupAddresses.filter((entry) => !entry.analysis.schema).map((entry) => entry.analysis.node.ga.text)).toEqual(["0/0/19", "0/0/20"]);
+  });
+
+  it("laesst den Namen eines einzigen Gebaeudes aus, den Bauherrn nennen koennte", () => {
+    const prompt = buildSchemaPrompt(demo);
+    expect(prompt.text).toContain("Building: (Name ausgelassen)");
+    expect(prompt.text).not.toContain("Building: DemoProject");
+    // Raeume und Etagen bleiben, sie braucht das Schema.
+    expect(prompt.text).toContain("Floor: First Floor");
+  });
+
+  it("nimmt bei grossen Projekten aus jedem Gruppenbereich ein Beispiel und listet alle Bereiche", () => {
+    const names = ["Funktion A", "Funktion B", "Funktion C", "Funktion D"];
+    const spread = {
+      ...demo,
+      groupAddresses: demo.groupAddresses.map((node, index) => {
+        const range = node.ranges[0];
+        return range ? { ...node, ranges: [{ ...range, name: names[index % names.length] ?? "" }] } : node;
+      }),
+    };
+    const prompt = buildSchemaPrompt(spread, { maxGroupAddresses: 4 });
+    expect(prompt.included).toBe(4);
+    for (const name of names) {
+      expect(prompt.text).toContain(`${name} | `);
+      expect(prompt.text.split("\n").filter((line) => line.includes(` | ${name} | `) && /^\d+\/\d+\/\d+ \|/.test(line))).toHaveLength(1);
+    }
+    expect(prompt.text).toContain("Gruppenbereiche (Hauptgruppe / Mittelgruppe, Anzahl GAs, Beispielname):");
   });
 
   it("baut den Prompt ohne Projektdaten und ersetzt Personennamen", () => {

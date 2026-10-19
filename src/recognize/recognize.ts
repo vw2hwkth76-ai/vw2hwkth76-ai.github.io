@@ -388,7 +388,7 @@ function buildThings(
     const fromSchema = schemaLabel ? [roomName, schemaLabel].filter((part) => part).join(" ") : undefined;
     things.push({
       key,
-      label: etsFunction?.name ?? fromSchema ?? climateLabel ?? familyLabel(members) ?? members[0]?.analysis.node.ga.name ?? key,
+      label: readable(etsFunction?.name ?? fromSchema ?? climateLabel ?? familyLabel(members), members) ?? key,
       source,
       groupAddressIds: members.map((member) => member.analysis.node.ga.id),
       trade: mostCommon(members.map((member) => member.decisions.trade.winner?.value).filter((value) => value !== undefined)),
@@ -398,6 +398,17 @@ function buildThings(
     });
   }
   return things;
+}
+
+/**
+ * Ein Titel nur aus Ziffern ("1", "2 1") entsteht, wenn der Name aus Raum und Nummer besteht ("Wohnzimmer 1")
+ * und der Raum herausgenommen wurde. Dann steht der Name selbst als Titel, der kuerzeste der Mitglieder.
+ */
+function readable(label: string | undefined, members: readonly GaRecognition[]): string | undefined {
+  if (label === undefined) return members[0]?.analysis.node.ga.name;
+  if (/\p{L}/u.test(label)) return label;
+  const names = members.map((member) => member.analysis.node.ga.name.trim()).filter((name) => /\p{L}/u.test(name));
+  return names.sort((a, b) => a.length - b.length)[0] ?? label;
 }
 
 /** Generische Gewerkbegriffe verlieren gegen konkrete Bezeichnungen ("Radiator" vor "heating"). */

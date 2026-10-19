@@ -10,6 +10,7 @@ import type { ClaimDimension } from "../../src/recognize/claims.ts";
 import { analyzeProject, type ProjectAnalysis } from "../../src/recognize/pipeline.ts";
 import { readiness } from "../../src/bench/readiness.ts";
 import { ASPECT_LABEL, DIRECTION_LABEL, TRADE_LABEL } from "../../src/app/labels.ts";
+import { dptDotted } from "../../src/ets/dpt-id.ts";
 import { compileProfile, type NamingProfile, parseProfile, profileJson } from "../../src/recognize/profile.ts";
 import { type SchemaMeaning, schemaCoverage } from "../../src/recognize/schema.ts";
 import { buildSchemaPrompt } from "../../src/recognize/schema-prompt.ts";
@@ -78,6 +79,7 @@ function describeMeaning(meaning: SchemaMeaning): string {
     meaning.trade ? TRADE_LABEL[meaning.trade] : undefined,
     meaning.direction ? DIRECTION_LABEL[meaning.direction] : undefined,
     meaning.aspect ? ASPECT_LABEL[meaning.aspect] : undefined,
+    meaning.dpt ? `DPT ${dptDotted(meaning.dpt)}` : undefined,
     meaning.room ? `Raum ${meaning.room}` : undefined,
     meaning.label ? `"${meaning.label}"` : undefined,
     meaning.thing ? `Thing wie ${meaning.thing}` : undefined,
@@ -178,7 +180,7 @@ async function handle(request: Request): Promise<unknown> {
         plain = { useEtsFunctions: request.useEtsFunctions, figures: figures(analyzeProject(graph, { useEtsFunctions: request.useEtsFunctions })) };
       }
       const after = figures(analyzeProject(graph, { useEtsFunctions: request.useEtsFunctions, profile: compiled }));
-      const coverage = compiled.schema ? schemaCoverage(compiled.schema, graph.groupAddresses.map((node) => node.ga.name)) : undefined;
+      const coverage = compiled.schema ? schemaCoverage(compiled.schema, graph.groupAddresses.map((node) => ({ name: node.ga.name, ranges: node.ranges.map((range) => range.name) }))) : undefined;
       const { schema } = parsed.profile;
       const result: SchemaPreviewResult = {
         ok: true,

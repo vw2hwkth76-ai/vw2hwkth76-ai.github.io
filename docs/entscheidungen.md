@@ -312,3 +312,50 @@ Gefragt war, ob ein LLM das Projekt besser liest als die Regeln.
 - **Schema-Things sind gesetzt:** keine Strukturfragen darin, andere
   Bündelungsregeln lassen ihre GAs in Ruhe. ETS-Funktionen gehen weiterhin
   vor.
+
+## Befunde an Projekt F (Vorlagenprojekt, über 5.500 GAs)
+
+Ein Einfamilienhaus mit einem Raster von über 5.500 GAs: Die Mittelgruppe
+nennt die Funktion ("Schalten", "Position Behang RM"), der Name nur Raum und
+Nummer ("Esszimmer 2"), für gut 25 Räume mit je 136 GAs, obwohl das Gebäude 11
+Räume hat. Nur 4,6 % der GAs sind mit Geräten verknüpft; 93 % der GAs liegen
+in Things ganz ohne Gerät. Blind: 1.306 Things, 2.616 TD-Dateien, 3,2 % fest
+belegt, 2.992 Rückfragen. Das ist der Eindruck "2.500 Things im Einfamilienhaus".
+
+- **Die Bündelung war schon richtig.** 16 Heizungs-GAs je Raum und Nummer,
+  6 Jalousie-GAs je Name. Das Problem ist die Menge, nicht die Zuordnung.
+- **Titel nur aus Ziffern.** 615 von 1.306 Things hießen "1" oder "2", weil
+  der Raumname aus dem Titel genommen wurde. Ein Titel ohne Buchstaben fällt
+  auf den GA-Namen zurück, danach waren es 80.
+- **Das Schema muss den Bereich lesen können.** Der erste Blindlauf eines LLM
+  schrieb 23 Muster auf Namen, fand aber die Funktion nicht, weil sie im
+  Bereich steht. Neu: `"source": "path"` lässt ein Muster auf den Pfad
+  passen.
+- **Meine Sicherheitsprüfung war zu grob.** Sie lehnte das übliche
+  Namensmuster `(?<room>\S+(?: \S+)*?)` ab, weil sie jede Wiederholung einer
+  Gruppe mit Wiederholung als gefährlich las. Jetzt prüft eine Funktion die
+  Klammerstruktur: Beginnt jede Runde mit einem festen Trenner, ist die
+  Wiederholung eindeutig und erlaubt. Das Limit stieg von 20 auf 40 Muster.
+- **Die Beispielauswahl im Prompt ignorierte den Bereich.** "Wohnzimmer 1"
+  steht in 16 Mittelgruppen, das LLM sah drei davon. Jetzt kommt reihum aus
+  jedem Gruppenbereich ein Beispiel, und alle Bereiche stehen mit Anzahl und
+  Beispielname im Prompt.
+- **Ein Prompt-Leck.** Bei einem einzelnen Gebäude ist dessen Name oft der
+  des Bauherrn. Er steht nicht mehr im Prompt.
+- **Datenpunkttyp je Wert im Schema.** Ohne Objekte gibt es für über 4.000
+  GAs keinen DPT; ein LLM kennt aber den üblichen Typ ("Schalten" 1.001). Er
+  steht in der Prüfliste, der Mensch bestätigt ihn. Passt er nicht zur
+  Objektgröße, gilt er nicht.
+
+| Lauf | Muster | gelesene GAs | TD-fertig | fest | Rückfragen | Things |
+|---|---|---|---|---|---|---|
+| ohne Schema | | | 70,8 % | 3,2 % | 2.992 | 1.306 |
+| LLM 1, nur Namen | 23 (abgelehnt, bis die Prüfung gelockert war) | 1.096 | 84,7 % | 4,5 % | 1.263 | 423 |
+| LLM 2, Pfad, Beispiele nach Namensform | 7 | 760 | 70,6 % | 3,7 % | 2.992 | 1.420 |
+| LLM 3, Beispiele je Bereich | 1 | 4.460 | 89,0 % | 4,0 % | 737 | 779 |
+| LLM 4, plus DPT je Wert | 6 | 5.271 | 92,4 % | 38,6 % | 445 | 831 |
+
+Jeder Lauf war ein frisches LLM, das nur den Prompt sah. Die Läufe 2 bis 4
+zeigen, dass Fehler im Prompt-Generator teurer waren als Fehler des LLM.
+Es gibt keinen Gold-Standard für dieses Projekt; die Zahlen messen
+Abdeckung und Festigkeit, nicht Richtigkeit.

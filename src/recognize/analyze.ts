@@ -209,7 +209,7 @@ export function analyzeGroupAddress(
   matcher: RoomMatcher,
   options: AnalyzeOptions,
 ): GaAnalysis {
-  const schema = options.profile?.schema ? matchSchema(options.profile.schema, node.ga.name) : undefined;
+  const schema = options.profile?.schema ? matchSchema(options.profile.schema, node.ga.name, node.ranges.map((range) => range.name)) : undefined;
   const plain = analyzeName(node.ga.name, matcher, options.profile);
   // Begriffe aus dem Schema gehen den Woertern im Namen vor; sie stehen fuer Rollen und DPT zuerst.
   const name: NameAnalysis =
@@ -248,8 +248,11 @@ export function analyzeGroupAddress(
     if (schema.roomId) claim("room", schema.roomId, "schema", SCHEMA_CONFIDENCE, where);
     if (schema.trade) claim("trade", schema.trade, "schema", SCHEMA_CONFIDENCE, where);
     if (schema.direction) claim("direction", schema.direction, "schema", SCHEMA_CONFIDENCE, where);
-    const typed = schema.aspects.filter((aspect) => ASPECTS[aspect].dpt !== undefined);
-    for (const aspect of typed.length > 0 ? typed : schema.aspects) {
+    // Der Errichter nennt den Typ selbst: mit passender Objektgroesse oder ohne Objekt ein fester Beleg, gegen eine bekannte Groesse keiner.
+    const named = schema.dpt && graph.loaded.master.dpts.has(schema.dpt) ? schema.dpt : undefined;
+    if (named && fitsSize(named)) claim("dpt", named, "schema", sizes.size === 1 ? 0.9 : SCHEMA_NAMED_DPT_CONFIDENCE, `${where}; Datenpunkttyp im Schema`);
+    const typed = named ? [] : schema.aspects.filter((aspect) => ASPECTS[aspect].dpt !== undefined);
+    for (const aspect of named ? [] : typed.length > 0 ? typed : schema.aspects) {
       const dpt = ASPECTS[aspect].dpt ?? ASPECTS[aspect].bareDpt;
       if (!dpt || !fitsSize(dpt)) continue;
       // Schema und Objektgroesse sind zwei unabhaengige Belege; der Begriff allein bleibt ein Vorschlag.
@@ -476,6 +479,8 @@ export function analyzeGroupAddress(
  * (0,76) ohne Rueckfrage, und verliert mit Rueckfrage gegen starke Verdrahtung (0,93) und ETS-Angaben.
  */
 const SCHEMA_CONFIDENCE = 0.92;
+/** Typ vom Errichter genannt, aber ohne Objekt zum Gegenpruefen: so fest wie das Schema, knapp darunter. */
+const SCHEMA_NAMED_DPT_CONFIDENCE = 0.86;
 /** Belege, die nur aus dem Namen geraten sind; das bestaetigte Schema ist die bessere Lesart desselben Namens. */
 const NAME_SOURCES: ReadonlySet<ClaimSource> = new Set(["name", "hierarchy", "pairing", "family", "default", "profile"]);
 

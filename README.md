@@ -97,15 +97,19 @@ stillen Entscheidung.
     Licht, "LR" den Raum Living room, "RM" eine Rückmeldung.
   - Aufbau (`knx-td-namensschema-2`): Muster mit benannten Gruppen lesen den
     ganzen Namen ("Etage.Raum.Gewerk-Art-Funktion-Kanal"), eine Tabelle sagt,
-    was die Werte bedeuten (Gewerk, Richtung, Begriff, Raumkürzel,
-    Anzeigename), Regeln fassen Ausnahmen. Die Gruppen unter "thing"
-    bestimmen, welche GAs ein Thing bilden.
+    was die Werte bedeuten (Gewerk, Richtung, Begriff, Datenpunkttyp,
+    Raumkürzel, Anzeigename), Regeln fassen Ausnahmen. Die Gruppen unter
+    "thing" bestimmen, welche GAs ein Thing bilden. Ein Muster liest den
+    Namen oder, mit `"source": "path"`, den Pfad "Hauptgruppe / Mittelgruppe /
+    Name": So lassen sich Projekte lesen, deren Gruppenbereiche die Funktion
+    nennen und deren Namen nur Raum und Nummer tragen.
   - Bestätigt belegt das Schema Raum, Gewerk und Richtung mit 0,92: Es
     ersetzt die Namensheuristik und schlägt die schwachen Ersatzregeln der
     Verdrahtung. Widerspricht starke Verdrahtung oder eine ETS-Angabe,
     gewinnt diese, mit Rückfrage. Ungültige Muster (auch solche mit
-    verschachtelten Wiederholungen, die den Browser blockieren könnten)
-    werden abgelehnt, unbekannte Begriffe mit Hinweis ignoriert.
+    verschachtelten Wiederholungen wie "(a+)+", die den Browser blockieren
+    könnten; "(?: \\S+)*" mit festem Trenner ist erlaubt) werden abgelehnt,
+    höchstens 40 Muster, unbekannte Begriffe mit Hinweis ignoriert.
 - **Verdrahtung mit Belegstärke:** Was ein Aktor oder ein eindeutiger
   Objekttext belegt, zählt 0,93. Ersatzregeln ("nur Empfänger", "lesbarer
   Sender ohne Aktor") zählen 0,76: Ein Kennwort im Namen ("Status", "STA")

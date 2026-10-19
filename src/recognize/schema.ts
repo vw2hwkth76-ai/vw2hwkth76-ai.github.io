@@ -19,6 +19,8 @@ export interface SchemaMeaning {
   readonly trade?: Trade;
   readonly direction?: Direction;
   readonly aspect?: Aspect;
+  /** Datenpunkttyp, den der Errichter fuer diese Funktion verwendet ("DPST-1-1"); gilt nur, wenn er zur Objektgroesse passt. */
+  readonly dpt?: string;
   readonly label?: string;
   /** Anderer Wert derselben Gruppe, mit dem dieser ein Thing bildet ("M" zum Raumregler "T"). */
   readonly thing?: string;
@@ -29,6 +31,11 @@ export interface SchemaMeaning {
 export interface SchemaPattern {
   readonly regex: string;
   readonly ignoreCase: boolean;
+  /**
+   * Worauf das Muster passt: der GA-Name allein oder der Pfad "Hauptgruppe / Mittelgruppe / Name". Steht die Funktion im
+   * Gruppenbereich und der Name nur fuer Raum und Nummer (Vorlagenprojekte), braucht das Schema den Pfad.
+   */
+  readonly source: "name" | "path";
   readonly thing: readonly string[];
 }
 
@@ -50,7 +57,7 @@ export const EMPTY_SCHEMA: NamingSchema = { description: "", patterns: [], value
 const DIRECTIONS: readonly Direction[] = ["command", "status", "alarm"];
 export const ROOM_GROUPS: ReadonlySet<string> = new Set(["room", "raum"]);
 const FLOOR_GROUPS: ReadonlySet<string> = new Set(["floor", "etage", "geschoss", "building", "gebaeude"]);
-const MAX_PATTERNS = 20;
+const MAX_PATTERNS = 40;
 const MAX_REGEX = 2000;
 const MAX_RULES = 200;
 const MAX_VALUES = 2000;
@@ -58,10 +65,58 @@ const MAX_TEXT = 80;
 const MAX_DESCRIPTION = 1000;
 
 /**
- * Wiederholte Gruppe, die selbst auf eine Wiederholung endet ("(a+)+", "(\\w*)*"): Ursache
- * katastrophalen Backtrackings. Die Analyse laeuft im Browser; ein solches Muster wuerde sie einfrieren.
+ * Wiederholte Gruppe, die selbst eine Wiederholung enthaelt ("(a+)+", "(\\w*)*"): Ursache katastrophalen
+ * Backtrackings. Die Analyse laeuft im Browser; ein solches Muster wuerde sie einfrieren. Harmlos ist die
+ * Wiederholung, wenn jede Runde mit einem festen Trenner beginnt: "(?: \\S+)*" kann den Text nur an
+ * Leerzeichen aufteilen, "(?:\\s+\\w+)*" ebenso. Ein Wort je Runde ist eindeutig.
  */
-const NESTED_QUANTIFIER = /[+*]\)[+*{]/;
+export function hasNestedQuantifier(source: string): boolean {
+  const open: number[] = [];
+  let inClass = false;
+  for (let i = 0; i < source.length; i++) {
+    const char = source[i];
+    if (char === "\\") {
+      i++;
+      continue;
+    }
+    if (inClass) {
+      if (char === "]") inClass = false;
+      continue;
+    }
+    if (char === "[") inClass = true;
+    else if (char === "(") open.push(i);
+    else if (char === ")") {
+      const from = open.pop();
+      const next = source[i + 1];
+      if (from === undefined || (next !== "*" && next !== "+" && next !== "{")) continue;
+      let body = source.slice(from + 1, i);
+      if (/^\?[=!]|^\?<[=!]/.test(body)) continue;
+      body = body.replace(/^\?(?::|<[A-Za-z_]\w*>)/, "");
+      if (!containsQuantifier(body)) continue;
+      if (/^(?: |-|_|,|\/|:|\\s|\\\.|\\\/)/.test(body)) continue;
+      return true;
+    }
+  }
+  return false;
+}
+
+function containsQuantifier(body: string): boolean {
+  let inClass = false;
+  for (let i = 0; i < body.length; i++) {
+    const char = body[i];
+    if (char === "\\") {
+      i++;
+      continue;
+    }
+    if (inClass) {
+      if (char === "]") inClass = false;
+      continue;
+    }
+    if (char === "[") inClass = true;
+    else if (char === "+" || char === "*" || (char === "{" && /^\{\d/.test(body.slice(i)))) return true;
+  }
+  return false;
+}
 
 /** Namen der benannten Gruppen eines Musters, in Reihenfolge. */
 export function groupNames(source: string): string[] {
@@ -92,6 +147,11 @@ function parseMeaning(item: Record<string, unknown>, at: string, warnings: strin
   if (direction !== undefined) {
     if (isDirection(direction)) meaning.direction = direction;
     else warnings.push(`${at}: unbekannte Richtung "${String(direction)}" ignoriert.`);
+  }
+  const dpt = item["dpt"];
+  if (dpt !== undefined) {
+    if (typeof dpt === "string" && /^DPS?T-\d{1,3}(?:-\d{1,4})?$/.test(dpt)) meaning.dpt = dpt;
+    else warnings.push(`${at}: Datenpunkttyp "${String(dpt)}" ist nicht als "DPT-1" oder "DPST-1-1" geschrieben, ignoriert.`);
   }
   const aspect = item["aspect"];
   if (aspect !== undefined) {
@@ -126,6 +186,7 @@ export function parseSchema(json: Record<string, unknown>, errors: string[], war
       }
       const regex = item["regex"];
       const ignoreCase = item["ignoreCase"] === true || item["flags"] === "i";
+      const source = item["source"] === "path" ? "path" : "name";
       if (regex.length > MAX_REGEX) {
         errors.push(`${at}: Regex länger als ${MAX_REGEX} Zeichen.`);
         return;
@@ -135,7 +196,7 @@ export function parseSchema(json: Record<string, unknown>, errors: string[], war
         errors.push(`${at}: Regex ungültig (${problem}).`);
         return;
       }
-      if (NESTED_QUANTIFIER.test(regex)) {
+      if (hasNestedQuantifier(regex)) {
         errors.push(`${at}: verschachtelte Wiederholung wie "(a+)+"; solche Muster können die Analyse sehr lange blockieren.`);
         return;
       }
@@ -149,7 +210,7 @@ export function parseSchema(json: Record<string, unknown>, errors: string[], war
       const thing = rawThing.filter((name): name is string => typeof name === "string");
       const missing = thing.filter((name) => !groups.includes(name));
       if (missing.length > 0) warnings.push(`${at}: Gruppen ${missing.map((name) => `"${name}"`).join(", ")} für das Thing gibt es im Regex nicht.`);
-      patterns.push({ regex, ignoreCase, thing: thing.filter((name) => groups.includes(name)) });
+      patterns.push({ regex, ignoreCase, source, thing: thing.filter((name) => groups.includes(name)) });
     });
   }
 
@@ -191,7 +252,7 @@ export function parseSchema(json: Record<string, unknown>, errors: string[], war
         return;
       }
       const problem = compiles(item["match"], "");
-      if (problem || NESTED_QUANTIFIER.test(item["match"])) {
+      if (problem || hasNestedQuantifier(item["match"])) {
         errors.push(`${at}: Regex ungültig (${problem ?? "verschachtelte Wiederholung"}).`);
         return;
       }
@@ -209,6 +270,7 @@ export function parseSchema(json: Record<string, unknown>, errors: string[], war
 
 interface CompiledPattern {
   readonly regex: RegExp;
+  readonly source: "name" | "path";
   readonly groups: readonly string[];
   readonly thing: readonly string[];
 }
@@ -228,6 +290,8 @@ export interface SchemaMatch {
   readonly trade: Trade | undefined;
   readonly direction: Direction | undefined;
   readonly aspects: readonly Aspect[];
+  /** Datenpunkttyp laut Schema; die letzte Angabe gewinnt, Regeln vor Werten. */
+  readonly dpt: string | undefined;
   /** Gleicher Schluessel, gleiches Thing. */
   readonly thingKey: string;
   /** Titel des Things ohne Raum ("Licht ChA"). */
@@ -268,6 +332,7 @@ function roomResolver(spaces: readonly Space[]): CompiledSchema["resolveRoom"] {
 export function compileSchema(schema: NamingSchema, spaces: readonly Space[]): CompiledSchema {
   const patterns = schema.patterns.map((pattern) => ({
     regex: new RegExp(pattern.regex, pattern.ignoreCase ? "i" : ""),
+    source: pattern.source,
     groups: groupNames(pattern.regex),
     thing: pattern.thing,
   }));
@@ -279,9 +344,11 @@ export function compileSchema(schema: NamingSchema, spaces: readonly Space[]): C
   return { patterns, values, rules, resolveRoom: roomResolver(spaces) };
 }
 
-export function matchSchema(schema: CompiledSchema, name: string): SchemaMatch | undefined {
-  const text = name.trim();
+export function matchSchema(schema: CompiledSchema, name: string, ranges: readonly string[] = []): SchemaMatch | undefined {
+  const plain = name.trim();
+  const path = [...ranges.map((range) => range.trim()), plain].join(" / ");
   for (const [index, pattern] of schema.patterns.entries()) {
+    const text = pattern.source === "path" ? path : plain;
     const found = pattern.regex.exec(text);
     if (!found?.groups) continue;
     const groups: Record<string, string> = {};
@@ -295,19 +362,22 @@ export function matchSchema(schema: CompiledSchema, name: string): SchemaMatch |
     let trade: Trade | undefined;
     let direction: Direction | undefined;
     const aspects: Aspect[] = [];
+    let dpt: string | undefined;
     for (const group of pattern.groups) {
       const meaning = meaningOf(group, groups[group]);
       if (!meaning) continue;
       trade = meaning.trade ?? trade;
       direction = meaning.direction ?? direction;
       if (meaning.aspect && !aspects.includes(meaning.aspect)) aspects.push(meaning.aspect);
+      dpt = meaning.dpt ?? dpt;
     }
     // Regeln sind Ausnahmen: Sie gehen den Werten vor, spaetere vor frueheren.
     for (const { regex, rule } of schema.rules) {
-      if (!regex.test(text)) continue;
+      if (!regex.test(text) && !regex.test(plain) && !regex.test(path)) continue;
       trade = rule.trade ?? trade;
       direction = rule.direction ?? direction;
       if (rule.aspect && !aspects.includes(rule.aspect)) aspects.unshift(rule.aspect);
+      dpt = rule.dpt ?? dpt;
     }
 
     const roomGroup = pattern.groups.find((group) => ROOM_GROUPS.has(group));
@@ -337,6 +407,7 @@ export function matchSchema(schema: CompiledSchema, name: string): SchemaMatch |
       trade,
       direction,
       aspects,
+      dpt,
       thingKey: `schema:${index}|${parts.join("|")}`,
       thingLabel: labels.join(" "),
       detail: Object.entries(groups)
@@ -358,14 +429,14 @@ export interface SchemaCoverage {
 }
 
 /** Wie viel eines Projekts das Schema liest; Grundlage fuer die Pruefung vor der Bestaetigung. */
-export function schemaCoverage(schema: CompiledSchema, names: readonly string[]): SchemaCoverage {
+export function schemaCoverage(schema: CompiledSchema, entries: readonly { readonly name: string; readonly ranges: readonly string[] }[]): SchemaCoverage {
   const perPattern = schema.patterns.map(() => 0);
   const unmatchedExamples: string[] = [];
   const unknownRooms = new Set<string>();
   const things = new Set<string>();
   let unmatched = 0;
-  for (const name of names) {
-    const found = matchSchema(schema, name);
+  for (const { name, ranges } of entries) {
+    const found = matchSchema(schema, name, ranges);
     if (!found) {
       unmatched++;
       if (unmatchedExamples.length < 10) unmatchedExamples.push(name);
@@ -383,7 +454,7 @@ export function schemaCoverage(schema: CompiledSchema, names: readonly string[])
 export function schemaJson(schema: NamingSchema): Record<string, unknown> {
   return {
     ...(schema.description ? { aufbau: schema.description } : {}),
-    patterns: schema.patterns.map((pattern) => ({ regex: pattern.regex, ...(pattern.ignoreCase ? { ignoreCase: true } : {}), thing: pattern.thing })),
+    patterns: schema.patterns.map((pattern) => ({ regex: pattern.regex, ...(pattern.ignoreCase ? { ignoreCase: true } : {}), thing: pattern.thing, ...(pattern.source === "path" ? { source: "path" } : {}) })),
     values: schema.values,
     rules: schema.rules,
   };
