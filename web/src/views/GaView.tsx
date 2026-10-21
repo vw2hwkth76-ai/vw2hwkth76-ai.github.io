@@ -10,7 +10,7 @@ import { count, strengthOf } from "../format.ts";
 import { useWorkspace } from "../workspace.ts";
 import { GaInspector } from "./GaInspector.tsx";
 
-type StateFilter = "alle" | "fragen" | "widerspruch" | "unsicher" | "bestaetigt" | "unbestaetigt";
+type StateFilter = "alle" | "fragen" | "widerspruch" | "unsicher" | "bestaetigt" | "unbestaetigt" | "ausgeschlossen";
 
 const STATE_FILTERS: readonly { readonly value: StateFilter; readonly label: string }[] = [
   { value: "alle", label: "Alle" },
@@ -19,9 +19,12 @@ const STATE_FILTERS: readonly { readonly value: StateFilter; readonly label: str
   { value: "unsicher", label: "Offen oder schwach belegt" },
   { value: "bestaetigt", label: "Bestätigt" },
   { value: "unbestaetigt", label: "Nicht bestätigt" },
+  { value: "ausgeschlossen", label: "Ausgeschlossen" },
 ];
 
 const BATCH_LABEL = { room: "Raum setzen", trade: "Gewerk setzen", direction: "Richtung setzen" } as const;
+
+const EXCLUDED_LABEL = { reserve: "ausgeschlossen (Vorrat)", group: "ausgeschlossen (Gruppe)", single: "ausgeschlossen (einzeln)" } as const;
 
 const NO_ROOM: Option = { value: "", label: "Ohne Raum" };
 
@@ -43,7 +46,7 @@ const COLUMNS: readonly Column<GaRow>[] = [
     header: "Raum",
     width: "12%",
     sort: (ga) => sortValue(ga, "room"),
-    cell: (ga) => <DecisionValue decision={ga.decisions.room} />,
+    cell: (ga) => (ga.excluded ? null : <DecisionValue decision={ga.decisions.room} />),
     title: (ga) => decisionTitle(ga.decisions.room),
   },
   {
@@ -51,7 +54,7 @@ const COLUMNS: readonly Column<GaRow>[] = [
     header: "Gewerk",
     width: "10%",
     sort: (ga) => sortValue(ga, "trade"),
-    cell: (ga) => <DecisionValue decision={ga.decisions.trade} />,
+    cell: (ga) => (ga.excluded ? null : <DecisionValue decision={ga.decisions.trade} />),
     title: (ga) => decisionTitle(ga.decisions.trade),
   },
   {
@@ -59,7 +62,7 @@ const COLUMNS: readonly Column<GaRow>[] = [
     header: "Richtung",
     width: "9rem",
     sort: (ga) => sortValue(ga, "direction"),
-    cell: (ga) => <DecisionValue decision={ga.decisions.direction} />,
+    cell: (ga) => (ga.excluded ? null : <DecisionValue decision={ga.decisions.direction} />),
     title: (ga) => decisionTitle(ga.decisions.direction),
   },
   {
@@ -67,7 +70,7 @@ const COLUMNS: readonly Column<GaRow>[] = [
     header: "DPT",
     width: "14%",
     sort: (ga) => sortValue(ga, "dpt"),
-    cell: (ga) => <DecisionValue decision={ga.decisions.dpt} />,
+    cell: (ga) => (ga.excluded ? null : <DecisionValue decision={ga.decisions.dpt} />),
     title: (ga) => decisionTitle(ga.decisions.dpt),
   },
   {
@@ -75,7 +78,7 @@ const COLUMNS: readonly Column<GaRow>[] = [
     header: "Thing",
     width: "13%",
     sort: (ga) => ga.thingLabel,
-    cell: (ga) => ga.thingLabel,
+    cell: (ga) => (ga.excluded ? EXCLUDED_LABEL[ga.excluded] : ga.thingLabel),
     title: (ga) => [ga.thingLabel, ga.role].filter(Boolean).join("\n"),
   },
   {
@@ -112,11 +115,16 @@ export function GaView(): ReactNode {
         const haystack = `${ga.text} ${ga.name} ${ga.ranges.join(" ")} ${ga.thingLabel}`.toLocaleLowerCase("de");
         if (!words.every((word) => haystack.includes(word))) return false;
       }
+      // Ausgeschlossene GAs haben keine Erkennung; nur "Alle" und "Ausgeschlossen" zeigen sie.
+      if (ga.excluded !== undefined && stateFilter !== "alle" && stateFilter !== "ausgeschlossen") return false;
+      if (ga.excluded === undefined && stateFilter === "ausgeschlossen") return false;
+      if (ga.excluded !== undefined && (trade !== "" || room)) return false;
       if (trade !== "" && (trade === "-" ? ga.decisions.trade !== undefined : ga.decisions.trade?.value !== trade)) return false;
       if (room && (room.value === "" ? ga.decisions.room !== undefined : ga.decisions.room?.value !== room.value)) return false;
       const reviewed = state.reviews[ga.id] !== undefined;
       switch (stateFilter) {
         case "alle":
+        case "ausgeschlossen":
           return true;
         case "fragen":
           return ga.questionIds.length > 0;
@@ -137,6 +145,8 @@ export function GaView(): ReactNode {
 
   const active = workspace.focusGa !== undefined ? lookups.gaById.get(workspace.focusGa) : undefined;
   const selectedIds = [...selected].filter((id) => lookups.gaById.has(id));
+  const selectedExcluded = selectedIds.filter((id) => lookups.gaById.get(id)?.excluded !== undefined);
+  const selectedEvaluated = selectedIds.filter((id) => lookups.gaById.get(id)?.excluded === undefined);
 
   return (
     <div className="ws-split">
@@ -213,12 +223,36 @@ export function GaView(): ReactNode {
                 onChange={(value) => workspace.setReview(selectedIds, dimension, value)}
               />
             ))}
-            <Button kind="primary" size="sm" onClick={() => workspace.confirmCurrent(selectedIds)}>
+            <Button kind="primary" size="sm" disabled={selectedEvaluated.length === 0} onClick={() => workspace.confirmCurrent(selectedEvaluated)}>
               Werte bestätigen
             </Button>
             <Button kind="secondary" size="sm" onClick={() => workspace.clearReviews(selectedIds)}>
               Bestätigungen entfernen
             </Button>
+            {selectedEvaluated.length > 0 ? (
+              <Button
+                kind="secondary"
+                size="sm"
+                onClick={() => {
+                  workspace.applyScope("exclude", selectedEvaluated);
+                  setSelected(new Set());
+                }}
+              >
+                {count(selectedEvaluated.length)} ausschließen
+              </Button>
+            ) : null}
+            {selectedExcluded.length > 0 ? (
+              <Button
+                kind="secondary"
+                size="sm"
+                onClick={() => {
+                  workspace.applyScope("include", selectedExcluded);
+                  setSelected(new Set());
+                }}
+              >
+                {count(selectedExcluded.length)} wieder aufnehmen
+              </Button>
+            ) : null}
             <Button kind="ghost" size="sm" onClick={() => setSelected(new Set())} style={{ color: "inherit" }}>
               Auswahl aufheben
             </Button>
@@ -234,7 +268,7 @@ export function GaView(): ReactNode {
           onActivate={(ga) => workspace.openGa(ga.id)}
           selection={{ selected, onChange: setSelected }}
           initialSort={{ id: "ga", desc: false }}
-          muted={(ga) => ga.outOfUse}
+          muted={(ga) => ga.outOfUse || ga.excluded !== undefined}
           empty={
             <div className="ws-empty">
               <h3>Keine Gruppenadresse passt</h3>

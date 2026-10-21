@@ -1,11 +1,13 @@
 import { createContext, useContext } from "react";
 import type { ReviewCheck } from "../../src/app/review-check.ts";
 import type { GaView, QuestionView, Snapshot, ThingView } from "../../src/app/snapshot.ts";
+import type { Exclusion } from "../../src/graph/scope.ts";
 import type { ClaimDimension } from "../../src/recognize/claims.ts";
 import type { TdOptions } from "../../src/td/render.ts";
 import type { AnalysisClient } from "./client.ts";
 import type { OpenResult } from "./protocol.ts";
 import type { ProjectState } from "./storage.ts";
+import type { WizardStep } from "./views/ImportWizard.tsx";
 
 export const VIEWS = ["uebersicht", "gruppenadressen", "things", "rueckfragen", "namensschema", "thing-descriptions", "export"] as const;
 export type ViewId = (typeof VIEWS)[number];
@@ -40,11 +42,13 @@ export interface Workspace {
   clearReviews(gaIds: readonly string[]): void;
   setProfile(profile: unknown): void;
   setUseEtsFunctions(value: boolean): void;
-  setScope(value: "all" | "used"): void;
+  setExclude(exclude: Exclusion): void;
+  /** Schliesst GAs einzeln aus oder holt sie zurueck; der Worker rechnet nach, wo ein Eintrag noetig ist. */
+  applyScope(action: "exclude" | "include", ids: readonly string[]): void;
   setTdOptions(options: TdOptions): void;
   replaceState(state: ProjectState): void;
-  /** Zurueck zum Schritt "Namensschema" mit Vorschlag und Live-Effekt. */
-  openSchemaStep(): void;
+  /** Zurueck in den Assistenten, standardmaessig zum Namensschema mit Vorschlag und Live-Effekt. */
+  openSchemaStep(step?: WizardStep): void;
   openGa(gaId: string | undefined): void;
   openThing(thingKey: string | undefined): void;
   navigate(view: ViewId): void;

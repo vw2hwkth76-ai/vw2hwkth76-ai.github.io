@@ -48,6 +48,17 @@ export function buildReport(snapshot: Snapshot, options: ReportOptions): Record<
       groupAddressStyle: project.groupAddressStyle,
       counts: project.counts,
     },
+    scope: {
+      total: snapshot.scope.total,
+      evaluated: snapshot.scope.included,
+      excluded: snapshot.scope.excluded,
+      byReason: snapshot.scope.byReason,
+      usage: { active: snapshot.scope.active, idle: snapshot.scope.idle, reserve: snapshot.scope.reserve, template: snapshot.scope.template },
+      reserveExcluded: snapshot.scope.exclusion.reserve,
+      mainGroups: snapshot.scope.groups.map((group) => ({ name: group.name, gas: group.total, active: group.active, excluded: group.excluded })),
+      singlyExcluded: snapshot.scope.exclusion.gas.length,
+      singlyIncluded: snapshot.scope.exclusion.include.length,
+    },
     coverage: snapshot.coverage,
     reviews: options.reviewCount,
     reviewCheck: options.reviewCheck
@@ -77,6 +88,9 @@ export function buildReport(snapshot: Snapshot, options: ReportOptions): Record<
       name: ga.name,
       ranges: ga.ranges,
       linked: ga.linked,
+      usage: ga.usage,
+      // Ausgeschlossene GAs stehen nur mit Grund da, ohne Belege.
+      excluded: ga.excluded,
       links: options.links?.get(ga.id),
       central: ga.central || undefined,
       outOfUse: ga.outOfUse || undefined,
@@ -113,12 +127,12 @@ function compact(decision: Snapshot["gas"][number]["decisions"]["room"]): unknow
 
 /** Kurzfassung als Text zum Einfuegen in einen Chat. */
 export function reportSummary(snapshot: Snapshot, reviewCheck?: ReviewCheck): string {
-  const total = snapshot.project.counts.groupAddresses;
+  const total = snapshot.scope.included;
   const percent = (value: number): string => `${total === 0 ? 0 : Math.round((value / total) * 1000) / 10} %`;
   const kinds = new Map<string, number>();
   for (const question of snapshot.questions) kinds.set(`${question.kind}:${question.dimension}`, (kinds.get(`${question.kind}:${question.dimension}`) ?? 0) + 1);
   return [
-    `${REPORT_FORMAT}, ${snapshot.project.createdBy} ${snapshot.project.toolVersion}, ${total} GAs, ${snapshot.project.counts.devices} Geräte (${snapshot.project.counts.devicesWithManufacturerData} mit Herstellerdaten), ${snapshot.project.counts.etsFunctions} ETS-Funktionen`,
+    `${REPORT_FORMAT}, ${snapshot.project.createdBy} ${snapshot.project.toolVersion}, ${snapshot.scope.total} GAs${snapshot.scope.excluded > 0 ? ` (${snapshot.scope.included} ausgewertet, ${snapshot.scope.excluded} ausgeschlossen: Vorrat ${snapshot.scope.byReason.reserve}, Gruppen ${snapshot.scope.byReason.group}, einzeln ${snapshot.scope.byReason.single})` : ""}, ${snapshot.project.counts.devices} Geräte (${snapshot.project.counts.devicesWithManufacturerData} mit Herstellerdaten), ${snapshot.project.counts.etsFunctions} ETS-Funktionen`,
     `Entschieden: Raum ${percent(snapshot.coverage.room.decided)}, Gewerk ${percent(snapshot.coverage.trade.decided)}, Richtung ${percent(snapshot.coverage.direction.decided)}, DPT ${percent(snapshot.coverage.dpt.decided)}`,
     `Things: ${snapshot.things.length}, Rückfragen: ${snapshot.questions.length} (${[...kinds].map(([key, count]) => `${key} ${count}`).join(", ")})`,
     `Unbekannte Kürzel: ${snapshot.unknownCodes.map((code) => `${code.token} (${code.count})`).join(", ") || "keine"}`,

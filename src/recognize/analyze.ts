@@ -47,7 +47,7 @@ export interface GaAnalysis {
   readonly ranges: readonly NameAnalysis[];
   readonly central: boolean;
   readonly outOfUse: boolean;
-  /** Wofuer die GA im Projekt benutzt wird; "reserve" und "idle" sind bei scope "used" ausser Betrieb. */
+  /** Wofuer die GA im Projekt benutzt wird. */
   readonly usage: Usage;
   readonly outdoor: boolean;
   readonly multiRoomName: boolean;
@@ -66,11 +66,6 @@ export type Reviews = ReadonlyMap<string, Readonly<Partial<Record<ClaimDimension
 export interface AnalyzeOptions {
   /** false misst die Heuristik so, als gaebe es keine ETS-Funktionen. */
   readonly useEtsFunctions: boolean;
-  /**
-   * Umfang der Auswertung. "used": GAs ohne wirksame Geraeteverknuepfung sind Vorrat (Vorlagenprojekte) und
-   * erzeugen weder Things noch Rueckfragen; nur in Projekten mit Geraeten. Standard "all".
-   */
-  readonly scope?: "all" | "used";
   readonly reviews?: Reviews;
   /** Bestaetigtes Namensschema; seine Kuerzel gehen dem allgemeinen Vokabular vor. */
   readonly profile?: CompiledProfile;
@@ -472,8 +467,7 @@ export function analyzeGroupAddress(
     ranges,
     central,
     // Ein Name ohne Buchstaben und Ziffern (".") ist ein Platzhalter, keine Funktion.
-    // Ein Name ohne Buchstaben und Ziffern (".") ist ein Platzhalter; im Umfang "used" ist auch Vorrat ausser Betrieb.
-    outOfUse: anyMarker("outOfUse") || !/[\p{L}\p{N}]/u.test(node.ga.name) || (options.scope === "used" && usage !== "active" && graph.loaded.project.devices.length > 0),
+    outOfUse: anyMarker("outOfUse") || !/[\p{L}\p{N}]/u.test(node.ga.name),
     usage,
     outdoor,
     multiRoomName,

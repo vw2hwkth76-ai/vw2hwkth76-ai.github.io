@@ -1,4 +1,4 @@
-import { Button, Tag, Toggle } from "@carbon/react";
+import { Button, Checkbox, Tag, Toggle } from "@carbon/react";
 import { type ReactNode, useMemo } from "react";
 import { DIMENSION_LABEL, SEVERITY_LABEL, SOURCE_LABEL } from "../../../src/app/labels.ts";
 import { checkAccuracy } from "../../../src/app/review-check.ts";
@@ -6,6 +6,7 @@ import { DIMENSIONS } from "../../../src/app/snapshot.ts";
 import { isClaimSource } from "../../../src/recognize/claims.ts";
 import { count, ratio, share, STRENGTH_LABEL, type Strength, strengthOf } from "../format.ts";
 import { Figure } from "../components/Figure.tsx";
+import { exclusionOf } from "../storage.ts";
 import { useWorkspace } from "../workspace.ts";
 
 const STRENGTHS: readonly Strength[] = [4, 3, 2, 1];
@@ -14,7 +15,8 @@ export function OverviewView(): ReactNode {
   const workspace = useWorkspace();
   const { snapshot, reviewCheck, state } = workspace;
   const { project } = snapshot;
-  const total = project.counts.groupAddresses;
+  // Prozentwerte beziehen sich auf die ausgewerteten GAs; ausgeschlossene stehen nicht im Nenner.
+  const total = snapshot.scope.included;
   const reviewed = Object.keys(state.reviews).length;
 
   const strengths = useMemo(
@@ -53,8 +55,14 @@ export function OverviewView(): ReactNode {
       <dl className="ws-figures">
         <Figure
           label="Gruppenadressen"
-          value={count(total)}
-          note={snapshot.usage.hasDevices ? `${count(snapshot.usage.active)} in Benutzung, ${count(snapshot.usage.idle + snapshot.usage.reserve)} ohne wirksames Gerät` : undefined}
+          value={count(snapshot.scope.total)}
+          note={
+            snapshot.scope.excluded > 0
+              ? `${count(snapshot.scope.included)} ausgewertet, ${count(snapshot.scope.excluded)} ausgeschlossen`
+              : snapshot.scope.hasDevices
+                ? `${count(snapshot.scope.active)} in Benutzung, ${count(snapshot.scope.idle + snapshot.scope.reserve)} ohne wirksames Gerät`
+                : undefined
+          }
         />
         <Figure
           label="Geräte"
@@ -196,23 +204,26 @@ export function OverviewView(): ReactNode {
           Ausgeschaltet zeigt sich, was die Erkennung allein aus Namen, Gebäudestruktur, Verdrahtung und Namensschema schafft. Viele Projekte pflegen keine
           ETS-Funktionen.
         </p>
-        {snapshot.usage.hasDevices && snapshot.usage.idle + snapshot.usage.reserve > 0 ? (
-          <div style={{ marginTop: "1.5rem" }}>
-            <Toggle
-              id="nur-in-benutzung"
-              size="sm"
-              labelText="Nur GAs in Benutzung auswerten"
-              labelA="Alle"
-              labelB="Nur in Benutzung"
-              toggled={snapshot.usage.scope === "used"}
-              onToggle={(value) => workspace.setScope(value ? "used" : "all")}
+        <div style={{ marginTop: "1.5rem" }}>
+          <h3 style={{ marginBottom: "0.5rem" }}>Umfang</h3>
+          <p className="helper" style={{ maxWidth: "68ch" }}>
+            {snapshot.scope.excluded === 0
+              ? `Alle ${count(snapshot.scope.total)} Gruppenadressen werden ausgewertet.`
+              : `${count(snapshot.scope.included)} von ${count(snapshot.scope.total)} werden ausgewertet. Ausgeschlossen: Vorrat ${count(snapshot.scope.byReason.reserve)}, Hauptgruppen ${count(snapshot.scope.byReason.group)}, einzeln ${count(snapshot.scope.byReason.single)}.`}{" "}
+            Ausgeschlossene GAs erzeugen weder Belege noch Things oder Rückfragen und gehen nicht in die Thing Descriptions, bleiben aber grau in der Tabelle.
+          </p>
+          {snapshot.scope.hasDevices && snapshot.scope.idle + snapshot.scope.reserve > 0 ? (
+            <Checkbox
+              id="scope-reserve-quick"
+              labelText={`Vorrat ausschließen (${count(snapshot.scope.idle + snapshot.scope.reserve)} GAs ohne wirksames Gerät)`}
+              checked={snapshot.scope.exclusion.reserve}
+              onChange={(_, { checked }) => workspace.setExclude({ ...exclusionOf(state), reserve: checked })}
             />
-            <p className="helper" style={{ marginTop: "0.5rem", maxWidth: "68ch" }}>
-              In Benutzung heißt: Ein Gerät sendet oder empfängt auf der GA. Die übrigen GAs sind Vorrat, zum Beispiel aus einer Vorlage. Sie erzeugen weder Things noch
-              Rückfragen und gehen nicht in die Thing Descriptions, bleiben aber in der Tabelle sichtbar.
-            </p>
-          </div>
-        ) : null}
+          ) : null}
+          <Button kind="tertiary" size="sm" style={{ marginTop: "0.75rem" }} onClick={() => workspace.openSchemaStep("scope")}>
+            Hauptgruppen und einzelne GAs ändern
+          </Button>
+        </div>
         {snapshot.profileWarnings.length > 0 || workspace.profileErrors.length > 0 ? (
           <ul className="ws-list" style={{ marginTop: "1rem" }}>
             {[...workspace.profileErrors, ...snapshot.profileWarnings].map((warning) => (

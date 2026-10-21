@@ -1,4 +1,6 @@
 import type { ReviewCheck } from "../../src/app/review-check.ts";
+import type { ScopeOverview, ScopeSearch, SplitThings } from "../../src/app/scope-view.ts";
+import type { Exclusion } from "../../src/graph/scope.ts";
 import type { GaDetail, Snapshot } from "../../src/app/snapshot.ts";
 import type { TdBundle, TdOptions } from "../../src/td/render.ts";
 import type { ClaimDimension } from "../../src/recognize/claims.ts";
@@ -19,8 +21,8 @@ export interface AnalyzeRequest {
   /** Rohes Profil-JSON; der Worker prueft es selbst. */
   readonly profile: unknown;
   readonly useEtsFunctions: boolean;
-  /** Umfang der Auswertung; siehe AnalyzeOptions. */
-  readonly scope: "all" | "used";
+  /** Welche GAs ausgewertet werden. */
+  readonly exclude: Exclusion;
 }
 
 export interface DetailRequest {
@@ -49,6 +51,38 @@ export interface TdZipRequest {
 export interface SchemaPromptRequest {
   readonly type: "schema-prompt";
   readonly maskPersons: boolean;
+  readonly exclude: Exclusion;
+}
+
+/** Umfang des Projekts mit den Zahlen, die der Ausschluss ergibt; braucht keine Analyse. */
+export interface ScopeOverviewRequest {
+  readonly type: "scope-overview";
+  readonly exclude: Exclusion;
+}
+
+/** Schliesst GAs ein oder aus; gemeint sind entweder genannte Ids oder alle Treffer einer Suche. */
+export interface ScopeApplyRequest {
+  readonly type: "scope-apply";
+  readonly exclude: Exclusion;
+  readonly action: "exclude" | "include";
+  readonly ids?: readonly string[];
+  readonly query?: string;
+}
+
+/** Things, die der Ausschluss auseinanderreisst; rechnet eine Erkennung ohne Ausschluss. */
+export interface ScopeSplitsRequest {
+  readonly type: "scope-splits";
+  readonly exclude: Exclusion;
+  readonly profile: unknown;
+  readonly useEtsFunctions: boolean;
+}
+
+/** GAs nach Adresse, Name oder Bereich suchen, fuer den Ausschluss von Treffern. */
+export interface ScopeSearchRequest {
+  readonly type: "scope-search";
+  readonly exclude: Exclusion;
+  readonly query: string;
+  readonly limit: number;
 }
 
 /** Prueft ein vorgeschlagenes Schema am geladenen Projekt, ohne den Projektstand zu aendern. */
@@ -56,10 +90,22 @@ export interface SchemaPreviewRequest {
   readonly type: "schema-preview";
   readonly profile: unknown;
   readonly useEtsFunctions: boolean;
-  readonly scope: "all" | "used";
+  readonly exclude: Exclusion;
 }
 
-export type Request = OpenRequest | AnalyzeRequest | DetailRequest | ReportRequest | TdRequest | TdZipRequest | SchemaPromptRequest | SchemaPreviewRequest;
+export type Request =
+  | OpenRequest
+  | AnalyzeRequest
+  | DetailRequest
+  | ReportRequest
+  | TdRequest
+  | TdZipRequest
+  | SchemaPromptRequest
+  | SchemaPreviewRequest
+  | ScopeOverviewRequest
+  | ScopeSearchRequest
+  | ScopeApplyRequest
+  | ScopeSplitsRequest;
 
 export interface OpenResult {
   readonly key: string;
@@ -90,8 +136,12 @@ export interface TdResult extends Omit<TdBundle, "files"> {
 
 export interface SchemaPromptResult {
   readonly text: string;
+  /** Alle GAs des Projekts. */
   readonly groupAddresses: number;
+  /** GAs, die als Zeile im Prompt stehen. */
   readonly included: number;
+  /** GAs, die der Ausschluss weglaesst. */
+  readonly excluded: number;
   readonly masked: number;
 }
 
@@ -135,6 +185,10 @@ export interface ResultOf {
   readonly "td-zip": ArrayBuffer;
   readonly "schema-prompt": SchemaPromptResult;
   readonly "schema-preview": SchemaPreviewResult;
+  readonly "scope-overview": ScopeOverview;
+  readonly "scope-search": ScopeSearch;
+  readonly "scope-apply": Exclusion;
+  readonly "scope-splits": SplitThings;
 }
 
 export interface WorkerError {

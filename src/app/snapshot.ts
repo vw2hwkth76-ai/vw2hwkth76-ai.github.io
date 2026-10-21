@@ -1,14 +1,16 @@
 import type { Severity } from "../diagnostics.ts";
 import type { LoadedProject } from "../ets/load.ts";
 import type { ComObjectFlag } from "../ets/model.ts";
-import type { ProjectGraph } from "../graph/evidence-graph.ts";
-import { looksLikeTemplate, summarizeUsage, type Usage, type UsageSummary } from "../graph/usage.ts";
+import type { GaNode, ProjectGraph } from "../graph/evidence-graph.ts";
+import type { ExcludeReason } from "../graph/scope.ts";
+import { gaUsage, type Usage } from "../graph/usage.ts";
 import type { Claim, ClaimDimension, ClaimSource, Decision } from "../recognize/claims.ts";
 import type { ProjectAnalysis } from "../recognize/pipeline.ts";
 import type { QuestionKind } from "../recognize/questions.ts";
 import type { GaRecognition } from "../recognize/recognize.ts";
 import { isTrade } from "../recognize/lexicon.ts";
 import { DIRECTION_LABEL, dptLabel, THING_TYPE_LABEL, TRADE_LABEL } from "./labels.ts";
+import { buildScopeOverview, type ScopeOverview } from "./scope-view.ts";
 
 /**
  * Serialisierbare Sicht auf eine Analyse fuer die Oberflaeche. Laeuft im
@@ -46,6 +48,8 @@ export interface GaView {
   readonly linked: number;
   readonly readable: boolean | undefined;
   readonly questionIds: readonly string[];
+  /** Vom Umfang ausgeschlossen: keine Belege, kein Thing, keine Rueckfrage; steht nur zur Ansicht in der Tabelle. */
+  readonly excluded: ExcludeReason | undefined;
 }
 
 export interface ThingView {
@@ -108,8 +112,8 @@ export interface Snapshot {
   readonly diagnostics: readonly DiagnosticSummary[];
   readonly coverage: Readonly<Record<ClaimDimension, { readonly decided: number; readonly bySource: Readonly<Partial<Record<ClaimSource, number>>> }>>;
   readonly profileWarnings: readonly string[];
-  /** Verteilung der GAs nach Nutzung und ob das Projekt nach einer Vorlage aussieht. */
-  readonly usage: UsageSummary & { readonly template: boolean; readonly scope: "all" | "used" };
+  /** Nutzung der GAs, Hauptgruppen und was der Ausschluss uebrig laesst. */
+  readonly scope: ScopeOverview;
 }
 
 export interface ClaimView extends ValueView {
@@ -186,11 +190,6 @@ export function projectKey(loaded: LoadedProject): string {
   return loaded.project.guid ?? `${loaded.project.id}:${loaded.project.name}`;
 }
 
-function usageOf(analysis: ProjectAnalysis): Snapshot["usage"] {
-  const summary = summarizeUsage(analysis.recognition.graph);
-  return { ...summary, template: looksLikeTemplate(summary), scope: analysis.scope };
-}
-
 export function buildSnapshot(analysis: ProjectAnalysis, profileWarnings: readonly string[] = []): Snapshot {
   const { recognition } = analysis;
   const graph = recognition.graph;
@@ -204,7 +203,7 @@ export function buildSnapshot(analysis: ProjectAnalysis, profileWarnings: readon
   }
   const gaText = new Map(project.groupAddresses.map((ga) => [ga.id, ga]));
 
-  const gas: GaView[] = recognition.groupAddresses.map((entry) => {
+  const evaluated: GaView[] = recognition.groupAddresses.map((entry) => {
     const ga = entry.analysis.node.ga;
     const decisions: Partial<Record<ClaimDimension, DecisionView>> = {};
     for (const dimension of DIMENSIONS) {
@@ -227,6 +226,31 @@ export function buildSnapshot(analysis: ProjectAnalysis, profileWarnings: readon
       linked: entry.analysis.node.links.length,
       readable: entry.analysis.node.readable,
       questionIds: questionsByGa.get(ga.id) ?? [],
+      excluded: undefined,
+    };
+  });
+  // Ausgeschlossene GAs stehen in Adressreihenfolge mit dazwischen, ohne Erkennung.
+  const evaluatedById = new Map(evaluated.map((view) => [view.id, view]));
+  const gas: GaView[] = analysis.full.groupAddresses.map((node) => {
+    const view = evaluatedById.get(node.ga.id);
+    if (view) return view;
+    return {
+      id: node.ga.id,
+      address: node.ga.address,
+      text: node.ga.text,
+      name: node.ga.name,
+      ranges: node.ranges.map((range) => range.name),
+      decisions: {},
+      thingKey: "",
+      thingLabel: "",
+      role: undefined,
+      central: false,
+      outOfUse: false,
+      usage: gaUsage(node),
+      linked: node.links.length,
+      readable: node.readable,
+      questionIds: [],
+      excluded: analysis.excluded.get(node.ga.id),
     };
   });
 
@@ -321,12 +345,48 @@ export function buildSnapshot(analysis: ProjectAnalysis, profileWarnings: readon
     diagnostics: [...grouped.values()].sort((a, b) => severityRank(a.severity) - severityRank(b.severity) || b.count - a.count),
     coverage,
     profileWarnings,
-    usage: usageOf(analysis),
+    scope: buildScopeOverview(analysis.full, analysis.exclusion),
   };
 }
 
 function severityRank(severity: Severity): number {
   return severity === "error" ? 0 : severity === "warning" ? 1 : 2;
+}
+
+function linkViews(node: GaNode, graph: ProjectGraph): readonly LinkView[] {
+  return node.links.map((link) => {
+    const space = graph.deviceSpace.get(link.device.device.id)?.space;
+    const co = link.comObject;
+    return {
+      device: link.device.device.individualAddress ?? link.device.device.id,
+      product: link.device.product?.textDe ?? link.device.product?.text,
+      location: space?.name,
+      cabinet: link.device.product?.isRailMounted ?? space?.type === "DistributionBoard",
+      comObject: [co.number !== undefined ? `${co.number}:` : "", co.textDe ?? co.text ?? co.refId, co.functionTextDe ?? co.functionText ?? ""]
+        .filter((part) => part !== "")
+        .join(" "),
+      flags: FLAG_LETTERS.filter(([flag]) => co.flags[flag] === true).map(([, letter]) => letter).join(""),
+      sends: link.sends,
+      receives: link.receives,
+      answersRead: link.answersRead,
+      dpts: co.dpts,
+      size: co.objectSize,
+      channel: co.channel?.label,
+    };
+  });
+}
+
+/** Detail einer ausgeschlossenen GA: Stammdaten und Verknuepfungen, keine Belege. */
+export function buildExcludedDetail(node: GaNode, graph: ProjectGraph): GaDetail {
+  return {
+    id: node.ga.id,
+    description: node.ga.description,
+    ranges: node.ranges.map((range) => range.name),
+    etsFunctions: node.functions.map((membership) => `${membership.function.name} (${membership.role || "ohne Rolle"})`),
+    claims: [],
+    links: linkViews(node, graph),
+    diagnostics: node.diagnostics.map((item) => item.message),
+  };
 }
 
 export function buildDetail(entry: GaRecognition, graph: ProjectGraph): GaDetail {
@@ -348,26 +408,7 @@ export function buildDetail(entry: GaRecognition, graph: ProjectGraph): GaDetail
         evidence: claim.evidence,
         winner: winners.has(claim),
       })),
-    links: node.links.map((link) => {
-      const space = graph.deviceSpace.get(link.device.device.id)?.space;
-      const co = link.comObject;
-      return {
-        device: link.device.device.individualAddress ?? link.device.device.id,
-        product: link.device.product?.textDe ?? link.device.product?.text,
-        location: space?.name,
-        cabinet: link.device.product?.isRailMounted ?? space?.type === "DistributionBoard",
-        comObject: [co.number !== undefined ? `${co.number}:` : "", co.textDe ?? co.text ?? co.refId, co.functionTextDe ?? co.functionText ?? ""]
-          .filter((part) => part !== "")
-          .join(" "),
-        flags: FLAG_LETTERS.filter(([flag]) => co.flags[flag] === true).map(([, letter]) => letter).join(""),
-        sends: link.sends,
-        receives: link.receives,
-        answersRead: link.answersRead,
-        dpts: co.dpts,
-        size: co.objectSize,
-        channel: co.channel?.label,
-      };
-    }),
+    links: linkViews(node, graph),
     diagnostics: node.diagnostics.map((item) => item.message),
   };
 }

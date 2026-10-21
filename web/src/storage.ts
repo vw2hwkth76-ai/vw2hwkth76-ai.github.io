@@ -1,3 +1,4 @@
+import { type Exclusion, exclusionFromState, NO_EXCLUSION } from "../../src/graph/scope.ts";
 import { DEFAULT_TD_OPTIONS, type TdOptions } from "../../src/td/render.ts";
 import { isRecord } from "../../src/util/guards.ts";
 import type { ReviewRecord } from "./protocol.ts";
@@ -18,11 +19,13 @@ export interface ProjectState {
   readonly useEtsFunctions: boolean;
   /** Ausgabeoptionen der Thing Descriptions; aendern nichts an der Erkennung. */
   readonly td: TdOptions;
-  /** Schritt "Namensschema" nach dem Import ist erledigt, mit oder ohne Schema. */
+  /** Der Assistent nach dem Import (Umfang, Namensschema) ist durchlaufen, mit oder ohne Schema. */
   readonly schemaChecked: boolean;
-  /** Umfang der Auswertung; fehlt, solange der Nutzer nichts gewaehlt hat (dann "all"). */
-  readonly scope?: "all" | "used";
+  /** Welche GAs ausgewertet werden; fehlt, solange der Nutzer nichts gewaehlt hat (dann gelten alle). */
+  readonly exclude?: Exclusion;
 }
+
+export const exclusionOf = (state: ProjectState): Exclusion => state.exclude ?? NO_EXCLUSION;
 
 export const EMPTY_STATE: ProjectState = { reviews: {}, profile: undefined, useEtsFunctions: true, td: DEFAULT_TD_OPTIONS, schemaChecked: false };
 
@@ -52,8 +55,8 @@ export function parseState(json: unknown): ProjectState | undefined {
   const profile = json["profile"] ?? undefined;
   // Aeltere Staende ohne das Feld: Wer schon ein Schema oder Antworten hat, ist ueber den Schritt hinaus.
   const schemaChecked = json["schemaChecked"] === true || profile !== undefined || Object.keys(reviews).length > 0;
-  const scope = json["scope"] === "used" || json["scope"] === "all" ? json["scope"] : undefined;
-  return { reviews, profile, useEtsFunctions: json["useEtsFunctions"] !== false, td: parseTdOptions(json["td"]), schemaChecked, ...(scope ? { scope } : {}) };
+  const exclude = exclusionFromState(json);
+  return { reviews, profile, useEtsFunctions: json["useEtsFunctions"] !== false, td: parseTdOptions(json["td"]), schemaChecked, ...(exclude ? { exclude } : {}) };
 }
 
 export function loadState(key: string): ProjectState {

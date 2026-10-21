@@ -143,7 +143,7 @@ export function SchemaView(): ReactNode {
               event.target.value = "";
             }}
           />
-          <Button kind="primary" size="md" onClick={workspace.openSchemaStep}>
+          <Button kind="primary" size="md" onClick={() => workspace.openSchemaStep("schema")}>
             {draft.schema ? "Aufbau neu vorschlagen lassen" : "Aufbau vorschlagen lassen"}
           </Button>
           <Button kind="tertiary" size="md" renderIcon={Upload} onClick={() => fileInput.current?.click()}>

@@ -1,5 +1,6 @@
 import { isNeutral } from "../graph/direction.ts";
 import type { ProjectGraph } from "../graph/evidence-graph.ts";
+import { type Exclusion, excludedReasons, NO_EXCLUSION, reserveOnlyMiddleGroups } from "../graph/scope.ts";
 import { ASPECTS, TRADES } from "./lexicon.ts";
 import { PROFILE_FORMAT_V2 } from "./profile.ts";
 
@@ -16,6 +17,8 @@ export interface PromptOptions {
   readonly maxGroupAddresses?: number;
   /** Anrede mit Namen ("Dr. Meier", "Frau Schmidt") durch Platzhalter ersetzen. */
   readonly maskPersons?: boolean;
+  /** Ausgeschlossene GAs stehen weder als Zeile noch in den Gruppenbereichen im Prompt. */
+  readonly exclude?: Exclusion;
 }
 
 export interface SchemaPrompt {
@@ -23,12 +26,15 @@ export interface SchemaPrompt {
   readonly groupAddresses: number;
   /** GAs, die als Zeile im Prompt stehen. */
   readonly included: number;
+  /** GAs, die wegen des Ausschlusses nicht vorkommen. */
+  readonly excluded: number;
   /** Ersetzte Personennamen. */
   readonly masked: number;
 }
 
 const DEFAULT_MAX = 400;
 const MAX_RANGE_LINES = 300;
+const MAX_VOCABULARY = 200;
 const MAX_OBJECT_TEXT = 40;
 const PERSON = /\b(Dr|Prof|Herr|Frau|Hr|Fr|Mr|Mrs|Ms)\.?\s+[\p{Lu}][\p{L}'-]+/gu;
 
@@ -100,7 +106,8 @@ export function buildSchemaPrompt(graph: ProjectGraph, options: PromptOptions = 
   };
   walk(undefined, 0);
 
-  const nodes = graph.groupAddresses;
+  const excludedIds = excludedReasons(graph, options.exclude ?? NO_EXCLUSION);
+  const nodes = graph.groupAddresses.filter((node) => !excludedIds.has(node.ga.id));
   // Grosse Projekte: reihum je Gruppenbereich die naechste Namensform, bis die Obergrenze erreicht ist. Der Bereich
   // zaehlt mit: "Wohnzimmer 1" in 16 Mittelgruppen sind 16 verschiedene Funktionen, nicht ein Beispiel.
   const rangePath = (node: (typeof nodes)[number]): string => node.ranges.map((range) => range.name.trim()).join(" / ");
@@ -155,7 +162,23 @@ export function buildSchemaPrompt(graph: ProjectGraph, options: PromptOptions = 
   if (included < nodes.length) {
     lines.push("", `Weitere ${nodes.length - included} GAs sind nicht aufgeführt; sie folgen denselben Namensformen, meist nur mit anderem Raum oder anderer Nummer. Das Muster soll auch sie abdecken.`);
   }
-  return { text: lines.join("\n"), groupAddresses: nodes.length, included, masked };
+  if (excludedIds.size > 0) {
+    lines.push("", `${excludedIds.size} weitere GAs (Vorrat ohne Gerät oder ausgeschlossen) sind bewusst weggelassen. Das Muster muss sie nicht abdecken.`);
+  }
+  // Vorlagenprojekte tragen das ganze Vokabular des Errichters, auch fuer Funktionen, die dieses Projekt nicht nutzt;
+  // ein Schema, das nur die benutzten Werte kennt, versagt beim naechsten Projekt mit derselben Vorlage.
+  const vocabulary = reserveOnlyMiddleGroups(graph, excludedIds);
+  if (vocabulary.length > 0) {
+    lines.push(
+      "",
+      `Weitere Mittelgruppen, die nur im weggelassenen Vorrat vorkommen. Nur als Vokabular: Ordne ihnen unter "values" eine Bedeutung zu, wenn sie sicher erkennbar ist, aber lege dafür keine eigenen Muster an:`,
+      vocabulary
+        .slice(0, MAX_VOCABULARY)
+        .map((name) => clean(name))
+        .join(" | "),
+    );
+  }
+  return { text: lines.join("\n"), groupAddresses: graph.groupAddresses.length, included, excluded: excludedIds.size, masked };
 }
 
 /** Holt das JSON aus einer eingefuegten LLM-Antwort, auch mit Codezaun oder Text drumherum. */

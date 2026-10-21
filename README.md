@@ -4,7 +4,7 @@ Proof of Concept: KNX-ETS-Projekte (`.knxproj`) werden zu W3C WoT Thing
 Descriptions. Grundsatz: belegte Semantik zuerst, Heuristik und KI nur für den
 Rest, jede Zuordnung mit Quelle und Beleg.
 
-Stand: **Schritt 4 von 6 (Thing Descriptions)**. Projektimport,
+Stand: **Schritt 4 von 6 (Thing Descriptions)**, mit Assistent und Ausschluss nach dem Import. Projektimport,
 Evidenz-Graph, Erkennung mit Things und Rückfragen, Benchmark, Web-Oberfläche
 und TD-Ausgabe sind fertig; KI-Schritt und Simulator folgen.
 
@@ -136,30 +136,43 @@ stillen Entscheidung.
   Unterordner oder mit einer `.knxproj` darin), als entpackter Ordner oder
   Beispielprojekt; geschützte ETS5- und ETS6-Projekte mit Passwortdialog.
   Die Analyse läuft in einem Web Worker.
-- **Vorlagenprojekte**: Importiert der Errichter eine große GA-Vorlage und
-  verknüpft nur, was er braucht, sind die meisten GAs ohne Gerät. Hat das
-  Projekt Geräte und ist weniger als die Hälfte der GAs in Benutzung (ein
-  Gerät sendet oder empfängt darauf), fragt Schritt 2 nach dem Umfang;
-  Vorgabe ist "nur in Benutzung". Der Vorrat erzeugt dann keine Things und
-  keine Rückfragen und bleibt in der Tabelle sichtbar. Umschalten geht in der
-  Übersicht.
-- **Schritt 2, Namensschema**, nach jedem Import und überspringbar; bei einem
-  schon bekannten Projekt ist der gespeicherte Stand vorbelegt und "Weiter
-  wie zuletzt" übernimmt ihn unverändert:
-  - Prompt für ein LLM kopieren. Er enthält nur Gebäudestruktur, GA-Namen,
-    Gruppenbereiche, DPT und verknüpfte Objekte. Personennamen sind
-    ersetzt, große Projekte erscheinen als Beispiele je Namensform.
-  - Die Antwort einfügen oder ein gespeichertes Schema laden. Die App prüft
-    sie an allen GAs: Abdeckung je Muster, nicht gelesene Beispiele,
-    unbekannte Räume.
-  - Werte und Ausnahmen lassen sich einzeln abwählen. Der Vergleich ohne
-    und mit Schema (TD-fertig, fest belegt, Things, Rückfragen) rechnet
-    sofort neu.
-  - Übernehmen, speichern oder ohne Schema weiter. Die App selbst schickt
-    nichts an ein LLM.
+- **Assistent nach dem Import** in drei Schritten mit Fortschrittsleiste. Alles
+  darin ist ein Entwurf; die volle Analyse läuft erst nach "Zur Werkstatt".
+  Danach bleiben Dashboard, Tabellen, Rückfragen und Export wie sie sind.
+  Jeder Schritt lässt sich später über die Werkstatt wieder öffnen.
+  1. **Umfang:** Welche GAs werden ausgewertet? Drei Wege, die sich
+     kombinieren lassen: der **Vorrat** (kein Gerät sendet oder empfängt
+     darauf; bei Vorlagenprojekten vorbelegt, wenn weniger als die Hälfte der
+     GAs in Benutzung ist), ganze **Hauptgruppen** per Häkchen und **einzelne
+     GAs** per Suche (alle Treffer ausschließen oder wieder aufnehmen).
+     Eine einzelne Entscheidung geht der Gruppe und dem Vorrat vor.
+     **Ausgeschlossene GAs fallen ganz heraus:** keine Belege, kein
+     Schema-Treffer, keine Things, keine Rückfragen, nicht im Prompt für das
+     Namensschema, nicht in den Thing Descriptions, nicht im Nenner der
+     Kennzahlen. In der Tabelle stehen sie grau mit dem Grund; der Filter
+     "Ausgeschlossen" zeigt sie, Sammelaktionen holen sie zurück.
+  2. **Namensschema**, überspringbar; bei einem schon bekannten Projekt ist der
+     gespeicherte Stand vorbelegt und "Weiter wie zuletzt" übernimmt ihn
+     unverändert:
+     - Prompt für ein LLM kopieren. Er enthält nur Gebäudestruktur, GA-Namen
+       der **eingeschlossenen** GAs, Gruppenbereiche, DPT und verknüpfte
+       Objekte. Personennamen sind ersetzt, große Projekte erscheinen als
+       Beispiele je Namensform. Die Mittelgruppen, die nur im weggelassenen
+       Vorrat vorkommen, stehen als reine Namensliste dabei, damit das Schema
+       beim nächsten Projekt mit derselben Vorlage nicht an ihnen scheitert.
+     - Die Antwort einfügen oder ein gespeichertes Schema laden. Die App
+       prüft sie an den GAs im Umfang: Abdeckung je Muster, nicht gelesene
+       Beispiele, unbekannte Räume.
+     - Werte und Ausnahmen lassen sich einzeln abwählen. Der Vergleich ohne
+       und mit Schema (TD-fertig, fest belegt, Things, Rückfragen) rechnet
+       sofort neu.
+     - Die App selbst schickt nichts an ein LLM.
+  3. **Zusammenfassung:** Umfang, Schema und eine Warnung, wenn der Ausschluss
+     Things auseinanderreißt (Befehl drin, Rückmeldung draußen).
 - **Übersicht:** Kennzahlen, Anteil entschiedener Werte je Dimension nach
   Belegstärke, Trefferquote gegen die eigenen Bestätigungen, Hinweise aus
-  dem Projekt. Schalter, ob ETS-Funktionen als Beleg zählen.
+  dem Projekt. Prozentwerte beziehen sich auf die ausgewerteten GAs. Schalter,
+  ob ETS-Funktionen als Beleg zählen, Umfang mit Schnellschalter für den Vorrat.
 - **Gruppenadressen:** virtuelle Tabelle mit Suche, Filtern (Rückfrage,
   Widerspruch, schwach belegt, bestätigt), Sortierung, Tastatursteuerung und
   Sammelaktionen. Der Inspektor zeigt je GA alle Belege mit Quelle und

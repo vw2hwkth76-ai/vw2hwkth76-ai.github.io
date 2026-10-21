@@ -18,13 +18,13 @@ import type { ClaimDimension } from "../../src/recognize/claims.ts";
 import { AnalysisClient, AnalysisError } from "./client.ts";
 import { count } from "./format.ts";
 import type { AnalyzeResult, OpenResult, ReviewRecord, WorkerError } from "./protocol.ts";
-import { EMPTY_STATE, loadPreference, loadState, type ProjectState, savePreference, saveState } from "./storage.ts";
+import { EMPTY_STATE, exclusionOf, loadPreference, loadState, type ProjectState, savePreference, saveState } from "./storage.ts";
 import { ExportView } from "./views/ExportView.tsx";
 import { GaView } from "./views/GaView.tsx";
 import { OverviewView } from "./views/OverviewView.tsx";
 import { PasswordModal } from "./views/PasswordModal.tsx";
 import { QuestionsView } from "./views/QuestionsView.tsx";
-import { SchemaStepView } from "./views/SchemaStepView.tsx";
+import { ImportWizard, type WizardStep } from "./views/ImportWizard.tsx";
 import { SchemaView } from "./views/SchemaView.tsx";
 import { type ProjectSource, StartView } from "./views/StartView.tsx";
 import { TdView } from "./views/TdView.tsx";
@@ -37,8 +37,8 @@ type Phase =
   | { readonly kind: "start"; readonly error?: WorkerError }
   | { readonly kind: "opening"; readonly fileName: string }
   | { readonly kind: "password"; readonly fileName: string; readonly wrong: boolean }
-  /** Schritt 2 nach dem Import: Namensschema vorschlagen lassen, laden oder ueberspringen. */
-  | { readonly kind: "schema" }
+  /** Assistent nach dem Import: Umfang festlegen, Namensschema vorschlagen lassen oder laden, Zusammenfassung. */
+  | { readonly kind: "wizard"; readonly step: WizardStep }
   | { readonly kind: "ready" };
 
 const NAV: readonly { readonly view: ViewId; readonly label: string; readonly icon: ComponentType }[] = [
@@ -97,6 +97,8 @@ export function App(): ReactNode {
   const [focusThing, setFocusThing] = useState<string>();
   const source = useRef<ProjectSource | undefined>(undefined);
   const sequence = useRef(0);
+  /** Wofuer zuletzt analysiert wurde; derselbe Stand wird nicht noch einmal gerechnet, etwa nach einem Besuch im Assistenten. */
+  const analyzed = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     document.documentElement.dataset["carbonTheme"] = theme;
@@ -124,13 +126,14 @@ export function App(): ReactNode {
         const data = await next.blob.arrayBuffer();
         const opened = await client.call({ type: "open", data, password }, [data]);
         const stored = loadState(opened.key);
+        analyzed.current = undefined;
         setResult(undefined);
         setFocusGa(undefined);
         setFocusThing(undefined);
         setProject(opened);
         setState(stored === EMPTY_STATE && next.preset ? next.preset : stored);
-        // Das Namensschema kommt nach jedem Import, auch bei bekannten Projekten; dort mit dem gespeicherten Stand vorbelegt.
-        setPhase({ kind: "schema" });
+        // Der Assistent kommt nach jedem Import, auch bei bekannten Projekten; dort mit dem gespeicherten Stand vorbelegt.
+        setPhase({ kind: "wizard", step: "scope" });
       } catch (error) {
         const failure = toFailure(error);
         if (failure.code === "password-required" || failure.code === "password-wrong") {
@@ -145,6 +148,7 @@ export function App(): ReactNode {
 
   const close = useCallback(() => {
     sequence.current++;
+    analyzed.current = undefined;
     source.current = undefined;
     setProject(undefined);
     setResult(undefined);
@@ -158,14 +162,18 @@ export function App(): ReactNode {
     if (project) saveState(project.key, state);
   }, [project, state]);
 
-  // Antworten, Namensschema und ETS-Schalter loesen eine neue Analyse aus; veraltete Antworten werden verworfen.
-  const { reviews, profile, useEtsFunctions } = state;
-  const scope = state.scope ?? "all";
+  // Antworten, Namensschema, Umfang und ETS-Schalter loesen eine neue Analyse aus; veraltete Antworten werden verworfen.
+  // Waehrend der Assistent laeuft, wird nicht gerechnet: Seine Auswahl ist ein Entwurf.
+  const { reviews, profile, useEtsFunctions, exclude } = state;
+  const analyze = phase.kind === "ready";
   useEffect(() => {
-    if (!project) return;
+    if (!project || !analyze) return;
+    const key = JSON.stringify([project.key, reviews, profile ?? null, useEtsFunctions, exclude ?? null]);
+    if (analyzed.current === key) return;
+    analyzed.current = key;
     const id = ++sequence.current;
     setBusy(true);
-    client.call({ type: "analyze", reviews, profile, useEtsFunctions, scope }).then(
+    client.call({ type: "analyze", reviews, profile, useEtsFunctions, exclude: exclude ?? exclusionOf(EMPTY_STATE) }).then(
       (next) => {
         if (id !== sequence.current) return;
         setResult(next);
@@ -173,12 +181,13 @@ export function App(): ReactNode {
       },
       (error: unknown) => {
         if (id !== sequence.current) return;
+        analyzed.current = undefined;
         setBusy(false);
         setProject(undefined);
         setPhase({ kind: "start", error: toFailure(error) });
       },
     );
-  }, [client, project, reviews, profile, useEtsFunctions, scope]);
+  }, [client, project, analyze, reviews, profile, useEtsFunctions, exclude]);
 
   const lookups = useMemo<Lookups | undefined>(() => {
     if (!result) return undefined;
@@ -233,10 +242,17 @@ export function App(): ReactNode {
         })),
       setProfile: (profile) => setState((current) => ({ ...current, profile })),
       setUseEtsFunctions: (value) => setState((current) => ({ ...current, useEtsFunctions: value })),
-      setScope: (value) => setState((current) => ({ ...current, scope: value })),
+      setExclude: (next) => setState((current) => ({ ...current, exclude: next })),
+      applyScope: (action, ids) => {
+        const before = exclusionOf(state);
+        client.call({ type: "scope-apply", exclude: before, action, ids }).then(
+          (next) => setState((current) => ({ ...current, exclude: next })),
+          () => undefined,
+        );
+      },
       setTdOptions: (options) => setState((current) => ({ ...current, td: options })),
       replaceState: (next) => setState(next),
-      openSchemaStep: () => setPhase({ kind: "schema" }),
+      openSchemaStep: (step = "schema") => setPhase({ kind: "wizard", step }),
       openGa: (gaId) => {
         setFocusGa(gaId);
         if (gaId !== undefined) navigate("gruppenadressen");
@@ -315,14 +331,14 @@ export function App(): ReactNode {
         ) : null}
       </Header>
       <main id="main" className={`ws-main${ready ? " ws-main--nav" : ""}`} tabIndex={-1}>
-        {phase.kind === "schema" && project ? (
-          <SchemaStepView
+        {phase.kind === "wizard" && project ? (
+          <ImportWizard
             client={client}
             project={project}
             state={state}
-            current={result}
-            onDone={(profile, chosenScope) => {
-              setState((current) => ({ ...current, profile, schemaChecked: true, ...(chosenScope ? { scope: chosenScope } : {}) }));
+            initialStep={phase.step}
+            onFinish={(nextProfile, nextExclude) => {
+              setState((current) => ({ ...current, profile: nextProfile, exclude: nextExclude, schemaChecked: true }));
               setPhase({ kind: "ready" });
               navigate("uebersicht");
             }}

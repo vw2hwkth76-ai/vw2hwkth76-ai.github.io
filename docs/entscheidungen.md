@@ -384,3 +384,38 @@ nichts, was ein Gerät tut.
   Schema: TD-fertig 95,6 %, fest 70,1 %, 22 Rückfragen, 131 Things. Mit dem
   Schema aus Lauf 4: fest 79,3 %, 110 Things. Mit allen GAs bleiben 445
   Rückfragen. Projekt E ist unberührt, dort sind alle 201 GAs in Benutzung.
+
+### Ausschluss statt Stilllegung
+
+Der Umfang "nur in Benutzung" setzte Vorrat nur auf "stillgelegt". Erkennung,
+Schema, Thing-Bildung und Prompt liefen weiter über alle GAs. Der
+Analysebericht eines Vorlagenprojekts (5.533 GAs, 252 verknüpft) zeigte es:
+5.282 GAs waren stillgelegt, trotzdem lagen alle 5.533 in Things, nur 145 von
+897 Things hatten ein verknüpftes Mitglied, und eine unverknüpfte GA wie
+`1/0/0` bekam vom Schema Gewerk, Richtung und Rolle mit 0,92. Der Prompt
+enthielt den ganzen Vorrat.
+
+- **Zwei Begriffe.** Stillgelegt (Platzhalter, Reserve) wird erkannt und nur
+  nicht gezählt. Ausgeschlossen wird vor der Erkennung aus dem Graphen
+  genommen (`restrictGraph`); alles danach sieht die GA nicht. So kann nichts
+  mehr durchrutschen, weil kein Zwischenschritt den Ausschluss kennen muss.
+- **Regeln.** Vorrat, Hauptgruppen (nach Id, nicht nach Name: "Sonderfunktionen"
+  gibt es mit und ohne Leerzeichen) und einzelne GAs, dazu "einzeln
+  zurückgeholt". Rangfolge: zurückgeholt, einzeln ausgeschlossen, Gruppe,
+  Vorrat. Einträge entstehen nur, wo sie etwas ändern (`excludeIds`,
+  `includeIds`), damit der Stand lesbar bleibt.
+- **Vorrat als Vokabular.** Ein Schema nur aus den benutzten GAs kennt
+  Mittelgruppen nicht, die dieses Projekt nicht braucht, das nächste mit
+  derselben Vorlage aber schon. Der Prompt führt sie als Namensliste auf, ohne
+  einzelne GAs. Bewusst abgewählte Hauptgruppen zählen dafür nicht.
+- **Assistent statt Einzelschritt.** Umfang, Schema und Zusammenfassung sind
+  ein Entwurf im Assistenten; die volle Analyse läuft erst danach. Davor
+  rechnete jede Umschaltung das ganze Projekt neu. Die Zahlen im Assistenten
+  kommen aus leichten Worker-Anfragen (`scope-overview`, `scope-search`).
+- **Gespeicherter Stand.** `exclude` ersetzt `scope`. Alte Stände mit
+  `scope: "used"` werden zu "Vorrat ausgeschlossen".
+- **Bericht.** Neu: Abschnitt `scope` (gesamt, ausgewertet, ausgeschlossen
+  nach Grund, Hauptgruppen) und je GA `usage` und `excluded`. Ausgeschlossene
+  GAs stehen im Bericht ohne Belege.
+- **Offen.** Ob der Ausschluss einzelner Rückmelde-GAs Things unvollständig
+  macht, meldet die Zusammenfassung nur, sie verhindert es nicht.

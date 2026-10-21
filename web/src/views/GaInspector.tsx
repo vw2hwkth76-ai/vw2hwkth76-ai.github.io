@@ -9,6 +9,12 @@ import { ValuePicker } from "../components/ValuePicker.tsx";
 import { confidence } from "../format.ts";
 import { useWorkspace } from "../workspace.ts";
 
+const EXCLUDE_REASON = {
+  reserve: "Vorrat: Auf dieser GA sendet oder empfängt kein Gerät.",
+  group: "Die Hauptgruppe ist abgewählt.",
+  single: "Einzeln ausgeschlossen.",
+} as const;
+
 interface Props {
   readonly ga: GaView;
   readonly onClose: () => void;
@@ -78,6 +84,24 @@ export function GaInspector({ ga, onClose }: Props): ReactNode {
         ) : null}
       </div>
 
+      {ga.excluded !== undefined ? (
+        <>
+          <InlineNotification
+            kind="info"
+            lowContrast
+            hideCloseButton
+            title="Ausgeschlossen"
+            subtitle={`${EXCLUDE_REASON[ga.excluded]} Keine Belege, kein Thing, keine Rückfrage, nicht in den Thing Descriptions.`}
+            style={{ marginTop: "1rem" }}
+          />
+          <div className="ws-inspector__actions">
+            <Button kind="primary" size="sm" onClick={() => workspace.applyScope("include", [ga.id])}>
+              Wieder aufnehmen
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
       {questions.map((question) => (
         <InlineNotification
           key={question.id}
@@ -164,6 +188,9 @@ export function GaInspector({ ga, onClose }: Props): ReactNode {
         <p className="muted">Keinem Thing zugeordnet.</p>
       )}
 
+        </>
+      )}
+
       {error ? <InlineNotification kind="error" lowContrast hideCloseButton title="Details nicht ladbar" subtitle={error} /> : null}
       {!shown && !error ? <InlineLoading description="Belege werden geladen" style={{ marginTop: "1.5rem" }} /> : null}
       {shown ? <DetailSections detail={shown} /> : null}
@@ -191,8 +218,8 @@ function DetailSections({ detail }: { readonly detail: GaDetail }): ReactNode {
         </>
       ) : null}
 
-      <h3>Belege</h3>
-      <table className="ws-claims">
+      {detail.claims.length === 0 ? null : <h3>Belege</h3>}
+      <table className="ws-claims" hidden={detail.claims.length === 0}>
         <thead>
           <tr>
             <th scope="col">Dimension</th>

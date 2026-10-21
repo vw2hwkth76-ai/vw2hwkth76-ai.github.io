@@ -1,20 +1,31 @@
 import { Copy, Upload } from "@carbon/icons-react";
-import { Button, Checkbox, InlineLoading, InlineNotification, RadioButton, RadioButtonGroup, TextArea } from "@carbon/react";
+import { Button, Checkbox, InlineLoading, InlineNotification, TextArea } from "@carbon/react";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Exclusion } from "../../../src/graph/scope.ts";
 import { extractJson } from "../../../src/recognize/schema-prompt.ts";
 import { isRecord } from "../../../src/util/guards.ts";
 import type { AnalysisClient } from "../client.ts";
 import { count, fileStem, share } from "../format.ts";
-import type { AnalyzeResult, OpenResult, PreviewFigures, SchemaPreviewResult, SchemaPromptResult } from "../protocol.ts";
+import type { OpenResult, PreviewFigures, SchemaPreviewResult, SchemaPromptResult } from "../protocol.ts";
 import { download, type ProjectState } from "../storage.ts";
+
+/** Was der Schritt ergibt: das Schema (oder keins) und wie gut es das Projekt liest, fuer die Zusammenfassung. */
+export interface SchemaChoice {
+  readonly profile: unknown;
+  readonly name?: string;
+  /** GAs, die das Schema geprueft hat, und davon nicht gelesene. */
+  readonly evaluated?: number;
+  readonly unmatched?: number;
+}
 
 interface Props {
   readonly client: AnalysisClient;
   readonly project: OpenResult;
   readonly state: ProjectState;
-  /** Laufende Erkennung ohne neues Schema; nur fuer die Anzeige, waehrend der Vorschlag fehlt. */
-  readonly current: AnalyzeResult | undefined;
-  readonly onDone: (profile: unknown, scope?: "all" | "used") => void;
+  /** Auswertungsumfang aus dem ersten Schritt; Prompt und Pruefung sehen nur diese GAs. */
+  readonly exclude: Exclusion;
+  readonly onDone: (choice: SchemaChoice) => void;
+  readonly onBack: () => void;
   readonly onCancel: () => void;
 }
 
@@ -50,7 +61,7 @@ function Compare({ label, before, after, total }: { readonly label: string; read
   );
 }
 
-export function SchemaStepView({ client, project, state, current, onDone, onCancel }: Props): ReactNode {
+export function SchemaStepView({ client, project, state, exclude, onDone, onBack, onCancel }: Props): ReactNode {
   const [maskPersons, setMaskPersons] = useState(true);
   const [prompt, setPrompt] = useState<SchemaPromptResult>();
   const [copied, setCopied] = useState<"ok" | "failed">();
@@ -65,28 +76,24 @@ export function SchemaStepView({ client, project, state, current, onDone, onCanc
   const [checking, setChecking] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const sequence = useRef(0);
-  // Vorlagenprojekt: nur ein kleiner Teil der GAs hat ein wirksames Geraet. Vorgabe "nur in Benutzung", der Nutzer entscheidet.
-  const usage = current?.snapshot.usage;
-  const [chosen, setChosen] = useState<"all" | "used" | undefined>(state.scope);
-  const scope: "all" | "used" = chosen ?? (usage?.template ? "used" : "all");
 
   useEffect(() => {
     let active = true;
-    client.call({ type: "schema-prompt", maskPersons }).then(
+    client.call({ type: "schema-prompt", maskPersons, exclude }).then(
       (result) => active && setPrompt(result),
       () => active && setPrompt(undefined),
     );
     return () => {
       active = false;
     };
-  }, [client, maskPersons]);
+  }, [client, maskPersons, exclude]);
 
   const check = useCallback(
     async (candidate: unknown, keep: boolean) => {
       const id = ++sequence.current;
       setChecking(true);
       try {
-        const result = await client.call({ type: "schema-preview", profile: candidate, useEtsFunctions: state.useEtsFunctions, scope });
+        const result = await client.call({ type: "schema-preview", profile: candidate, useEtsFunctions: state.useEtsFunctions, exclude });
         if (id !== sequence.current) return;
         if (!result.ok) {
           setErrors(result.errors);
@@ -106,7 +113,7 @@ export function SchemaStepView({ client, project, state, current, onDone, onCanc
         if (id === sequence.current) setChecking(false);
       }
     },
-    [client, state.useEtsFunctions, scope],
+    [client, state.useEtsFunctions, exclude],
   );
 
   // Ein mitgebrachtes Schema (Beispielprojekt, Rueckkehr aus der Ansicht Namensschema) wird gleich geprueft.
@@ -182,7 +189,7 @@ export function SchemaStepView({ client, project, state, current, onDone, onCanc
       <header className="ws-page-header">
         <div>
           <p className="ws-step__kicker">
-            Schritt 2 von 2 · {project.name}
+            {project.name}
             {state.schemaChecked ? " · schon einmal geöffnet, gespeicherter Stand ist geladen" : ""}
           </p>
           <h1>Namensschema</h1>
@@ -192,54 +199,36 @@ export function SchemaStepView({ client, project, state, current, onDone, onCanc
           </p>
         </div>
         <div className="ws-step__actions">
+          <Button kind="ghost" size="md" onClick={onBack}>
+            Zurück
+          </Button>
           <Button kind="ghost" size="md" onClick={onCancel}>
             Abbrechen
           </Button>
           {state.schemaChecked ? (
-            <Button kind="tertiary" size="md" onClick={() => onDone(state.profile, chosen ?? state.scope)}>
+            <Button kind="tertiary" size="md" onClick={() => onDone({ profile: state.profile })}>
               {state.profile === undefined ? "Weiter wie zuletzt, ohne Schema" : "Weiter wie zuletzt"}
             </Button>
           ) : null}
-          <Button kind="secondary" size="md" onClick={() => onDone(undefined, scope)}>
+          <Button kind="secondary" size="md" onClick={() => onDone({ profile: undefined })}>
             Ohne Schema weiter
           </Button>
         </div>
       </header>
 
-      {usage?.template ? (
-        <section className="ws-step__usage" aria-labelledby="step-usage">
-          <h2 id="step-usage">Vorlagenprojekt?</h2>
-          <p>
-            Nur {count(usage.active)} von {count(usage.active + usage.idle + usage.reserve)} Gruppenadressen ({share(usage.active, usage.active + usage.idle + usage.reserve)}) sind mit einem Gerät
-            verknüpft, das sendet oder empfängt. Viele Errichter importieren eine große Vorlage und verknüpfen nur, was sie brauchen. Die übrigen GAs sind dann kein Fehler,
-            sondern Vorrat.
-          </p>
-          <RadioButtonGroup
-            legendText="Was soll ausgewertet werden?"
-            name="scope"
-            orientation="vertical"
-            valueSelected={scope}
-            onChange={(value: unknown) => setChosen(value === "all" ? "all" : "used")}
-          >
-            <RadioButton id="scope-used" value="used" labelText={`Nur GAs in Benutzung (${count(usage.active)}), der Rest ist Vorrat: keine Things, keine Rückfragen (empfohlen)`} />
-            <RadioButton id="scope-all" value="all" labelText={`Alle GAs (${count(usage.active + usage.idle + usage.reserve)}), auch ohne Gerät`} />
-          </RadioButtonGroup>
-          <p className="helper">Später unter Übersicht, Erkennung jederzeit änderbar. Vorrat bleibt in der Tabelle sichtbar.</p>
-        </section>
-      ) : null}
-
       <div className="ws-step__ways">
         <section className="ws-step__panel" aria-labelledby="step-llm">
           <h2 id="step-llm">Vorschlag von einem LLM</h2>
           <p>
-            Die App schickt nichts weg. Den Prompt kopieren, in ein LLM einfügen und dessen Antwort hier einfügen; geprüft wird sie an allen Gruppenadressen
-            dieses Projekts.
+            Die App schickt nichts weg. Den Prompt kopieren, in ein LLM einfügen und dessen Antwort hier einfügen; geprüft wird sie an allen Gruppenadressen,
+            die im Umfang liegen.
           </p>
           {prompt ? (
             <p className="helper">
-              {prompt.included === prompt.groupAddresses
-                ? `${count(prompt.groupAddresses)} GAs im Prompt`
-                : `${count(prompt.included)} von ${count(prompt.groupAddresses)} GAs als Beispiele je Namensform`}
+              {prompt.included === prompt.groupAddresses - prompt.excluded
+                ? `${count(prompt.included)} GAs im Prompt`
+                : `${count(prompt.included)} von ${count(prompt.groupAddresses - prompt.excluded)} GAs als Beispiele je Namensform`}
+              {prompt.excluded > 0 ? `, ${count(prompt.excluded)} ausgeschlossene GAs fehlen` : ""}
               , {count(prompt.text.length)} Zeichen{prompt.masked > 0 ? `, ${count(prompt.masked)} Personennamen ersetzt` : ""}.
             </p>
           ) : (
@@ -296,11 +285,6 @@ export function SchemaStepView({ client, project, state, current, onDone, onCanc
           <Button kind="tertiary" size="md" renderIcon={Upload} onClick={() => fileInput.current?.click()}>
             Schema-Datei laden
           </Button>
-          {current ? (
-            <p className="helper ws-step__now">
-              Ohne Schema: {count(current.snapshot.things.length)} Things, {count(current.snapshot.questions.length)} Rückfragen.
-            </p>
-          ) : null}
         </section>
       </div>
 
@@ -446,7 +430,7 @@ export function SchemaStepView({ client, project, state, current, onDone, onCanc
           ) : null}
 
           <div className="ws-step__finish">
-            <Button kind="primary" size="lg" disabled={checking} onClick={() => onDone(live.profile, scope)}>
+            <Button kind="primary" size="lg" disabled={checking} onClick={() => onDone({ profile: live.profile, name: live.name, evaluated: totalNames, unmatched: base.unmatched })}>
               Schema übernehmen
             </Button>
             <Button kind="tertiary" size="lg" onClick={() => download(`${fileStem(live.name || "namensschema")}.namensschema.json`, JSON.stringify(live.profile, null, 2))}>

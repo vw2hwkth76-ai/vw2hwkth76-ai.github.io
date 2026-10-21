@@ -1185,3 +1185,57 @@ body {
     color: $text-secondary;
   }
 }
+
+// Assistent nach dem Import: Fortschritt und Umfang
+
+.ws-wizard {
+  .ws-wizard__progress {
+    margin-bottom: $spacing-07;
+  }
+
+  .ws-wizard__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-03;
+    margin-top: $spacing-08;
+  }
+
+  .ws-wizard__summary {
+    display: grid;
+    gap: $spacing-04;
+    max-width: 68ch;
+  }
+}
+
+.ws-scope {
+  .ws-scope__table {
+    width: 100%;
+
+    tr.ws-row--muted td {
+      color: $text-disabled;
+    }
+  }
+
+  .ws-scope__num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ws-scope__hits {
+    @include type.type-style('body-01');
+    align-self: center;
+    color: $text-secondary;
+  }
+
+  .ws-step__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-03;
+    margin-block: $spacing-04;
+  }
+
+  .ws-step__table td:first-child,
+  .ws-step__table th:first-child {
+    width: 3rem;
+  }
+}
