@@ -1,10 +1,11 @@
 import { Close } from "@carbon/icons-react";
 import { IconButton, InlineNotification, Search, Select, SelectItem, Tag } from "@carbon/react";
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { BUNDLE_LABEL } from "../../../src/app/labels.ts";
 import type { ThingView } from "../../../src/app/snapshot.ts";
 import { type Column, VirtualTable } from "../components/VirtualTable.tsx";
 import { count } from "../format.ts";
+import { useEscape } from "../useEscape.ts";
 import { useWorkspace } from "../workspace.ts";
 
 const COLUMNS: readonly Column<ThingView>[] = [
@@ -43,6 +44,8 @@ export function ThingsView(): ReactNode {
   }, [snapshot, query, type]);
 
   const active = workspace.focusThing !== undefined ? lookups.thingByKey.get(workspace.focusThing) : undefined;
+  const { openThing } = workspace;
+  useEscape(active !== undefined, useCallback(() => openThing(undefined), [openThing]));
   const structure = active ? snapshot.questions.filter((question) => question.kind === "structure" && question.thingKey === active.key) : [];
 
   return (
@@ -99,7 +102,7 @@ export function ThingsView(): ReactNode {
         <div style={{ height: "1rem" }} />
       </div>
       {active ? (
-        <aside className="ws-split__aside" aria-label={`Thing ${active.label}`} onKeyDown={(event) => event.key === "Escape" && workspace.openThing(undefined)}>
+        <aside key={active.key} className="ws-split__aside" aria-label={`Thing ${active.label}`}>
           <div className="ws-inspector">
             <div className="ws-inspector__head">
               <div>
@@ -109,7 +112,7 @@ export function ThingsView(): ReactNode {
                   {active.functionType ? <span className="muted">, KNX-Funktionstyp {active.functionType}</span> : null}
                 </div>
               </div>
-              <IconButton kind="ghost" size="sm" label="Schließen" align="left" onClick={() => workspace.openThing(undefined)}>
+              <IconButton kind="ghost" size="sm" label="Inspektor schließen" align="left" onClick={() => workspace.openThing(undefined)}>
                 <Close size={16} />
               </IconButton>
             </div>

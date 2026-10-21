@@ -1,4 +1,4 @@
-import { Asleep, Close, Code, Cube, Dashboard, DataTable, DocumentExport, Help, Light, Rule } from "@carbon/icons-react";
+import { Asleep, Building, Code, Cube, Dashboard, DataTable, DocumentExport, Help, Light, Logout, Rule } from "@carbon/icons-react";
 import {
   GlobalTheme,
   Header,
@@ -27,6 +27,7 @@ import { QuestionsView } from "./views/QuestionsView.tsx";
 import { ImportWizard, type WizardStep } from "./views/ImportWizard.tsx";
 import { SchemaView } from "./views/SchemaView.tsx";
 import { type ProjectSource, StartView } from "./views/StartView.tsx";
+import { AssetView } from "./views/AssetView.tsx";
 import { TdView } from "./views/TdView.tsx";
 import { ThingsView } from "./views/ThingsView.tsx";
 import { isView, type Lookups, type ViewId, type Workspace, WorkspaceContext } from "./workspace.ts";
@@ -48,6 +49,7 @@ const NAV: readonly { readonly view: ViewId; readonly label: string; readonly ic
   { view: "rueckfragen", label: "Rückfragen", icon: Help },
   { view: "namensschema", label: "Namensschema", icon: Rule },
   { view: "thing-descriptions", label: "Thing Descriptions", icon: Code },
+  { view: "building-pro", label: "Building Pro Integration", icon: Building },
   { view: "export", label: "Export", icon: DocumentExport },
 ];
 
@@ -251,6 +253,7 @@ export function App(): ReactNode {
         );
       },
       setTdOptions: (options) => setState((current) => ({ ...current, td: options })),
+      setAssets: (assets) => setState((current) => ({ ...current, assets })),
       replaceState: (next) => setState(next),
       openSchemaStep: (step = "schema") => setPhase({ kind: "wizard", step }),
       openGa: (gaId) => {
@@ -303,8 +306,14 @@ export function App(): ReactNode {
             {theme === "g10" ? <Asleep size={20} /> : <Light size={20} />}
           </HeaderGlobalAction>
           {ready ? (
-            <HeaderGlobalAction aria-label="Projekt schließen" tooltipAlignment="end" onClick={close}>
-              <Close size={20} />
+            <HeaderGlobalAction
+              aria-label="Projekt schließen"
+              tooltipAlignment="end"
+              onClick={() => {
+                if (window.confirm(`Projekt "${project.name}" schließen? Antworten und Schema bleiben im Browser gespeichert.`)) close();
+              }}
+            >
+              <Logout size={20} />
             </HeaderGlobalAction>
           ) : null}
         </HeaderGlobalBar>
@@ -342,7 +351,8 @@ export function App(): ReactNode {
               setPhase({ kind: "ready" });
               navigate("uebersicht");
             }}
-            onCancel={close}
+            // Aus der Werkstatt heraus geoeffnet (es gibt schon ein Ergebnis): Abbrechen fuehrt zurueck, statt das Projekt zu schliessen.
+            onCancel={result ? () => setPhase({ kind: "ready" }) : close}
           />
         ) : ready ? (
           workspace ? (
@@ -389,6 +399,8 @@ function CurrentView({ view }: { readonly view: ViewId }): ReactNode {
       return <SchemaView />;
     case "thing-descriptions":
       return <TdView />;
+    case "building-pro":
+      return <AssetView />;
     case "export":
       return <ExportView />;
   }

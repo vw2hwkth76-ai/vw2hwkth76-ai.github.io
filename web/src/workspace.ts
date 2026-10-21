@@ -6,10 +6,10 @@ import type { ClaimDimension } from "../../src/recognize/claims.ts";
 import type { TdOptions } from "../../src/td/render.ts";
 import type { AnalysisClient } from "./client.ts";
 import type { OpenResult } from "./protocol.ts";
-import type { ProjectState } from "./storage.ts";
+import type { AssetState, ProjectState } from "./storage.ts";
 import type { WizardStep } from "./views/ImportWizard.tsx";
 
-export const VIEWS = ["uebersicht", "gruppenadressen", "things", "rueckfragen", "namensschema", "thing-descriptions", "export"] as const;
+export const VIEWS = ["uebersicht", "gruppenadressen", "things", "rueckfragen", "namensschema", "thing-descriptions", "building-pro", "export"] as const;
 export type ViewId = (typeof VIEWS)[number];
 
 export function isView(value: string): value is ViewId {
@@ -46,6 +46,7 @@ export interface Workspace {
   /** Schliesst GAs einzeln aus oder holt sie zurueck; der Worker rechnet nach, wo ein Eintrag noetig ist. */
   applyScope(action: "exclude" | "include", ids: readonly string[]): void;
   setTdOptions(options: TdOptions): void;
+  setAssets(assets: AssetState): void;
   replaceState(state: ProjectState): void;
   /** Zurueck in den Assistenten, standardmaessig zum Namensschema mit Vorschlag und Live-Effekt. */
   openSchemaStep(step?: WizardStep): void;

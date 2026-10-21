@@ -627,11 +627,18 @@ body {
 .ws-inspector {
   padding: $spacing-05 $spacing-05 $spacing-09;
 
+  // Kopf mit Schliessen bleibt beim Scrollen stehen; sonst ist das einzige X oben rechts "Projekt schliessen" im Header.
   .ws-inspector__head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: $spacing-03;
+    margin: (-$spacing-05) (-$spacing-05) 0;
+    padding: $spacing-05;
+    background: $layer-01;
   }
 
   .ws-inspector__ga {
@@ -1237,5 +1244,77 @@ body {
   .ws-step__table td:first-child,
   .ws-step__table th:first-child {
     width: 3rem;
+  }
+}
+
+// Building Pro Integration
+
+.ws-assets {
+  .ws-assets__inputs {
+    display: grid;
+    gap: $spacing-06;
+
+    @media (min-width: 66rem) {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .ws-section {
+      margin-top: $spacing-06;
+    }
+  }
+
+  .ws-assets__site {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    gap: $spacing-05;
+  }
+
+  .ws-step__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-03;
+    margin-block: $spacing-04;
+  }
+
+  .ws-step__warnings summary {
+    @include type.type-style('body-01');
+    margin-block: $spacing-04;
+    cursor: pointer;
+    color: $link-primary;
+  }
+
+  .ws-assets__table {
+    width: 100%;
+
+    td {
+      vertical-align: top;
+    }
+  }
+
+  .ws-scope__num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ws-assets__attr {
+    @include type.type-style('code-01');
+    display: inline-block;
+    margin: 0 $spacing-02 $spacing-02 0;
+    padding: 0 $spacing-02;
+    border: 1px solid $border-subtle;
+  }
+
+  .ws-assets__attr--ext {
+    border-color: $support-error;
+    color: $support-error;
+  }
+
+  .ws-assets__tree {
+    @include type.type-style('code-01');
+    max-height: 32rem;
+    overflow: auto;
+    padding: $spacing-05;
+    background: $layer-01;
+    white-space: pre;
   }
 }

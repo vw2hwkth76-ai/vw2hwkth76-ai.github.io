@@ -1,0 +1,265 @@
+import { beforeAll, describe, expect, it } from "vitest";
+import { type AssetModel, buildAssetModel } from "../src/assets/model.ts";
+import { ASSET_PROFILE_FORMAT, type AssetProfile, EMPTY_ASSET_PROFILE, parseAssetProfile } from "../src/assets/profile.ts";
+import { applyMappingAnswer, buildMappingPrompt, needsMapping } from "../src/assets/prompt.ts";
+import { assetFiles, gapsMarkdown, locationTreeMarkdown, templateLibraryMarkdown } from "../src/assets/render.ts";
+import { loadKnxProject } from "../src/ets/load.ts";
+import { buildGraph, type ProjectGraph } from "../src/graph/evidence-graph.ts";
+import { NO_EXCLUSION } from "../src/graph/scope.ts";
+import { analyzeProject, type ProjectAnalysis } from "../src/recognize/pipeline.ts";
+import { readFixture } from "./helpers.ts";
+
+let demo: ProjectGraph;
+let analysis: ProjectAnalysis;
+let style: ProjectAnalysis;
+
+beforeAll(async () => {
+  demo = buildGraph(await loadKnxProject(readFixture("oeffentlich/demoprojekt.knxproj")));
+  analysis = analyzeProject(demo, { useEtsFunctions: true });
+  style = analyzeProject(buildGraph(await loadKnxProject(readFixture("oeffentlich/style3.knxproj"))), { useEtsFunctions: true });
+});
+
+/** Neutrales Testprofil: zwei Raumtypen, ein Lichttyp ohne Helligkeit, ein Jalousietyp mit Lamellenwinkel in Grad. */
+const PROFILE_JSON = {
+  format: ASSET_PROFILE_FORMAT,
+  name: "Testprofil",
+  types: [
+    { key: "site", class: "Site", attributes: [] },
+    { key: "building", class: "Building", attributes: [] },
+    { key: "floor", class: "Level", attributes: [] },
+    { key: "room", class: "Room", attributes: [] },
+    { key: "light", class: "Lighting_System", label: { en: "Light" }, attributes: [{ name: "on_off", subtype: "output" }], tags: ["usage:lighting"] },
+    {
+      key: "shade",
+      class: "Shading_Equipment",
+      attributes: [
+        { name: "position", subtype: "output", unit: "%" },
+        { name: "slat_angle", subtype: "output", unit: "°" },
+      ],
+    },
+    { key: "room_controller", class: "Thermostat", attributes: [{ name: "temp", subtype: "input", unit: "°C" }, { name: "setpoint", subtype: "input" }] },
+  ],
+  spaces: { Building: "building", Floor: "floor", Room: "room" },
+  upper: { site: "site" },
+  things: [
+    { match: { thingType: ["SwitchableLight", "DimmableLight"] }, type: "light" },
+    { match: { thingType: ["SunProtection"] }, type: "shade" },
+    { match: { thingType: ["Heating"] }, type: "room_controller" },
+  ],
+  attributes: [
+    { roles: ["SwitchOnOff", "InfoOnOff"], attribute: "on_off" },
+    { roles: ["AbsolutePositionBlindsPercentage", "CurrentAbsolutePositionBlindsPercentage"], attribute: "position" },
+    { roles: ["AbsolutePositionSlatPercentage", "CurrentAbsolutePositionSlatPercentage"], attribute: "slat_angle" },
+    { roles: ["TempRoom"], attribute: "temp" },
+    { roles: ["TempRoomSetpoint", "InfoTempRoomSetpoint"], attribute: "setpoint" },
+  ],
+};
+
+function profile(json: unknown = PROFILE_JSON): AssetProfile {
+  const parsed = parseAssetProfile(json);
+  if (!parsed.ok) throw new Error(parsed.errors.join("; "));
+  return parsed.profile;
+}
+
+const SITE = { country: "Germany", region: "Baden-Württemberg", site: "Villa Nord", gaiPrefix: "Villa" };
+
+function checkIntegrity(model: AssetModel, graph: ProjectGraph): void {
+  const ids = new Set(model.assets.map((asset) => asset.id));
+  expect(ids.size).toBe(model.assets.length);
+  expect(new Set(model.assets.map((asset) => asset.gai)).size).toBe(model.assets.length);
+  const roots = model.assets.filter((asset) => asset.parent.location === null);
+  expect(roots.length).toBe(1);
+  for (const asset of model.assets) if (asset.parent.location !== null) expect(ids.has(asset.parent.location)).toBe(true);
+  const types = new Map(model.types.map((type) => [type.key, type]));
+  const addresses = new Set(graph.groupAddresses.map((node) => node.ga.text));
+  for (const asset of model.assets) {
+    const type = types.get(asset.type);
+    expect(type, asset.type).toBeDefined();
+    for (const binding of asset.bindings) {
+      expect(type?.attributes.some((attribute) => attribute.name === binding.attribute && attribute.subtype === binding.subtype), `${asset.type}.${binding.attribute}`).toBe(true);
+      if (binding.write) expect(addresses.has(binding.write)).toBe(true);
+      if (binding.feedback) expect(addresses.has(binding.feedback)).toBe(true);
+      expect(binding.write ?? binding.feedback).toBeDefined();
+    }
+    // Ein Attribut je Asset hoechstens einmal gebunden.
+    expect(new Set(asset.bindings.map((binding) => binding.attribute)).size).toBe(asset.bindings.length);
+  }
+  expect(model.types.reduce((sum, type) => sum + type.assets, 0)).toBe(model.assets.length);
+}
+
+describe("Zielprofil", () => {
+  it("liest ein gueltiges Profil", () => {
+    const parsed = parseAssetProfile(PROFILE_JSON);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.profile.types.length).toBe(7);
+    expect(parsed.profile.spaces["Room"]).toBe("room");
+    expect(parsed.warnings).toEqual([]);
+  });
+
+  it("lehnt falsches Format, unbekannte Typen und doppelte Schluessel ab", () => {
+    expect(parseAssetProfile({ ...PROFILE_JSON, format: "x" }).ok).toBe(false);
+    expect(parseAssetProfile(null).ok).toBe(false);
+    const unknown = parseAssetProfile({ ...PROFILE_JSON, things: [{ match: {}, type: "missing" }] });
+    expect(unknown.ok).toBe(false);
+    if (!unknown.ok) expect(unknown.errors.join(" ")).toContain("missing");
+    expect(parseAssetProfile({ ...PROFILE_JSON, types: [...PROFILE_JSON.types, { key: "light", class: "X", attributes: [] }] }).ok).toBe(false);
+    expect(parseAssetProfile({ ...PROFILE_JSON, spaces: { Room: "nope" } }).ok).toBe(false);
+    expect(parseAssetProfile({ ...PROFILE_JSON, types: [{ key: "bad key!", class: "X", attributes: [] }] }).ok).toBe(false);
+  });
+
+  it("ignoriert unbrauchbare Attribute mit Hinweis", () => {
+    const parsed = parseAssetProfile({
+      ...PROFILE_JSON,
+      types: [...PROFILE_JSON.types, { key: "odd", class: "X", attributes: [{ name: "a", subtype: "weird" }, { name: "b", subtype: "input" }, { name: "b", subtype: "input" }, "x"] }],
+    });
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.profile.types.find((type) => type.key === "odd")?.attributes.map((attribute) => attribute.name)).toEqual(["b"]);
+    expect(parsed.warnings.length).toBe(3);
+  });
+});
+
+describe("Asset-Modell ohne Zielprofil", () => {
+  it("baut einen geschlossenen Ortsbaum mit Land, Region und Standort ueber dem Gebaeude", async () => {
+    const model = await buildAssetModel(analysis, EMPTY_ASSET_PROFILE, SITE, "test");
+    checkIntegrity(model, demo);
+    const [country] = model.assets;
+    expect(country).toMatchObject({ kind: "country", name: "Germany", parent: { location: null } });
+    const region = model.assets.find((asset) => asset.kind === "region");
+    const site = model.assets.find((asset) => asset.kind === "site");
+    expect(region?.parent.location).toBe(country?.id);
+    expect(site?.parent.location).toBe(region?.id);
+    expect(model.assets.filter((asset) => asset.kind === "space").length).toBe(demo.spaces.size);
+    expect(model.types.every((type) => type.origin === "generated")).toBe(true);
+    expect(model.stats.equipment).toBeGreaterThan(0);
+    expect(model.gaps.map((gap) => gap.id)).toEqual(expect.arrayContaining(["upper-country", "upper-region", "command-feedback", "functional-tree"]));
+    // Ohne Profil sind fehlende Typen keine Luecke, sondern der Normalfall.
+    expect(model.gaps.some((gap) => gap.id.startsWith("thing-") || gap.id.startsWith("space-"))).toBe(false);
+  });
+
+  it("laesst Land und Region weg, wenn sie fehlen, und vergibt GAI mit Praefix", async () => {
+    const model = await buildAssetModel(analysis, EMPTY_ASSET_PROFILE, { gaiPrefix: "Häus 1" }, "test");
+    checkIntegrity(model, demo);
+    expect(model.assets[0]?.kind).toBe("site");
+    expect(model.assets.every((asset) => asset.gai.startsWith("HAUS1-"))).toBe(true);
+    expect(model.gaps.some((gap) => gap.id === "upper-country")).toBe(false);
+  });
+
+  it("ist reproduzierbar", async () => {
+    const a = await buildAssetModel(analysis, EMPTY_ASSET_PROFILE, SITE, "test");
+    const b = await buildAssetModel(analysis, EMPTY_ASSET_PROFILE, SITE, "test");
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+  });
+
+  it("bindet Befehl und Rueckmeldung an dasselbe Attribut", async () => {
+    const model = await buildAssetModel(style, EMPTY_ASSET_PROFILE, SITE, "test");
+    const paired = model.assets.flatMap((asset) => asset.bindings).filter((binding) => binding.write && binding.feedback);
+    expect(paired.length).toBeGreaterThan(10);
+    expect(model.gaps.find((gap) => gap.id === "command-feedback")?.count).toBe(paired.length);
+    expect(model.gaps.find((gap) => gap.id === "central-function")?.count).toBeGreaterThan(0);
+  });
+});
+
+describe("Asset-Modell mit Zielprofil", () => {
+  it("nutzt Profiltypen und fuehrt fehlende Attribute als Erweiterung", async () => {
+    const model = await buildAssetModel(style, profile(), SITE, "test");
+    const light = model.types.find((type) => type.key === "light");
+    expect(light).toMatchObject({ origin: "profile", class: "Lighting_System", tags: ["usage:lighting"] });
+    // Dimmbare Lichter bringen Helligkeit und relatives Dimmen mit, die der Testtyp nicht hat.
+    expect(light?.extended).toBe(true);
+    expect(light?.attributes.find((attribute) => attribute.name === "on_off")).toMatchObject({ origin: "profile", dpt: "1.001", map: { "0": "Off", "1": "On" } });
+    expect(light?.attributes.some((attribute) => attribute.origin === "extension")).toBe(true);
+    const missing = model.gaps.find((gap) => gap.id === "missing-attributes-light");
+    expect(missing?.action).toBe("extend-model");
+    expect(missing?.examples.some((example) => example.startsWith("brightness"))).toBe(true);
+    // Gezaehlt werden Bindungen auf ergaenzte Attribute, nicht Attribute.
+    const extended = new Set(light?.attributes.filter((attribute) => attribute.origin === "extension").map((attribute) => attribute.name));
+    const onExtensions = model.assets.filter((asset) => asset.type === "light").flatMap((asset) => asset.bindings).filter((binding) => extended.has(binding.attribute));
+    expect(missing?.count).toBe(onExtensions.length);
+    const lamp = model.assets.find((asset) => asset.type === "light");
+    expect(lamp?.tags).toEqual(["usage:lighting"]);
+    expect(lamp?.bindings.find((binding) => binding.attribute === "on_off")?.write).toBeDefined();
+    // Raeume aus dem Profil, Standort aus "upper".
+    expect(model.assets.filter((asset) => asset.type === "room").length).toBeGreaterThan(5);
+    expect(model.assets.find((asset) => asset.kind === "site")?.type).toBe("site");
+  });
+
+  it("legt Schrittbefehle nicht auf die Groesse selbst", async () => {
+    const model = await buildAssetModel(analysis, profile(), SITE, "test");
+    const controller = model.assets.find((asset) => asset.type === "room_controller");
+    expect(controller).toBeDefined();
+    const step = controller?.bindings.find((binding) => binding.dpt === "1.007");
+    expect(step?.attribute).toBe("setpoint_step");
+    expect(controller?.bindings.find((binding) => binding.attribute === "setpoint")?.dpt).toBe("9.001");
+    expect(model.gaps.some((gap) => gap.id === "duplicate-attribute")).toBe(false);
+  });
+
+  it("meldet Einheitenkonflikte und Schreibzugriffe auf Eingaenge", async () => {
+    const model = await buildAssetModel(style, profile(), SITE, "test");
+    const ids = model.gaps.map((gap) => gap.id);
+    // Sollwert ist im Testtyp input, KNX schreibt ihn aber.
+    expect(ids).toContain("subtype-room_controller-setpoint");
+    checkIntegrity(model, buildGraph(await loadKnxProject(readFixture("oeffentlich/style3.knxproj"))));
+  });
+
+  it("legt fuer Things ohne Regel eigene Typen an und fuehrt sie als Luecke", async () => {
+    const model = await buildAssetModel(analysis, profile(), SITE, "test");
+    const generated = model.types.filter((type) => type.origin === "generated" && model.assets.some((asset) => asset.type === type.key && asset.kind === "equipment"));
+    expect(generated.length).toBeGreaterThan(0);
+    for (const type of generated) expect(type.key.startsWith("knx_")).toBe(true);
+    expect(model.gaps.some((gap) => gap.id.startsWith("thing-") && gap.action === "generated")).toBe(true);
+    // ETS-Raumtypen ohne Profiltyp (Gebaeudeteil, Verteiler) sind ebenfalls Luecken.
+    expect(model.gaps.some((gap) => gap.id === "space-distribution_board")).toBe(true);
+  });
+
+  it("nimmt ausgeschlossene GAs nicht auf", async () => {
+    const first = demo.groupAddresses[0];
+    expect(first).toBeDefined();
+    if (!first) return;
+    const reduced = analyzeProject(demo, { useEtsFunctions: true, exclude: { ...NO_EXCLUSION, gas: [first.ga.id] } });
+    const model = await buildAssetModel(reduced, profile(), SITE, "test");
+    const bound = model.assets.flatMap((asset) => asset.bindings).flatMap((binding) => [binding.write, binding.feedback]);
+    expect(bound).not.toContain(first.ga.text);
+    expect(model.gaps.find((gap) => gap.id === "excluded")?.count).toBe(1);
+  });
+});
+
+describe("KI-Zuordnung", () => {
+  it("fragt nur nach, was offen ist, und uebernimmt gepruefte Regeln", async () => {
+    const base = profile();
+    const model = await buildAssetModel(analysis, base, SITE, "test");
+    expect(needsMapping(model)).toBe(true);
+    const prompt = buildMappingPrompt(model, base);
+    expect(prompt).toBeDefined();
+    expect(prompt).toContain("light | Lighting_System | output:on_off");
+    expect(prompt).toContain("Generic");
+    expect(buildMappingPrompt(model, EMPTY_ASSET_PROFILE)).toBeUndefined();
+
+    const rejected = applyMappingAnswer(base, { things: [{ match: { thingType: ["Generic"] }, type: "invented" }] });
+    expect(rejected.ok).toBe(false);
+    const accepted = applyMappingAnswer(base, { things: [{ match: { thingType: ["Generic"] }, type: "light" }], attributes: [] });
+    expect(accepted.ok).toBe(true);
+    if (!accepted.ok) return;
+    const after = await buildAssetModel(analysis, accepted.profile, SITE, "test");
+    expect(after.types.some((type) => type.key === "knx_generic")).toBe(false);
+    expect(after.gaps.some((gap) => gap.id === "thing-generic")).toBe(false);
+  });
+});
+
+describe("Dateien", () => {
+  it("schreibt Modell, Vorlagenbibliothek, Luecken und Ortsbaum", async () => {
+    const model = await buildAssetModel(style, profile(), SITE, "test");
+    const files = assetFiles(model, "prompt");
+    expect(files.map((file) => file.path)).toEqual(["asset-model.json", "template-library.md", "gaps.md", "location-tree.md", "mapping-prompt.md"]);
+    expect(JSON.parse(files[0]?.text ?? "{}")).toMatchObject({ format: "knx-asset-model-1", stats: model.stats });
+    const gaps = gapsMarkdown(model);
+    for (const gap of model.gaps) expect(gaps).toContain(gap.title);
+    const library = templateLibraryMarkdown(model);
+    for (const type of model.types) expect(library).toContain(`## ${type.key}`);
+    expect(library).toContain("**extension**");
+    const tree = locationTreeMarkdown(model);
+    expect(tree).toContain("- **Germany**");
+    expect(tree.split("\n").filter((line) => line.trimStart().startsWith("- ")).length).toBe(model.assets.length);
+  });
+});

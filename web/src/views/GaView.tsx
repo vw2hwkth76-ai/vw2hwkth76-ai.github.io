@@ -1,5 +1,5 @@
 import { Button, ComboBox, Search, Select, SelectItem } from "@carbon/react";
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { TRADE_LABEL } from "../../../src/app/labels.ts";
 import { DIMENSIONS, type GaView as GaRow } from "../../../src/app/snapshot.ts";
 import { TRADES } from "../../../src/recognize/lexicon.ts";
@@ -7,6 +7,7 @@ import { DecisionValue, decisionTitle } from "../components/DecisionValue.tsx";
 import { type Option, useOptions, ValuePicker } from "../components/ValuePicker.tsx";
 import { type Column, VirtualTable } from "../components/VirtualTable.tsx";
 import { count, strengthOf } from "../format.ts";
+import { useEscape } from "../useEscape.ts";
 import { useWorkspace } from "../workspace.ts";
 import { GaInspector } from "./GaInspector.tsx";
 
@@ -144,6 +145,8 @@ export function GaView(): ReactNode {
   }, [snapshot, query, trade, room, stateFilter, state.reviews]);
 
   const active = workspace.focusGa !== undefined ? lookups.gaById.get(workspace.focusGa) : undefined;
+  const { openGa } = workspace;
+  useEscape(active !== undefined, useCallback(() => openGa(undefined), [openGa]));
   const selectedIds = [...selected].filter((id) => lookups.gaById.has(id));
   const selectedExcluded = selectedIds.filter((id) => lookups.gaById.get(id)?.excluded !== undefined);
   const selectedEvaluated = selectedIds.filter((id) => lookups.gaById.get(id)?.excluded === undefined);
@@ -283,9 +286,9 @@ export function GaView(): ReactNode {
       </div>
       {active ? (
         <aside
+          key={active.id}
           className="ws-split__aside"
           aria-label={`Gruppenadresse ${active.text}`}
-          onKeyDown={(event) => event.key === "Escape" && workspace.openGa(undefined)}
         >
           <GaInspector ga={active} onClose={() => workspace.openGa(undefined)} />
         </aside>

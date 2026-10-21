@@ -4,6 +4,10 @@ import { ArchiveError } from "../../src/archive/errors.ts";
 import { buildGold, buildReport, formatLink, reportSummary } from "../../src/app/report.ts";
 import { checkReviews, type ReviewCheck } from "../../src/app/review-check.ts";
 import { buildScopeOverview, searchScope, splitThings } from "../../src/app/scope-view.ts";
+import { type AssetModel, buildAssetModel, type SiteInput } from "../../src/assets/model.ts";
+import { assetProfileJson, type AssetProfileResult, EMPTY_ASSET_PROFILE, parseAssetProfile } from "../../src/assets/profile.ts";
+import { applyMappingAnswer, buildMappingPrompt } from "../../src/assets/prompt.ts";
+import { assetFiles } from "../../src/assets/render.ts";
 import { buildDetail, buildExcludedDetail, buildSnapshot, projectKey, type Snapshot } from "../../src/app/snapshot.ts";
 import { loadKnxProject } from "../../src/ets/load.ts";
 import { buildGraph, type ProjectGraph } from "../../src/graph/evidence-graph.ts";
@@ -19,6 +23,8 @@ import { buildSchemaPrompt } from "../../src/recognize/schema-prompt.ts";
 import { buildThingDescriptions, type TdBundle, type TdOptions } from "../../src/td/render.ts";
 import { XmlError } from "../../src/xml/sax.ts";
 import type {
+  AssetAnswerResult,
+  AssetModelResult,
   AnalyzeResult,
   OpenResult,
   PreviewFigures,
@@ -48,6 +54,25 @@ async function tdBundle(options: TdOptions, toolVersion: string): Promise<TdBund
   const bundle = await buildThingDescriptions(analysis, options, toolVersion);
   tdCache = { analysis, key, bundle };
   return bundle;
+}
+
+/** Letztes Asset-Modell, gilt fuer genau diese Analyse, dieses Profil und diesen Standort. */
+let assetCache: { analysis: ProjectAnalysis; key: string; model: AssetModel; prompt: string | undefined; parsed: Extract<AssetProfileResult, { ok: true }> } | undefined;
+const TREE_PREVIEW_LINES = 400;
+
+function profileOf(raw: unknown): AssetProfileResult {
+  return raw === undefined || raw === null ? { ok: true, profile: EMPTY_ASSET_PROFILE, warnings: [] } : parseAssetProfile(raw);
+}
+
+async function assetModel(raw: unknown, site: SiteInput, toolVersion: string): Promise<NonNullable<typeof assetCache> | { ok: false; errors: readonly string[] }> {
+  if (!analysis) throw new Error("Noch keine Analyse vorhanden.");
+  const parsed = profileOf(raw);
+  if (!parsed.ok) return parsed;
+  const key = JSON.stringify([raw ?? null, site, toolVersion]);
+  if (assetCache?.analysis === analysis && assetCache.key === key) return assetCache;
+  const model = await buildAssetModel(analysis, parsed.profile, site, `KNX TD Werkstatt ${toolVersion}`);
+  assetCache = { analysis, key, model, prompt: buildMappingPrompt(model, parsed.profile), parsed };
+  return assetCache;
 }
 
 function readme(bundle: TdBundle, options: TdOptions, toolVersion: string): string {
@@ -103,6 +128,7 @@ async function handle(request: Request): Promise<unknown> {
       baseline = undefined;
       plain = undefined;
       tdCache = undefined;
+      assetCache = undefined;
       const loaded = await loadKnxProject(new Uint8Array(request.data), request.password === undefined ? {} : { password: request.password });
       graph = buildGraph(loaded);
       const result: OpenResult = {
@@ -228,6 +254,41 @@ async function handle(request: Request): Promise<unknown> {
         after,
         milliseconds: Math.round(performance.now() - started),
       };
+      return result;
+    }
+    case "asset-model": {
+      const started = performance.now();
+      const built = await assetModel(request.profile, request.site, request.toolVersion);
+      if (!("model" in built)) return { ok: false, errors: built.errors } satisfies AssetModelResult;
+      const tree = assetFiles(built.model, undefined).find((file) => file.path === "location-tree.md")?.text ?? "";
+      const lines = tree.split("\n");
+      const result: AssetModelResult = {
+        ok: true,
+        profileName: built.parsed.profile.name,
+        profileWarnings: built.parsed.warnings,
+        stats: built.model.stats,
+        types: built.model.types,
+        gaps: built.model.gaps,
+        tree: lines.slice(0, TREE_PREVIEW_LINES).join("\n"),
+        treeTruncated: lines.length > TREE_PREVIEW_LINES,
+        prompt: built.prompt,
+        milliseconds: Math.round(performance.now() - started),
+      };
+      return result;
+    }
+    case "asset-zip": {
+      const built = await assetModel(request.profile, request.site, request.toolVersion);
+      if (!("model" in built)) throw new Error(built.errors.join(" "));
+      const entries: Record<string, Uint8Array> = {};
+      for (const file of assetFiles(built.model, built.prompt)) entries[file.path] = strToU8(file.text);
+      const zip = zipSync(entries, { level: 6, mtime: new Date("2026-01-01T00:00:00Z") });
+      return transfer(zip.buffer);
+    }
+    case "asset-answer": {
+      const parsed = profileOf(request.profile);
+      if (!parsed.ok) return { ok: false, errors: parsed.errors } satisfies AssetAnswerResult;
+      const merged = applyMappingAnswer(parsed.profile, request.answer);
+      const result: AssetAnswerResult = merged.ok ? { ok: true, profile: assetProfileJson(merged.profile), warnings: merged.warnings } : { ok: false, errors: merged.errors };
       return result;
     }
     case "report": {

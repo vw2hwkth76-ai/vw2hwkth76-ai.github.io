@@ -1,5 +1,6 @@
 import type { ReviewCheck } from "../../src/app/review-check.ts";
 import type { ScopeOverview, ScopeSearch, SplitThings } from "../../src/app/scope-view.ts";
+import type { AssetModel, Gap, ModelType, SiteInput } from "../../src/assets/model.ts";
 import type { Exclusion } from "../../src/graph/scope.ts";
 import type { GaDetail, Snapshot } from "../../src/app/snapshot.ts";
 import type { TdBundle, TdOptions } from "../../src/td/render.ts";
@@ -93,6 +94,28 @@ export interface SchemaPreviewRequest {
   readonly exclude: Exclusion;
 }
 
+/** Asset-Modell fuer die Building Pro Integration; das Zielprofil kommt roh, der Worker prueft es. */
+export interface AssetModelRequest {
+  readonly type: "asset-model";
+  readonly profile: unknown;
+  readonly site: SiteInput;
+  readonly toolVersion: string;
+}
+
+export interface AssetZipRequest {
+  readonly type: "asset-zip";
+  readonly profile: unknown;
+  readonly site: SiteInput;
+  readonly toolVersion: string;
+}
+
+/** Prueft eine LLM-Antwort mit Zuordnungsregeln und liefert das ergaenzte Profil. */
+export interface AssetAnswerRequest {
+  readonly type: "asset-answer";
+  readonly profile: unknown;
+  readonly answer: unknown;
+}
+
 export type Request =
   | OpenRequest
   | AnalyzeRequest
@@ -105,7 +128,29 @@ export type Request =
   | ScopeOverviewRequest
   | ScopeSearchRequest
   | ScopeApplyRequest
-  | ScopeSplitsRequest;
+  | ScopeSplitsRequest
+  | AssetModelRequest
+  | AssetZipRequest
+  | AssetAnswerRequest;
+
+export type AssetModelResult =
+  | { readonly ok: false; readonly errors: readonly string[] }
+  | {
+      readonly ok: true;
+      readonly profileName: string;
+      readonly profileWarnings: readonly string[];
+      readonly stats: AssetModel["stats"];
+      readonly types: readonly ModelType[];
+      readonly gaps: readonly Gap[];
+      /** Ortsbaum als Markdown, gekuerzt fuer die Vorschau. */
+      readonly tree: string;
+      readonly treeTruncated: boolean;
+      /** Prompt fuer die KI-Zuordnung, wenn etwas offen ist und ein Zielprofil geladen ist. */
+      readonly prompt: string | undefined;
+      readonly milliseconds: number;
+    };
+
+export type AssetAnswerResult = { readonly ok: false; readonly errors: readonly string[] } | { readonly ok: true; readonly profile: unknown; readonly warnings: readonly string[] };
 
 export interface OpenResult {
   readonly key: string;
@@ -189,6 +234,9 @@ export interface ResultOf {
   readonly "scope-search": ScopeSearch;
   readonly "scope-apply": Exclusion;
   readonly "scope-splits": SplitThings;
+  readonly "asset-model": AssetModelResult;
+  readonly "asset-zip": ArrayBuffer;
+  readonly "asset-answer": AssetAnswerResult;
 }
 
 export interface WorkerError {

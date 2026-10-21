@@ -36,7 +36,7 @@ const DEFAULT_MAX = 400;
 const MAX_RANGE_LINES = 300;
 const MAX_VOCABULARY = 200;
 const MAX_OBJECT_TEXT = 40;
-const PERSON = /\b(Dr|Prof|Herr|Frau|Hr|Fr|Mr|Mrs|Ms)\.?\s+[\p{Lu}][\p{L}'-]+/gu;
+export const PERSON_PATTERN = /\b(Dr|Prof|Herr|Frau|Hr|Fr|Mr|Mrs|Ms)\.?\s+[\p{Lu}][\p{L}'-]+/gu;
 
 function instructions(): string {
   return `Du bekommst die Gruppenadressen eines KNX-Projekts. Erkenne das Namensschema des Errichters und gib es als JSON im Format "${PROFILE_FORMAT_V2}" zurück. Antworte nur mit dem JSON, ohne Erklärung davor oder danach.
@@ -86,7 +86,7 @@ export function buildSchemaPrompt(graph: ProjectGraph, options: PromptOptions = 
   const clean = (text: string): string =>
     options.maskPersons === false
       ? text
-      : text.replace(PERSON, (_, title: string) => {
+      : text.replace(PERSON_PATTERN, (_, title: string) => {
           masked++;
           return `${title}. [Name]`;
         });

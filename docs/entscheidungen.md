@@ -419,3 +419,26 @@ enthielt den ganzen Vorrat.
   GAs stehen im Bericht ohne Belege.
 - **Offen.** Ob der Ausschluss einzelner Rückmelde-GAs Things unvollständig
   macht, meldet die Zusammenfassung nur, sie verhindert es nicht.
+
+### Asset-Modell neben den Thing Descriptions
+
+- **Profil als Daten.** Eine Zielplattform beschreibt ihre Typen, Klassen und
+  Attribute in einer JSON-Datei, die der Nutzer lädt. So bleibt das öffentliche
+  Repo frei von plattformspezifischen Katalogen, und ein Katalog lässt sich
+  ändern, ohne Code zu ändern.
+- **Katalog zuerst, Lücken sichtbar.** Der Export verbiegt nichts: Passt kein
+  Typ, entsteht ein eigener (`knx_*`, Klasse `Not_Defined`); fehlt ein
+  Attribut, wird es ergänzt und gezählt. Die Lückenliste ist ein Ergebnis für
+  die Plattform-Entwicklung, kein Fehlerprotokoll.
+- **Zentralfunktionen bekommen keinen Katalogtyp**, wenn das Profil es nicht
+  ausdrücklich will: Eine Zentral-GA wirkt auf viele Assets, das Modell bindet
+  ein Attribut an genau eines.
+- **Schrittbefehle sind nicht die Größe selbst.** "Sollwert Schritt" (1.007)
+  neben "Sollwert" (9.001) bekommt ein eigenes Attribut, sonst landet ein
+  Schaltbefehl auf einem Temperaturwert.
+- **Attributnamen ohne Ortswörter.** Ohne erkannte Rolle entsteht der Name aus
+  dem GA-Namen, ohne die Wörter des Raumpfads und ohne reine Zahlen; sonst
+  hätte jeder Raum eigene Attribute desselben Typs.
+- **Englische Dateien.** Die Ausgabe richtet sich an eine Plattform-Entwicklung;
+  die Oberfläche bleibt deutsch.
+

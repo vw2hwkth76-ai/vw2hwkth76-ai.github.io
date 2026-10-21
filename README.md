@@ -230,6 +230,37 @@ Ansicht **Thing Descriptions** in der Werkstatt, Download als ZIP:
 - Der Namensraum `kb:` ist auf der Pages-Seite unter `/ns/knx-binding`
   (Begriffsseite) und `/ns/knx-binding.jsonld` (Kontext) abrufbar.
 
+## Asset-Modell (Ansicht "Building Pro Integration")
+
+Neben den Thing Descriptions exportiert die Werkstatt ein Asset-Modell nach
+einer Ontologie: Assets in einem Ortsbaum, je Asset ein Typ mit Klasse und
+Attributen, je Attribut die Gruppenadressen. Grundlage ist dieselbe Planung
+wie bei den TDs, Befehl und Rückmeldung bleiben gepaart.
+
+- **Zielprofil** (`knx-asset-profile-1`, JSON): welche Asset-Typen die
+  Zielplattform kennt, ihre Klasse (RealEstateCore/Brick), ihre Attribute
+  (input, output, status, info, property), welcher ETS-Raumtyp und welches
+  Thing auf welchen Typ geht und welche Rolle auf welches Attribut. Das Profil
+  ist eine Datei des Nutzers, wird zur Laufzeit geladen und bleibt im Browser;
+  das Repo enthält kein plattformspezifisches Profil. Ohne Profil entstehen
+  alle Typen aus der Erkennung.
+- **Ortsbaum:** Land und Region (Eingabe, optional), Standort, darunter die
+  ETS-Gebäudestruktur, darunter je Thing ein Asset. GAI mit Präfix, IDs als
+  UUID v5 aus Projekt-GUID und ETS-Kennungen.
+- **Typen:** erst die Regeln des Profils; was keine Regel trifft, bekommt einen
+  eigenen Typ (`knx_*`). Fehlt einem Profiltyp ein Attribut, das KNX liefert,
+  ergänzt der Export es und markiert den Typ als erweitert.
+- **Lückenliste** (`gaps.md`, englisch): jede Stelle, an der KNX nicht ins
+  Modell passt, mit Anzahl und Beispielen aus dem Projekt. Dazu gehören
+  Befehl und Rückmeldung auf zwei GAs, Befehle ohne Zustand (relatives Dimmen,
+  Schritt/Stopp), Zentralfunktionen, mehrteilige DPTs, Szenen, Logik,
+  fehlende Attribute je Typ, Einheitenkonflikte und Ebenen über dem Standort.
+- **Zuordnung per KI:** Für eigene Typen und ergänzte Attribute erzeugt die
+  Ansicht einen Prompt. Die Antwort des LLM darf nur auf Typen und Attribute
+  des Profils zeigen und wird wie ein Profil geprüft, bevor sie gilt.
+- **ZIP:** `asset-model.json`, `template-library.md`, `gaps.md`,
+  `location-tree.md`, bei offenen Zuordnungen `mapping-prompt.md`.
+
 ## Benchmark
 
 `npm run bench` misst jedes Verfahren gegen die Gold-Standards aus dem

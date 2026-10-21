@@ -1,4 +1,5 @@
 import { type Exclusion, exclusionFromState, NO_EXCLUSION } from "../../src/graph/scope.ts";
+import type { SiteInput } from "../../src/assets/model.ts";
 import { DEFAULT_TD_OPTIONS, type TdOptions } from "../../src/td/render.ts";
 import { isRecord } from "../../src/util/guards.ts";
 import type { ReviewRecord } from "./protocol.ts";
@@ -23,6 +24,26 @@ export interface ProjectState {
   readonly schemaChecked: boolean;
   /** Welche GAs ausgewertet werden; fehlt, solange der Nutzer nichts gewaehlt hat (dann gelten alle). */
   readonly exclude?: Exclusion;
+  /** Building Pro Integration: Zielprofil (roh, privat in diesem Browser) und Standortangaben. */
+  readonly assets?: AssetState;
+}
+
+export interface AssetState {
+  readonly profile?: unknown;
+  readonly site: SiteInput;
+}
+
+const SITE_FIELDS = ["country", "region", "site", "gaiPrefix"] as const;
+
+function parseAssetState(json: unknown): AssetState | undefined {
+  if (!isRecord(json)) return undefined;
+  const raw = isRecord(json["site"]) ? json["site"] : {};
+  const site: Record<string, string> = {};
+  for (const field of SITE_FIELDS) {
+    const value = raw[field];
+    if (typeof value === "string" && value.length <= 120) site[field] = value;
+  }
+  return { ...(json["profile"] !== undefined && json["profile"] !== null ? { profile: json["profile"] } : {}), site };
 }
 
 export const exclusionOf = (state: ProjectState): Exclusion => state.exclude ?? NO_EXCLUSION;
@@ -56,7 +77,16 @@ export function parseState(json: unknown): ProjectState | undefined {
   // Aeltere Staende ohne das Feld: Wer schon ein Schema oder Antworten hat, ist ueber den Schritt hinaus.
   const schemaChecked = json["schemaChecked"] === true || profile !== undefined || Object.keys(reviews).length > 0;
   const exclude = exclusionFromState(json);
-  return { reviews, profile, useEtsFunctions: json["useEtsFunctions"] !== false, td: parseTdOptions(json["td"]), schemaChecked, ...(exclude ? { exclude } : {}) };
+  const assets = parseAssetState(json["assets"]);
+  return {
+    reviews,
+    profile,
+    useEtsFunctions: json["useEtsFunctions"] !== false,
+    td: parseTdOptions(json["td"]),
+    schemaChecked,
+    ...(exclude ? { exclude } : {}),
+    ...(assets ? { assets } : {}),
+  };
 }
 
 export function loadState(key: string): ProjectState {
