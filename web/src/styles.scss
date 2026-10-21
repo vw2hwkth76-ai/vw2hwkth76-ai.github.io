@@ -1253,6 +1253,8 @@ body {
   .ws-assets__inputs {
     display: grid;
     gap: $spacing-06;
+    // Abstand zu den Kennzahlen darunter; sonst stossen die Eingabefelder direkt an die Kacheln.
+    margin-bottom: $spacing-08;
 
     @media (min-width: 66rem) {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
