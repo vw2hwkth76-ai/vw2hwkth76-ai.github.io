@@ -1,6 +1,6 @@
 import type { ReviewCheck } from "../../src/app/review-check.ts";
 import type { ScopeOverview, ScopeSearch, SplitThings } from "../../src/app/scope-view.ts";
-import type { AssetModel, Gap, ModelType, SiteInput } from "../../src/assets/model.ts";
+import type { AssetModel, Gap, ModelAsset, ModelType, SiteInput } from "../../src/assets/model.ts";
 import type { Exclusion } from "../../src/graph/scope.ts";
 import type { GaDetail, Snapshot } from "../../src/app/snapshot.ts";
 import type { TdBundle, TdOptions } from "../../src/td/render.ts";
@@ -142,9 +142,8 @@ export type AssetModelResult =
       readonly stats: AssetModel["stats"];
       readonly types: readonly ModelType[];
       readonly gaps: readonly Gap[];
-      /** Ortsbaum als Markdown, gekuerzt fuer die Vorschau. */
-      readonly tree: string;
-      readonly treeTruncated: boolean;
+      /** Alle Assets mit Eltern in beiden Baeumen, fuer die Baumansicht. */
+      readonly assets: readonly ModelAsset[];
       /** Prompt fuer die KI-Zuordnung, wenn etwas offen ist und ein Zielprofil geladen ist. */
       readonly prompt: string | undefined;
       readonly milliseconds: number;

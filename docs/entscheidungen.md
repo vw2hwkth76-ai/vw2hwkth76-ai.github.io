@@ -441,4 +441,15 @@ enthielt den ganzen Vorrat.
   hätte jeder Raum eigene Attribute desselben Typs.
 - **Englische Dateien.** Die Ausgabe richtet sich an eine Plattform-Entwicklung;
   die Oberfläche bleibt deutsch.
+- **Funktionsbaum aus Gewerk und Zentralfunktion.** KNX kennt keine Anlagen,
+  aber zwei Dinge, die eine Zugehörigkeit belegen: das Gewerk und die
+  Zentral-GA, die mehrere Aktorkanäle erreicht. Daraus entsteht
+  System › Zentralfunktion › Asset. Die Zuordnung geht über den Kanal, nicht
+  über das Gerät: Ein Zwölffach-Aktor ist kein Thing. Unter mehreren
+  Zentralfunktionen gewinnt die kleinste, die das Asset enthält; eine
+  Zentralfunktion hängt unter der kleinsten, die echt mehr umfasst, so
+  entstehen keine Kreise.
+- **Zwei Bäume in einer Ansicht.** Ein Asset steht an zwei Stellen; erst wenn
+  beide gleichzeitig sichtbar sind und die Auswahl in beiden markiert wird,
+  liest man den Funktionsbaum als Ergänzung zum Ort statt als zweite Liste.
 

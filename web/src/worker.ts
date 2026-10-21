@@ -7,7 +7,7 @@ import { buildScopeOverview, searchScope, splitThings } from "../../src/app/scop
 import { type AssetModel, buildAssetModel, type SiteInput } from "../../src/assets/model.ts";
 import { assetProfileJson, type AssetProfileResult, EMPTY_ASSET_PROFILE, parseAssetProfile } from "../../src/assets/profile.ts";
 import { applyMappingAnswer, buildMappingPrompt } from "../../src/assets/prompt.ts";
-import { assetFiles, locationTreeMarkdown } from "../../src/assets/render.ts";
+import { assetFiles } from "../../src/assets/render.ts";
 import { buildDetail, buildExcludedDetail, buildSnapshot, projectKey, type Snapshot } from "../../src/app/snapshot.ts";
 import { loadKnxProject } from "../../src/ets/load.ts";
 import { buildGraph, type ProjectGraph } from "../../src/graph/evidence-graph.ts";
@@ -60,7 +60,6 @@ async function tdBundle(options: TdOptions, toolVersion: string): Promise<TdBund
 
 /** Letztes Asset-Modell, gilt fuer genau diese Analyse, dieses Profil und diesen Standort. */
 let assetCache: { analysis: ProjectAnalysis; key: string; model: AssetModel; prompt: string | undefined; parsed: Extract<AssetProfileResult, { ok: true }> } | undefined;
-const TREE_PREVIEW_LINES = 400;
 
 function profileOf(raw: unknown): AssetProfileResult {
   return raw === undefined || raw === null ? { ok: true, profile: EMPTY_ASSET_PROFILE, warnings: [] } : parseAssetProfile(raw);
@@ -272,8 +271,6 @@ async function handle(request: Request): Promise<unknown> {
       const started = performance.now();
       const built = await assetModel(request.profile, request.site, request.toolVersion);
       if (!("model" in built)) return { ok: false, errors: built.errors } satisfies AssetModelResult;
-      const tree = locationTreeMarkdown(built.model);
-      const lines = tree.split("\n");
       const result: AssetModelResult = {
         ok: true,
         profileName: built.parsed.profile.name,
@@ -281,8 +278,7 @@ async function handle(request: Request): Promise<unknown> {
         stats: built.model.stats,
         types: built.model.types,
         gaps: built.model.gaps,
-        tree: lines.slice(0, TREE_PREVIEW_LINES).join("\n"),
-        treeTruncated: lines.length > TREE_PREVIEW_LINES,
+        assets: built.model.assets,
         prompt: built.prompt,
         milliseconds: Math.round(performance.now() - started),
       };

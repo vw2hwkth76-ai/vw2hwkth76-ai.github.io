@@ -247,6 +247,16 @@ wie bei den TDs, Befehl und Rückmeldung bleiben gepaart.
 - **Ortsbaum:** Land und Region (Eingabe, optional), Standort, darunter die
   ETS-Gebäudestruktur, darunter je Thing ein Asset. Lesbare Kennung mit Präfix, IDs als
   UUID v5 aus Projekt-GUID und ETS-Kennungen.
+- **Funktionsbaum:** je Gebäude und Gewerk ein System-Asset (Klasse
+  `System`), darunter die Zentralfunktionen, darunter die Assets, deren
+  Aktorkanäle auf der Zentral-GA empfangen. Kleinere Zentralfunktionen hängen
+  unter größeren ("Etage aus" unter "Alles aus"). Ohne Herstellerdaten oder
+  ohne gemeinsamen Kanal hängt eine Zentralfunktion direkt unter dem System.
+- **Zwei Bäume, ein Asset:** Die Ansicht zeigt Orts- und Funktionsbaum
+  nebeneinander, mit Klasse je Knoten und Suche über Name, Kennung, Typ,
+  Klasse, Attribut und Gruppenadresse. Ein Klick markiert das Asset in beiden
+  Bäumen und öffnet Typ, Klasse, beide Pfade und die Attribute nach Subtyp
+  (input, output, status, info, property) mit ihren Gruppenadressen.
 - **Typen:** erst die Regeln des Profils; was keine Regel trifft, bekommt einen
   eigenen Typ (`knx_*`). Fehlt einem Profiltyp ein Attribut, das KNX liefert,
   ergänzt der Export es und markiert den Typ als erweitert.
@@ -259,7 +269,8 @@ wie bei den TDs, Befehl und Rückmeldung bleiben gepaart.
   Ansicht einen Prompt. Die Antwort des LLM darf nur auf Typen und Attribute
   des Profils zeigen und wird wie ein Profil geprüft, bevor sie gilt.
 - **ZIP:** `asset-model.json`, `template-library.md`, `gaps.md`,
-  `location-tree.md`, bei offenen Zuordnungen `mapping-prompt.md`.
+  `location-tree.md`, `function-tree.md`, bei offenen Zuordnungen
+  `mapping-prompt.md`.
 
 ## Benchmark
 

@@ -75,14 +75,28 @@ export function gapsMarkdown(model: AssetModel): string {
   return `${lines.join("\n")}\n`;
 }
 
-export function locationTreeMarkdown(model: AssetModel): string {
+export type TreeKind = "location" | "function";
+
+/** Kinder je Eltern-Asset in einem der beiden Baeume, in der Reihenfolge des Modells. */
+export function treeChildren(model: AssetModel, tree: TreeKind): Map<string | null, ModelAsset[]> {
   const children = new Map<string | null, ModelAsset[]>();
   for (const asset of model.assets) {
-    const list = children.get(asset.parent.location);
+    // Im Funktionsbaum stehen nur Assets, die dort einen Platz haben: Systeme und alles, was unter einem haengt.
+    if (tree === "function" && asset.parent.function === null && asset.kind !== "system") continue;
+    const key = tree === "location" ? asset.parent.location : asset.parent.function;
+    const list = children.get(key);
     if (list) list.push(asset);
-    else children.set(asset.parent.location, [asset]);
+    else children.set(key, [asset]);
   }
-  const lines = ["# Location tree", "", "Asset name, type and code. Equipment lists its bound attributes.", ""];
+  return children;
+}
+
+function treeMarkdown(model: AssetModel, tree: TreeKind): string {
+  const children = treeChildren(model, tree);
+  const lines =
+    tree === "location"
+      ? ["# Location tree", "", "Where is it? Asset name, type and code. Equipment lists its bound attributes.", ""]
+      : ["# Functional tree", "", "What does it belong to? Systems per trade and building, central functions, and the assets they control.", ""];
   const walk = (parent: string | null, depth: number): void => {
     for (const asset of children.get(parent) ?? []) {
       const attributes = asset.bindings.length > 0 ? ` · ${asset.bindings.map((binding) => binding.attribute).join(", ")}` : "";
@@ -94,12 +108,21 @@ export function locationTreeMarkdown(model: AssetModel): string {
   return `${lines.join("\n")}\n`;
 }
 
+export function locationTreeMarkdown(model: AssetModel): string {
+  return treeMarkdown(model, "location");
+}
+
+export function functionTreeMarkdown(model: AssetModel): string {
+  return treeMarkdown(model, "function");
+}
+
 export function assetFiles(model: AssetModel, mappingPrompt: string | undefined): AssetFile[] {
   return [
     { path: "asset-model.json", text: `${JSON.stringify(model, null, 2)}\n` },
     { path: "template-library.md", text: templateLibraryMarkdown(model) },
     { path: "gaps.md", text: gapsMarkdown(model) },
     { path: "location-tree.md", text: locationTreeMarkdown(model) },
+    { path: "function-tree.md", text: functionTreeMarkdown(model) },
     ...(mappingPrompt ? [{ path: "mapping-prompt.md", text: mappingPrompt }] : []),
   ];
 }

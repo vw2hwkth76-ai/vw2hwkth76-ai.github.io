@@ -63,6 +63,8 @@ export interface AssetProfile {
   readonly spaces: Readonly<Record<string, string>>;
   /** Typen der Ebenen ueber dem Gebaeude. */
   readonly upper: Readonly<Partial<Record<UpperLevel, string>>>;
+  /** Gewerk ("lighting", "shading", "hvac", ...) auf den Typ des System-Assets im Funktionsbaum. */
+  readonly systems: Readonly<Record<string, string>>;
   readonly things: readonly ThingRule[];
   readonly attributes: readonly AttributeRule[];
   /** Klasse und Praefix fuer Typen, die der Export selbst anlegt. */
@@ -75,6 +77,7 @@ export const EMPTY_ASSET_PROFILE: AssetProfile = {
   types: [],
   spaces: {},
   upper: {},
+  systems: {},
   things: [],
   attributes: [],
   generated: { prefix: "knx_", class: "Unclassified" },
@@ -192,13 +195,22 @@ export function parseAssetProfile(json: unknown): AssetProfileResult {
       if (key && known(key, `upper.${level}`)) upper[level as UpperLevel] = key;
     }
 
+  const systems: Record<string, string> = {};
+  const rawSystems = json["systems"] ?? {};
+  if (!isRecord(rawSystems)) errors.push('Zielprofil: "systems" muss ein Objekt sein ("lighting": "<typ>").');
+  else
+    for (const [trade, value] of Object.entries(rawSystems)) {
+      const key = text(value);
+      if (key && known(key, `systems.${trade}`)) systems[trade] = key;
+    }
+
   const rules = parseRules(json, known, errors, warnings);
   const rawGenerated = isRecord(json["generated"]) ? json["generated"] : {};
   const prefix = text(rawGenerated["prefix"]) ?? EMPTY_ASSET_PROFILE.generated.prefix;
   const generated = { prefix: KEY.test(`${prefix}x`) ? prefix : EMPTY_ASSET_PROFILE.generated.prefix, class: text(rawGenerated["class"]) ?? EMPTY_ASSET_PROFILE.generated.class };
 
   if (errors.length > 0) return { ok: false, errors };
-  return { ok: true, profile: { format: ASSET_PROFILE_FORMAT, name, types, spaces, upper, ...rules, generated }, warnings };
+  return { ok: true, profile: { format: ASSET_PROFILE_FORMAT, name, types, spaces, upper, systems, ...rules, generated }, warnings };
 }
 
 function parseRules(

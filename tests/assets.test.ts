@@ -85,6 +85,19 @@ function checkIntegrity(model: AssetModel, graph: ProjectGraph): void {
     expect(new Set(asset.bindings.map((binding) => binding.attribute)).size).toBe(asset.bindings.length);
   }
   expect(model.types.reduce((sum, type) => sum + type.assets, 0)).toBe(model.assets.length);
+  // Funktionsbaum: jedes Geraete-Asset hat einen Platz, Eltern sind Systeme oder Zentralfunktionen, keine Kreise.
+  const byId = new Map(model.assets.map((asset) => [asset.id, asset]));
+  for (const asset of model.assets) {
+    if (asset.kind === "equipment") expect(asset.parent.function, asset.name).not.toBeNull();
+    if (asset.kind === "system") expect(asset.parent.function).toBeNull();
+    if (asset.kind !== "equipment" && asset.kind !== "system") expect(asset.parent.function).toBeNull();
+    const seen = new Set<string>();
+    for (let current = asset.parent.function; current !== null; current = byId.get(current)?.parent.function ?? null) {
+      expect(seen.has(current)).toBe(false);
+      seen.add(current);
+      expect(["system", "equipment"]).toContain(byId.get(current)?.kind);
+    }
+  }
 }
 
 describe("Zielprofil", () => {
@@ -236,6 +249,52 @@ describe("Asset-Modell mit Zielprofil", () => {
   });
 });
 
+describe("Funktionsbaum", () => {
+  it("haengt Assets unter ihr System und unter die Zentralfunktion, die sie schaltet", async () => {
+    const model = await buildAssetModel(style, profile(), SITE, "test");
+    const byId = new Map(model.assets.map((asset) => [asset.id, asset]));
+    const systems = model.assets.filter((asset) => asset.kind === "system");
+    expect(systems.map((asset) => asset.name)).toEqual(expect.arrayContaining(["Lighting", "Shading", "Heating and climate"]));
+    // Systeme stehen im Ortsbaum unter dem Gebaeude.
+    for (const system of systems) expect(byId.get(system.parent.location ?? "")?.source.spaceType).toBe("Building");
+    // Style3 hat keine Geraete: Zentralfunktionen haengen ohne Mitglieder unter ihrem System.
+    const centrals = model.assets.filter((asset) => asset.source.central === true);
+    expect(centrals.length).toBeGreaterThan(0);
+    for (const central of centrals) expect(byId.get(central.parent.function ?? "")?.kind).toBe("system");
+    expect(model.gaps.find((gap) => gap.id === "central-unlinked")?.count).toBe(centrals.length);
+    expect(model.gaps.some((gap) => gap.id === "system-type" && gap.action === "generated")).toBe(true);
+  });
+
+  it("findet die Mitglieder einer Zentralfunktion ueber den Aktorkanal", async () => {
+    // Eine Zentral-GA, die auf denselben Aktorkanal geht wie das Licht im Demoprojekt.
+    const light = demo.groupAddresses.find((node) => node.ga.text === "0/0/1");
+    expect(light?.links.some((link) => link.comObject.channel)).toBe(true);
+    if (!light) return;
+    const central = { ...light, functions: [], ga: { ...light.ga, id: "ga-zentral", address: 7 * 2048, text: "0/7/0", name: "Zentral Licht aus" } };
+    const graph: ProjectGraph = {
+      ...demo,
+      groupAddresses: [...demo.groupAddresses, central],
+      byGroupAddressId: new Map([...demo.byGroupAddressId, [central.ga.id, central]]),
+    };
+    const model = await buildAssetModel(analyzeProject(graph, { useEtsFunctions: true }), profile(), SITE, "test");
+    checkIntegrity(model, graph);
+    const byId = new Map(model.assets.map((asset) => [asset.id, asset]));
+    const centralAsset = model.assets.find((asset) => asset.source.central === true);
+    expect(centralAsset).toBeDefined();
+    expect(byId.get(centralAsset?.parent.function ?? "")?.kind).toBe("system");
+    const members = model.assets.filter((asset) => asset.parent.function === centralAsset?.id);
+    expect(members.map((asset) => asset.name)).toContain("Light");
+    expect(model.gaps.find((gap) => gap.id === "central-function")?.detail).toContain("1 of 1 linked");
+  });
+
+  it("nimmt Systemtypen aus dem Profil, wenn es sie nennt", async () => {
+    const json = { ...PROFILE_JSON, types: [...PROFILE_JSON.types, { key: "lighting_system", class: "System", attributes: [] }], systems: { lighting: "lighting_system" } };
+    const model = await buildAssetModel(style, profile(json), SITE, "test");
+    expect(model.assets.find((asset) => asset.kind === "system" && asset.name === "Lighting")?.type).toBe("lighting_system");
+    expect(parseAssetProfile({ ...PROFILE_JSON, systems: { lighting: "missing" } }).ok).toBe(false);
+  });
+});
+
 describe("Eindeutige Kennungen", () => {
   // Mehrere Things am selben Aktorkanal teilten frueher dieselbe stabile ID (privates Projekt D).
   const fixtures = ["oeffentlich/demoprojekt.knxproj", "oeffentlich/style3.knxproj", "privat/projekt-c.zip", "privat/projekt-d.zip", "privat/projekt-e.knxproj", "privat/schule.knxproj"];
@@ -290,7 +349,7 @@ describe("Dateien", () => {
   it("schreibt Modell, Vorlagenbibliothek, Luecken und Ortsbaum", async () => {
     const model = await buildAssetModel(style, profile(), SITE, "test");
     const files = assetFiles(model, "prompt");
-    expect(files.map((file) => file.path)).toEqual(["asset-model.json", "template-library.md", "gaps.md", "location-tree.md", "mapping-prompt.md"]);
+    expect(files.map((file) => file.path)).toEqual(["asset-model.json", "template-library.md", "gaps.md", "location-tree.md", "function-tree.md", "mapping-prompt.md"]);
     expect(JSON.parse(files[0]?.text ?? "{}")).toMatchObject({ format: "knx-asset-model-1", stats: model.stats });
     const gaps = gapsMarkdown(model);
     for (const gap of model.gaps) expect(gaps).toContain(gap.title);

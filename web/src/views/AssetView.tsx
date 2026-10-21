@@ -6,6 +6,7 @@ import { extractJson } from "../../../src/recognize/schema-prompt.ts";
 import { count, fileStem } from "../format.ts";
 import type { AssetModelResult } from "../protocol.ts";
 import { download, downloadBlob } from "../storage.ts";
+import { AssetTrees } from "../components/AssetTrees.tsx";
 import { Figure } from "../components/Figure.tsx";
 import { useWorkspace } from "../workspace.ts";
 
@@ -218,6 +219,15 @@ export function AssetView(): ReactNode {
             <Figure label="Modell erweitern" value={count(extendCount)} note="Lücken, die das Asset-Modell betreffen" />
           </dl>
 
+          <section className="ws-section" aria-labelledby="assets-trees">
+            <h2 id="assets-trees">Zwei Bäume, ein Asset</h2>
+            <p>
+              Jedes Asset steht im Ortsbaum (wo ist es?) und, wenn es zu einer Funktion gehört, im Funktionsbaum (wozu gehört es?). Ein Klick markiert es in beiden
+              Bäumen. Der Funktionsbaum entsteht aus den Gewerken und den Zentralfunktionen; was eine Zentral-GA schaltet, steht darunter.
+            </p>
+            <AssetTrees assets={ok.assets} types={ok.types} />
+          </section>
+
           <section className="ws-section" aria-labelledby="assets-gaps">
             <h2 id="assets-gaps">Wo das Asset-Modell nicht passt</h2>
             <p>Jede Zeile ist ein KNX-Konzept, das das Modell so nicht ausdrücken kann, mit Anzahl in diesem Projekt. Im ZIP steht dazu die englische Begründung (gaps.md).</p>
@@ -316,12 +326,6 @@ export function AssetView(): ReactNode {
               {answerError ? <InlineNotification kind="error" lowContrast title="Antwort abgelehnt" subtitle={answerError.slice(0, 6).join(" ")} onClose={() => setAnswerError(undefined)} /> : null}
             </section>
           ) : null}
-
-          <section className="ws-section" aria-labelledby="assets-tree">
-            <h2 id="assets-tree">Ortsbaum</h2>
-            <pre className="ws-assets__tree">{ok.tree}</pre>
-            {ok.treeTruncated ? <p className="helper">Gekürzt; vollständig im ZIP (location-tree.md).</p> : null}
-          </section>
         </>
       ) : null}
     </div>

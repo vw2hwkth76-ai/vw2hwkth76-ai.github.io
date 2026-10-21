@@ -1,6 +1,8 @@
 import { dptDotted, dptMainNumber } from "../ets/dpt-id.ts";
 import type { DptField } from "../ets/master-data.ts";
 import type { ProjectGraph } from "../graph/evidence-graph.ts";
+import { TRADE_LABEL } from "../app/labels.ts";
+import { isTrade } from "../recognize/lexicon.ts";
 import type { ProjectAnalysis } from "../recognize/pipeline.ts";
 import type { Thing, ThingType } from "../recognize/things.ts";
 import { uuidV5 } from "../td/ids.ts";
@@ -68,7 +70,7 @@ export interface Binding {
   readonly gaNames: readonly string[];
 }
 
-export type AssetKind = UpperLevel | "space" | "equipment";
+export type AssetKind = UpperLevel | "space" | "system" | "equipment";
 
 export interface ModelAsset {
   readonly id: string;
@@ -81,7 +83,15 @@ export interface ModelAsset {
   readonly parent: { readonly location: string | null; readonly function: string | null };
   readonly tags: readonly string[];
   readonly bindings: readonly Binding[];
-  readonly source: { readonly ets?: string; readonly spaceType?: string; readonly thingType?: ThingType; readonly functionType?: string; readonly openQuestions?: number };
+  readonly source: {
+    readonly ets?: string;
+    readonly spaceType?: string;
+    readonly thingType?: ThingType;
+    readonly functionType?: string;
+    /** Zentralfunktion: eine GA fuer viele Aktoren. */
+    readonly central?: true;
+    readonly openQuestions?: number;
+  };
 }
 
 export type GapAction = "extend-model" | "generated" | "review" | "info";
@@ -245,6 +255,33 @@ function matches(rule: AssetProfile["things"][number], thing: Thing, roles: Read
   return true;
 }
 
+/** Englische Namen der Gewerke fuer die System-Assets; "general" fasst Things ohne Gewerk. */
+const TRADE_EN: Readonly<Record<string, string>> = {
+  lighting: "Lighting",
+  shading: "Shading",
+  hvac: "Heating and climate",
+  monitoring: "Monitoring",
+  metering: "Metering",
+  system: "System functions",
+  scene: "Scenes",
+  socket: "Sockets",
+  general: "Other functions",
+};
+const SYSTEM_CLASS = "System";
+
+interface EquipmentEntry {
+  readonly id: string;
+  readonly name: string;
+  readonly trade: string;
+  readonly central: boolean;
+  /** Gebaeude-Asset, sonst der Standort. */
+  readonly building: string | null;
+  readonly buildingKey: string;
+  readonly buildingName: string;
+  /** Aktorkanaele, die auf den GAs des Assets empfangen. */
+  readonly channels: ReadonlySet<string>;
+}
+
 /** Geraete, die nach Produkt oder Applikation Logik ausfuehren; ihre Logik selbst steht nicht im Projekt. */
 const LOGIC = /logi[ck]|logic controller|logikmodul|logikbaustein/i;
 
@@ -353,6 +390,25 @@ export async function buildAssetModel(analysis: ProjectAnalysis, profile: AssetP
   const counters = new Map<string, number>();
   let bindingCount = 0;
   const groupAddresses = new Set<string>();
+  const equipment: EquipmentEntry[] = [];
+  const buildingOf = (roomId: string | undefined): { id: string | null; key: string; name: string } => {
+    const building = roomId ? graph.spaces.get(roomId)?.path.find((space) => space.type === "Building") : undefined;
+    const asset = building ? spaceAsset.get(building.id) : undefined;
+    return asset && building ? { id: asset.id, key: building.id, name: asset.name } : { id: siteId, key: "site", name: site.site?.trim() || "Site" };
+  };
+  const channelsOf = (thing: Thing): Set<string> => {
+    const channels = new Set<string>();
+    for (const id of thing.draft.groupAddressIds) {
+      const entry = analysis.recognition.byGroupAddressId.get(id);
+      if (!entry || entry.analysis.outOfUse) continue;
+      for (const link of entry.analysis.node.links) {
+        // Kanalschluessel sind je Geraet eindeutig; ohne Herstellerdaten sind die Flags unbekannt und jede Verknuepfung zaehlt.
+        const channel = link.comObject.channel;
+        if (channel && (link.receives || !link.flagsKnown)) channels.add(channel.key);
+      }
+    }
+    return channels;
+  };
 
   for (const planned of plan.things) {
     const thing = thingByKey.get(planned.key);
@@ -383,21 +439,25 @@ export async function buildAssetModel(analysis: ProjectAnalysis, profile: AssetP
     }
     const room = planned.roomId ? spaceAsset.get(planned.roomId) : undefined;
     if (!room) gaps.add("no-room", "Equipment without room", "The recognition found no room for these things; they hang below the site.", "review", planned.title);
-    if (thing.draft.central)
-      gaps.add(
-        "central-function",
-        "Central functions act on many assets",
-        "A KNX central group address (all lights off, all blinds up) addresses many actuators at once. In the asset model an attribute belongs to exactly one asset; the export keeps each central function as an asset of its own, without a link to the assets it controls.",
-        "extend-model",
-        planned.title,
-      );
     const roomKey = room?.name ?? "SITE";
     const counterKey = `${roomKey}|${type.key}`;
     const number = (counters.get(counterKey) ?? 0) + 1;
     counters.set(counterKey, number);
+    const assetId = await uuidV5(`${projectId}|thing|${planned.stableKey}`);
+    const building = buildingOf(planned.roomId);
+    equipment.push({
+      id: assetId,
+      name: planned.title,
+      trade: thing.draft.trade && isTrade(thing.draft.trade) ? thing.draft.trade : "general",
+      central: thing.draft.central,
+      building: building.id,
+      buildingKey: building.key,
+      buildingName: building.name,
+      channels: channelsOf(thing),
+    });
     push(
       {
-        id: await uuidV5(`${projectId}|thing|${planned.stableKey}`),
+        id: assetId,
         code: code(roomKey, type.key.replace(profile.generated.prefix, ""), String(number).padStart(2, "0")),
         name: planned.title,
         type: type.key,
@@ -405,7 +465,12 @@ export async function buildAssetModel(analysis: ProjectAnalysis, profile: AssetP
         parent: { location: room?.id ?? siteId, function: null },
         tags: [...type.tags],
         bindings,
-        source: { thingType: thing.type, ...(thing.functionType ? { functionType: thing.functionType } : {}), ...(planned.openQuestions > 0 ? { openQuestions: planned.openQuestions } : {}) },
+        source: {
+          thingType: thing.type,
+          ...(thing.functionType ? { functionType: thing.functionType } : {}),
+          ...(thing.draft.central ? { central: true as const } : {}),
+          ...(planned.openQuestions > 0 ? { openQuestions: planned.openQuestions } : {}),
+        },
       },
       type,
     );
@@ -414,13 +479,21 @@ export async function buildAssetModel(analysis: ProjectAnalysis, profile: AssetP
   }
   for (const skipped of plan.skipped) gaps.add("skipped-thing", "Things without usable group address", "These recognized things have no group address left to bind (all out of use).", "info", skipped.title);
 
+  const functionParent = await buildFunctionTree(equipment, { projectId, profile, hasProfile, gaps, push, code, typeFor, generatedType });
+
   detectProjectGaps(graph, analysis, gaps);
   gaps.add(
     "functional-tree",
-    "No functional hierarchy in KNX",
-    "KNX projects describe group addresses, devices and a building structure, but no plants or systems. The functional tree stays empty; ETS functions and actuator channels bundle group addresses into things, not into systems.",
+    "Functional tree derived from trades and central functions",
+    "KNX projects describe group addresses, devices and a building structure, but no plants. The export builds the functional tree from what KNX does say: one system asset per trade and building, below it the central functions, below those the assets whose actuator channels receive the central group address. Assets that no central function controls hang directly below their system.",
     "info",
   );
+  // Funktionsbaum eintragen; die Assets selbst bleiben unveraendert, nur die Eltern im Funktionsbaum kommen hinzu.
+  for (let index = 0; index < assets.length; index++) {
+    const asset = assets[index];
+    const parent = asset ? functionParent.get(asset.id) : undefined;
+    if (asset && parent) assets[index] = { ...asset, parent: { ...asset.parent, function: parent } };
+  }
 
   const modelTypes: ModelType[] = [...types.values()]
     .filter((type) => type.assets > 0)
@@ -444,6 +517,98 @@ export async function buildAssetModel(analysis: ProjectAnalysis, profile: AssetP
       typesExtended: modelTypes.filter((type) => type.extended).length,
     },
   };
+}
+
+interface TreeContext {
+  readonly projectId: string;
+  readonly profile: AssetProfile;
+  readonly hasProfile: boolean;
+  readonly gaps: GapCollector;
+  readonly push: (asset: ModelAsset, type: TypeDraft) => ModelAsset;
+  readonly code: (...parts: string[]) => string;
+  readonly typeFor: (key: string, fallback: () => Omit<TypeDraft, "assets">) => TypeDraft;
+  readonly generatedType: (key: string, cls: string, en: string, de: string) => TypeDraft;
+}
+
+/**
+ * Funktionsbaum: System je Gewerk und Gebaeude, darunter Zentralfunktionen, darunter die Assets, deren Aktorkanaele
+ * auf der Zentral-GA empfangen. Eine Zentralfunktion, deren Mitglieder in einer groesseren enthalten sind, haengt unter
+ * dieser ("Etage aus" unter "Alles aus"). Liefert je Asset-Id das Eltern-Asset im Funktionsbaum.
+ */
+async function buildFunctionTree(equipment: readonly EquipmentEntry[], context: TreeContext): Promise<Map<string, string>> {
+  const { projectId, profile, hasProfile, gaps, push, code, typeFor, generatedType } = context;
+  const parent = new Map<string, string>();
+  const systems = new Map<string, string>();
+  const systemOf = async (entry: EquipmentEntry): Promise<string> => {
+    const key = `${entry.buildingKey}|${entry.trade}`;
+    const existing = systems.get(key);
+    if (existing) return existing;
+    const typeKey = Object.hasOwn(profile.systems, entry.trade) ? profile.systems[entry.trade] : undefined;
+    const en = TRADE_EN[entry.trade] ?? entry.trade;
+    const de = isTrade(entry.trade) ? TRADE_LABEL[entry.trade] : "Weitere Funktionen";
+    const type = typeKey
+      ? typeFor(typeKey, () => ({ key: typeKey, class: SYSTEM_CLASS, label: { en, de }, origin: "generated", extended: false, attributes: new Map(), tags: [] }))
+      : generatedType(`${profile.generated.prefix}system_${entry.trade}`, SYSTEM_CLASS, `${en} system`, de);
+    if (!typeKey && hasProfile)
+      gaps.add(
+        "system-type",
+        "No asset type for trade systems",
+        "The functional tree needs one asset per trade and building (lighting, shading, heating). The target profile maps no type to these systems; the export creates them with class System.",
+        "generated",
+        en,
+      );
+    const id = await uuidV5(`${projectId}|system|${entry.buildingKey}|${entry.trade}`);
+    push(
+      { id, code: code(entry.buildingName, `${entry.trade}SYSTEM`), name: en, type: type.key, kind: "system", parent: { location: entry.building, function: null }, tags: [...type.tags], bindings: [], source: {} },
+      type,
+    );
+    systems.set(key, id);
+    return id;
+  };
+
+  const centrals = equipment.filter((entry) => entry.central);
+  const regular = equipment.filter((entry) => !entry.central);
+  const members = new Map<string, Set<string>>();
+  for (const central of centrals) {
+    const set = new Set<string>();
+    if (central.channels.size > 0)
+      for (const entry of regular) if (entry.trade === central.trade && [...entry.channels].some((channel) => central.channels.has(channel))) set.add(entry.id);
+    members.set(central.id, set);
+  }
+  const sizeOf = (id: string): number => members.get(id)?.size ?? 0;
+  // Kleinste Zentralfunktion, die alle angegebenen Mitglieder umfasst; die genaueste gewinnt.
+  const smallestCovering = (ids: ReadonlySet<string>, except: string | undefined, trade: string): string | undefined => {
+    let best: string | undefined;
+    for (const central of centrals) {
+      if (central.id === except || central.trade !== trade) continue;
+      const set = members.get(central.id);
+      if (!set || set.size === 0 || set.size <= (except ? sizeOf(except) : 0)) continue;
+      if (![...ids].every((id) => set.has(id))) continue;
+      if (best === undefined || set.size < sizeOf(best) || (set.size === sizeOf(best) && central.id < best)) best = central.id;
+    }
+    return best;
+  };
+
+  let linked = 0;
+  for (const central of centrals) {
+    const own = members.get(central.id) ?? new Set<string>();
+    if (own.size > 0) linked++;
+    else gaps.add("central-unlinked", "Central functions without known members", "No actuator channel of these central functions is shared with another asset (missing manufacturer data, or the central group address goes to devices that are not recognized as things). They hang directly below their system.", "review", central.name);
+    const above = own.size > 0 ? smallestCovering(own, central.id, central.trade) : undefined;
+    parent.set(central.id, above ?? (await systemOf(central)));
+  }
+  for (const entry of regular) parent.set(entry.id, smallestCovering(new Set([entry.id]), undefined, entry.trade) ?? (await systemOf(entry)));
+  if (centrals.length > 0)
+    gaps.add(
+      "central-function",
+      "Central functions act on many assets",
+      `A KNX central group address (all lights off, all blinds up) addresses many actuators at once. The export places each central function in the functional tree, with the assets it controls below it (${linked} of ${centrals.length} linked via actuator channels). The model still binds the central group address to the central asset only; the members do not know it as their own source.`,
+      "extend-model",
+      undefined,
+      centrals.length,
+    );
+  for (const central of centrals.slice(0, 8)) gaps.add("central-function", "", "", "extend-model", `${central.name} (${sizeOf(central.id)} members)`, 0);
+  return parent;
 }
 
 /** Bindet die Affordances eines Things an Attribute seines Typs; was fehlt, wird ergaenzt und als Luecke gefuehrt. */

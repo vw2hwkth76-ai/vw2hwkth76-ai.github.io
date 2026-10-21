@@ -1320,3 +1320,396 @@ body {
     white-space: pre;
   }
 }
+
+// Zwei Baeume, ein Asset
+
+.ws-trees {
+  .ws-trees__search {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $spacing-04;
+    margin-bottom: $spacing-05;
+
+    .cds--search {
+      flex: 1 1 24rem;
+      max-width: 40rem;
+    }
+  }
+
+  .ws-trees__hits {
+    @include type.type-style('body-01');
+    color: $text-secondary;
+  }
+
+  .ws-trees__grid {
+    display: grid;
+    align-items: start;
+    gap: $spacing-05;
+
+    @media (min-width: 62rem) {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+
+      .ws-asset-panel {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (min-width: 100rem) {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(22rem, 0.9fr);
+
+      .ws-asset-panel {
+        grid-column: auto;
+        position: sticky;
+        top: $spacing-09;
+      }
+    }
+  }
+}
+
+.ws-tree {
+  background: $layer-01;
+  border-top: 2px solid $border-interactive;
+
+  .ws-tree__head {
+    padding: $spacing-04 $spacing-05 $spacing-03;
+
+    h3 {
+      @include type.type-style('heading-compact-02');
+
+      span {
+        @include type.type-style('body-compact-01');
+        color: $text-secondary;
+      }
+    }
+  }
+
+  .ws-tree__scroll {
+    max-height: 34rem;
+    overflow: auto;
+    padding-bottom: $spacing-03;
+  }
+
+  .ws-tree__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ws-tree__row {
+    display: flex;
+    align-items: center;
+    min-height: 2rem;
+    padding-right: $spacing-03;
+    border-left: 3px solid transparent;
+
+    &:hover {
+      background: $layer-hover-01;
+    }
+  }
+
+  .ws-tree__row--selected {
+    background: $layer-selected-01;
+    border-left-color: $border-interactive;
+  }
+
+  .ws-tree__row--hit .ws-tree__name {
+    font-weight: 600;
+  }
+
+  .ws-tree__toggle {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: $icon-secondary;
+    cursor: pointer;
+
+    &:disabled {
+      cursor: default;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $focus;
+    }
+  }
+
+  .ws-tree__label {
+    @include type.type-style('body-compact-01');
+    display: flex;
+    flex: 1 1 auto;
+    align-items: baseline;
+    gap: $spacing-03;
+    min-width: 0;
+    padding: $spacing-02 $spacing-02;
+    border: 0;
+    background: none;
+    color: $text-primary;
+    text-align: left;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid $focus;
+      outline-offset: -2px;
+    }
+  }
+
+  .ws-tree__dot {
+    flex: none;
+    align-self: center;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: $icon-secondary;
+  }
+
+  .ws-tree__dot--country,
+  .ws-tree__dot--region,
+  .ws-tree__dot--site {
+    border-radius: 1px;
+    background: $text-primary;
+  }
+
+  .ws-tree__dot--space {
+    border-radius: 1px;
+    background: none;
+    box-shadow: inset 0 0 0 1.5px $icon-secondary;
+  }
+
+  .ws-tree__dot--system {
+    border-radius: 1px;
+    background: $support-info;
+  }
+
+  .ws-tree__dot--equipment {
+    background: $interactive;
+  }
+
+  .ws-tree__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ws-tree__class {
+    @include type.type-style('code-01');
+    flex: none;
+    color: $text-secondary;
+  }
+
+  .ws-tree__badge,
+  .ws-tree__count {
+    @include type.type-style('label-01');
+    flex: none;
+    padding: 0 $spacing-02;
+    border: 1px solid $border-subtle;
+    color: $text-secondary;
+  }
+
+  .ws-tree__empty {
+    padding: $spacing-03 $spacing-05;
+  }
+}
+
+.ws-asset-panel {
+  padding: $spacing-05;
+  background: $layer-01;
+  border-top: 2px solid $border-interactive;
+
+  &.ws-asset-panel--empty p {
+    @include type.type-style('body-01');
+    max-width: 52ch;
+    margin-bottom: $spacing-05;
+    color: $text-secondary;
+  }
+
+  .ws-asset-panel__legend {
+    display: grid;
+    gap: $spacing-03;
+
+    div {
+      display: flex;
+      align-items: center;
+      gap: $spacing-03;
+    }
+
+    dd {
+      @include type.type-style('body-compact-01');
+      color: $text-secondary;
+    }
+  }
+
+  .ws-asset-panel__head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: $spacing-04;
+    padding-bottom: $spacing-04;
+    border-bottom: 1px solid $border-subtle;
+
+    h3 {
+      @include type.type-style('productive-heading-03');
+    }
+  }
+
+  .ws-asset-panel__kicker {
+    @include type.type-style('label-01');
+    color: $text-secondary;
+  }
+
+  .ws-asset-panel__code {
+    @include type.type-style('code-01');
+    margin-top: $spacing-02;
+    color: $text-secondary;
+  }
+
+  .ws-asset-panel__type {
+    display: grid;
+    justify-items: end;
+    gap: $spacing-01;
+    text-align: right;
+
+    .mono {
+      @include type.type-style('code-02');
+    }
+  }
+
+  .ws-asset-panel__class {
+    @include type.type-style('code-02');
+    color: $link-primary;
+  }
+
+  .ws-asset-panel__paths {
+    display: grid;
+    gap: $spacing-03;
+    padding-block: $spacing-04;
+    border-bottom: 1px solid $border-subtle;
+
+    div {
+      display: grid;
+      grid-template-columns: 5.5rem minmax(0, 1fr);
+      gap: $spacing-03;
+    }
+
+    dt {
+      @include type.type-style('label-01');
+      padding-top: 2px;
+      color: $text-secondary;
+    }
+
+    dd {
+      @include type.type-style('body-compact-01');
+    }
+  }
+
+  .ws-asset-panel__crumb {
+    @include type.type-style('body-compact-01');
+    padding: 0;
+    border: 0;
+    background: none;
+    color: $link-primary;
+    cursor: pointer;
+    text-align: left;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $focus;
+    }
+  }
+
+  .ws-asset-panel__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-02;
+    padding-top: $spacing-04;
+  }
+
+  .ws-asset-panel__attributes {
+    display: grid;
+    gap: $spacing-05;
+    padding-top: $spacing-05;
+
+    h4 {
+      display: flex;
+      align-items: center;
+      gap: $spacing-03;
+      margin-bottom: $spacing-03;
+
+      span:last-child {
+        @include type.type-style('label-01');
+        color: $text-secondary;
+      }
+    }
+
+    ul {
+      display: grid;
+      gap: $spacing-03;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    li {
+      display: grid;
+      grid-template-columns: minmax(7rem, 0.8fr) minmax(0, 2fr);
+      gap: $spacing-01 $spacing-04;
+      padding-left: $spacing-03;
+      border-left: 2px solid $border-subtle;
+    }
+  }
+
+  .ws-asset-panel__attr {
+    @include type.type-style('code-01');
+  }
+
+  .ws-asset-panel__ext {
+    color: $support-warning;
+  }
+
+  .ws-asset-panel__binding {
+    @include type.type-style('body-compact-01');
+
+    .mono {
+      @include type.type-style('code-01');
+    }
+  }
+
+  .ws-asset-panel__unit {
+    @include type.type-style('helper-text-01');
+    grid-column: 2;
+    color: $text-secondary;
+  }
+
+  .ws-asset-panel__unbound {
+    color: $text-disabled;
+
+    .ws-asset-panel__binding {
+      color: $text-disabled;
+    }
+  }
+
+  .ws-asset-panel__below {
+    padding-top: $spacing-05;
+
+    h4 {
+      @include type.type-style('heading-compact-01');
+      margin-bottom: $spacing-03;
+    }
+
+    ul {
+      display: grid;
+      gap: $spacing-02;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      @include type.type-style('body-compact-01');
+    }
+  }
+}
