@@ -105,6 +105,7 @@ export function ImportWizard({ client, project, state, initialStep, onFinish, on
           project={project}
           state={state}
           exclude={draft}
+          initialProfile={choice.profile}
           onBack={() => setStep("scope")}
           onCancel={onCancel}
           onDone={(next) => {

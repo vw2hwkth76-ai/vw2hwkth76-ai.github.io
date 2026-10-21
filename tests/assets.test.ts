@@ -7,7 +7,7 @@ import { loadKnxProject } from "../src/ets/load.ts";
 import { buildGraph, type ProjectGraph } from "../src/graph/evidence-graph.ts";
 import { NO_EXCLUSION } from "../src/graph/scope.ts";
 import { analyzeProject, type ProjectAnalysis } from "../src/recognize/pipeline.ts";
-import { readFixture } from "./helpers.ts";
+import { hasFixture, readFixture } from "./helpers.ts";
 
 let demo: ProjectGraph;
 let analysis: ProjectAnalysis;
@@ -61,12 +61,12 @@ function profile(json: unknown = PROFILE_JSON): AssetProfile {
   return parsed.profile;
 }
 
-const SITE = { country: "Germany", region: "Baden-Württemberg", site: "Villa Nord", gaiPrefix: "Villa" };
+const SITE = { country: "Germany", region: "Baden-Württemberg", site: "Villa Nord", codePrefix: "Villa" };
 
 function checkIntegrity(model: AssetModel, graph: ProjectGraph): void {
   const ids = new Set(model.assets.map((asset) => asset.id));
   expect(ids.size).toBe(model.assets.length);
-  expect(new Set(model.assets.map((asset) => asset.gai)).size).toBe(model.assets.length);
+  expect(new Set(model.assets.map((asset) => asset.code)).size).toBe(model.assets.length);
   const roots = model.assets.filter((asset) => asset.parent.location === null);
   expect(roots.length).toBe(1);
   for (const asset of model.assets) if (asset.parent.location !== null) expect(ids.has(asset.parent.location)).toBe(true);
@@ -108,6 +108,17 @@ describe("Zielprofil", () => {
     expect(parseAssetProfile({ ...PROFILE_JSON, types: [{ key: "bad key!", class: "X", attributes: [] }] }).ok).toBe(false);
   });
 
+  it("lehnt Regeln ohne Bedingung und unbekannte Thing-Typen ab, warnt bei unbekannten Rollen", () => {
+    const empty = parseAssetProfile({ ...PROFILE_JSON, things: [{ match: { anyRole: [] }, type: "light" }] });
+    expect(empty.ok).toBe(false);
+    if (!empty.ok) expect(empty.errors.join(" ")).toContain("mindestens eine Bedingung");
+    expect(parseAssetProfile({ ...PROFILE_JSON, things: [{ match: { thingType: ["Lamp"] }, type: "light" }] }).ok).toBe(false);
+    const role = parseAssetProfile({ ...PROFILE_JSON, attributes: [{ roles: ["OnOffSwitch"], attribute: "on_off" }] });
+    expect(role.ok).toBe(true);
+    if (role.ok) expect(role.warnings.join(" ")).toContain("OnOffSwitch");
+    expect(parseAssetProfile({ ...PROFILE_JSON, things: [{ match: { central: true }, type: "light" }] }).ok).toBe(true);
+  });
+
   it("ignoriert unbrauchbare Attribute mit Hinweis", () => {
     const parsed = parseAssetProfile({
       ...PROFILE_JSON,
@@ -138,11 +149,11 @@ describe("Asset-Modell ohne Zielprofil", () => {
     expect(model.gaps.some((gap) => gap.id.startsWith("thing-") || gap.id.startsWith("space-"))).toBe(false);
   });
 
-  it("laesst Land und Region weg, wenn sie fehlen, und vergibt GAI mit Praefix", async () => {
-    const model = await buildAssetModel(analysis, EMPTY_ASSET_PROFILE, { gaiPrefix: "Häus 1" }, "test");
+  it("laesst Land und Region weg, wenn sie fehlen, und vergibt Kennungen mit Praefix", async () => {
+    const model = await buildAssetModel(analysis, EMPTY_ASSET_PROFILE, { codePrefix: "Häus 1" }, "test");
     checkIntegrity(model, demo);
     expect(model.assets[0]?.kind).toBe("site");
-    expect(model.assets.every((asset) => asset.gai.startsWith("HAUS1-"))).toBe(true);
+    expect(model.assets.every((asset) => asset.code.startsWith("HAUS1-"))).toBe(true);
     expect(model.gaps.some((gap) => gap.id === "upper-country")).toBe(false);
   });
 
@@ -222,6 +233,34 @@ describe("Asset-Modell mit Zielprofil", () => {
     const bound = model.assets.flatMap((asset) => asset.bindings).flatMap((binding) => [binding.write, binding.feedback]);
     expect(bound).not.toContain(first.ga.text);
     expect(model.gaps.find((gap) => gap.id === "excluded")?.count).toBe(1);
+  });
+});
+
+describe("Eindeutige Kennungen", () => {
+  // Mehrere Things am selben Aktorkanal teilten frueher dieselbe stabile ID (privates Projekt D).
+  const fixtures = ["oeffentlich/demoprojekt.knxproj", "oeffentlich/style3.knxproj", "privat/projekt-c.zip", "privat/projekt-d.zip", "privat/projekt-e.knxproj", "privat/schule.knxproj"];
+  for (const fixture of fixtures) {
+    it.runIf(hasFixture(fixture))(`vergibt jede ID nur einmal: ${fixture}`, async () => {
+      const graph = buildGraph(await loadKnxProject(readFixture(fixture)));
+      const result = analyzeProject(graph, { useEtsFunctions: true });
+      const model = await buildAssetModel(result, profile(), SITE, "test");
+      checkIntegrity(model, graph);
+    });
+  }
+
+  it("verkraftet Raumtypen, die wie Objekt-Eigenschaften heissen", async () => {
+    const spaces = new Map(demo.spaces);
+    const first = [...spaces.values()][0];
+    expect(first).toBeDefined();
+    if (!first) return;
+    const odd = { ...first, space: { ...first.space, id: "odd-space", type: "constructor", parentId: undefined } };
+    spaces.set("odd-space", odd);
+    const graph: ProjectGraph = { ...demo, spaces };
+    const model = await buildAssetModel(analyzeProject(graph, { useEtsFunctions: true }), profile(), SITE, "test");
+    const asset = model.assets.find((entry) => entry.source.ets === "odd-space");
+    expect(typeof asset?.type).toBe("string");
+    expect(asset?.type).toBe("knx_constructor");
+    expect(() => structuredClone(model)).not.toThrow();
   });
 });
 

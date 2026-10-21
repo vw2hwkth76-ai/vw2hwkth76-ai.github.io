@@ -27,7 +27,8 @@ export const NO_EXCLUSION: Exclusion = { reserve: false, ranges: [], gas: [], in
  * (nur GAs in Benutzung); das ist der Ausschluss des Vorrats.
  */
 export function exclusionFromState(state: Readonly<Record<string, unknown>>): Exclusion | undefined {
-  return parseExclusion(state["exclude"]) ?? (state["scope"] === "used" ? { ...NO_EXCLUSION, reserve: true } : undefined);
+  // "all" war eine ausdrueckliche Wahl: nichts ausschliessen, auch nicht bei einer Vorlage.
+  return parseExclusion(state["exclude"]) ?? (state["scope"] === "used" ? { ...NO_EXCLUSION, reserve: true } : state["scope"] === "all" ? NO_EXCLUSION : undefined);
 }
 
 export function isEmptyExclusion(exclusion: Exclusion): boolean {
@@ -55,7 +56,7 @@ export function parseExclusion(json: unknown): Exclusion | undefined {
 export type ExcludeReason = "reserve" | "group" | "single";
 
 /** Schluessel fuer GAs, die in keinem Gruppenbereich liegen (freie Ebenen). */
-export const NO_GROUP = "";
+export const NO_GROUP = "~ohne-bereich";
 
 export function mainGroupId(node: GaNode): string {
   return node.ranges[0]?.id ?? NO_GROUP;

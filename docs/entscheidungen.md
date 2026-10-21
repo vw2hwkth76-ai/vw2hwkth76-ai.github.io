@@ -427,7 +427,7 @@ enthielt den ganzen Vorrat.
   Repo frei von plattformspezifischen Katalogen, und ein Katalog lässt sich
   ändern, ohne Code zu ändern.
 - **Katalog zuerst, Lücken sichtbar.** Der Export verbiegt nichts: Passt kein
-  Typ, entsteht ein eigener (`knx_*`, Klasse `Not_Defined`); fehlt ein
+  Typ, entsteht ein eigener (`knx_*`, Klasse aus dem Profil, sonst `Unclassified`); fehlt ein
   Attribut, wird es ergänzt und gezählt. Die Lückenliste ist ein Ergebnis für
   die Plattform-Entwicklung, kein Fehlerprotokoll.
 - **Zentralfunktionen bekommen keinen Katalogtyp**, wenn das Profil es nicht

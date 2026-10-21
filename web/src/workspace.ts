@@ -42,7 +42,8 @@ export interface Workspace {
   clearReviews(gaIds: readonly string[]): void;
   setProfile(profile: unknown): void;
   setUseEtsFunctions(value: boolean): void;
-  setExclude(exclude: Exclusion): void;
+  /** Aendert den Ausschluss auf Grundlage des neuesten Stands, auch wenn eine andere Aenderung noch laeuft. */
+  setExclude(update: (current: Exclusion) => Exclusion): void;
   /** Schliesst GAs einzeln aus oder holt sie zurueck; der Worker rechnet nach, wo ein Eintrag noetig ist. */
   applyScope(action: "exclude" | "include", ids: readonly string[]): void;
   setTdOptions(options: TdOptions): void;

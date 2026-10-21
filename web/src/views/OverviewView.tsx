@@ -17,7 +17,8 @@ export function OverviewView(): ReactNode {
   const { project } = snapshot;
   // Prozentwerte beziehen sich auf die ausgewerteten GAs; ausgeschlossene stehen nicht im Nenner.
   const total = snapshot.scope.included;
-  const reviewed = Object.keys(state.reviews).length;
+  // Nur Bestaetigungen ausgewerteter GAs zaehlen; ausgeschlossene stehen nicht im Nenner.
+  const reviewed = snapshot.gas.filter((ga) => ga.excluded === undefined && state.reviews[ga.id] !== undefined).length;
 
   const strengths = useMemo(
     () =>
@@ -216,8 +217,8 @@ export function OverviewView(): ReactNode {
             <Checkbox
               id="scope-reserve-quick"
               labelText={`Vorrat ausschließen (${count(snapshot.scope.idle + snapshot.scope.reserve)} GAs ohne wirksames Gerät)`}
-              checked={snapshot.scope.exclusion.reserve}
-              onChange={(_, { checked }) => workspace.setExclude({ ...exclusionOf(state), reserve: checked })}
+              checked={exclusionOf(state).reserve}
+              onChange={(_, { checked }) => workspace.setExclude((current) => ({ ...current, reserve: checked }))}
             />
           ) : null}
           <Button kind="tertiary" size="sm" style={{ marginTop: "0.75rem" }} onClick={() => workspace.openSchemaStep("scope")}>

@@ -1,4 +1,4 @@
-import type { ThingType } from "../recognize/things.ts";
+import { isThingType, ROLE_NAMES, type ThingType } from "../recognize/things.ts";
 import { isRecord } from "../util/guards.ts";
 
 /**
@@ -77,7 +77,7 @@ export const EMPTY_ASSET_PROFILE: AssetProfile = {
   upper: {},
   things: [],
   attributes: [],
-  generated: { prefix: "knx_", class: "Not_Defined" },
+  generated: { prefix: "knx_", class: "Unclassified" },
 };
 
 export type AssetProfileResult = { readonly ok: true; readonly profile: AssetProfile; readonly warnings: readonly string[] } | { readonly ok: false; readonly errors: readonly string[] };
@@ -119,8 +119,8 @@ function parseType(json: unknown, index: number, errors: string[], warnings: str
     errors.push(`${where}: "key" fehlt oder enthält unzulässige Zeichen (Buchstaben, Ziffern, _ . -).`);
     return undefined;
   }
-  const cls = text(json["class"]) ?? "Not_Defined";
-  if (json["class"] === undefined) warnings.push(`${where} (${key}): ohne "class", gilt als Not_Defined.`);
+  const cls = text(json["class"]) ?? EMPTY_ASSET_PROFILE.generated.class;
+  if (json["class"] === undefined) warnings.push(`${where} (${key}): ohne "class", gilt als ${EMPTY_ASSET_PROFILE.generated.class}.`);
   const attributes: AttributeDef[] = [];
   const seen = new Set<string>();
   const rawAttributes = json["attributes"] ?? [];
@@ -217,10 +217,16 @@ function parseRules(
       const type = text(raw["type"]);
       if (!type || !known(type, where)) return;
       const match = raw["match"];
-      const thingType = textList(match["thingType"], `${where}.match.thingType`, warnings) as ThingType[];
+      const thingTypes = textList(match["thingType"], `${where}.match.thingType`, warnings);
+      const unknownTypes = thingTypes.filter((value) => !isThingType(value));
+      if (unknownTypes.length > 0) return void errors.push(`${where}: unbekannter Thing-Typ ${unknownTypes.map((value) => `"${value}"`).join(", ")}.`);
+      const thingType = thingTypes.filter(isThingType);
       const trade = textList(match["trade"], `${where}.match.trade`, warnings);
       const anyRole = textList(match["anyRole"], `${where}.match.anyRole`, warnings);
+      for (const role of anyRole) if (!ROLE_NAMES.has(role)) warnings.push(`${where}: Rolle "${role}" kennt die Erkennung nicht; die Bedingung trifft dann nie.`);
       const central = typeof match["central"] === "boolean" ? match["central"] : undefined;
+      // Eine Regel ohne Bedingung traefe jedes Thing; sie steht vorn und verdeckte alle anderen.
+      if (thingType.length === 0 && trade.length === 0 && anyRole.length === 0 && central === undefined) return void errors.push(`${where}: "match" braucht mindestens eine Bedingung.`);
       things.push({
         type,
         match: {
@@ -243,6 +249,7 @@ function parseRules(
       const attribute = text(raw["attribute"]);
       const type = text(raw["type"]);
       if (roles.length === 0 || !attribute) return void errors.push(`${where}: "roles" und "attribute" sind Pflicht.`);
+      for (const role of roles) if (!ROLE_NAMES.has(role)) warnings.push(`${where}: Rolle "${role}" kennt die Erkennung nicht; die Regel trifft dann nie.`);
       if (type && !known(type, where)) return;
       attributes.push({ roles, attribute, ...(type ? { type } : {}) });
     });

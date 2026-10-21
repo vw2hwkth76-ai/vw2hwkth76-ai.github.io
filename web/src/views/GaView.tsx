@@ -223,7 +223,7 @@ export function GaView(): ReactNode {
                 placeholder={BATCH_LABEL[dimension]}
                 hideLabel
                 value={undefined}
-                onChange={(value) => workspace.setReview(selectedIds, dimension, value)}
+                onChange={(value) => workspace.setReview(selectedEvaluated, dimension, value)}
               />
             ))}
             <Button kind="primary" size="sm" disabled={selectedEvaluated.length === 0} onClick={() => workspace.confirmCurrent(selectedEvaluated)}>

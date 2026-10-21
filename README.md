@@ -245,7 +245,7 @@ wie bei den TDs, Befehl und Rückmeldung bleiben gepaart.
   das Repo enthält kein plattformspezifisches Profil. Ohne Profil entstehen
   alle Typen aus der Erkennung.
 - **Ortsbaum:** Land und Region (Eingabe, optional), Standort, darunter die
-  ETS-Gebäudestruktur, darunter je Thing ein Asset. GAI mit Präfix, IDs als
+  ETS-Gebäudestruktur, darunter je Thing ein Asset. Lesbare Kennung mit Präfix, IDs als
   UUID v5 aus Projekt-GUID und ETS-Kennungen.
 - **Typen:** erst die Regeln des Profils; was keine Regel trifft, bekommt einen
   eigenen Typ (`knx_*`). Fehlt einem Profiltyp ein Attribut, das KNX liefert,

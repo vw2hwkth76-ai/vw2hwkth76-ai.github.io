@@ -4,7 +4,7 @@ import { buildDetail, buildExcludedDetail, buildSnapshot } from "../src/app/snap
 import { buildScopeOverview, searchScope, splitThings } from "../src/app/scope-view.ts";
 import { loadKnxProject } from "../src/ets/load.ts";
 import { buildGraph, type ProjectGraph } from "../src/graph/evidence-graph.ts";
-import { excludedReasons, excludeIds, exclusionFromState, parseExclusion, includeIds, mainGroupId, mainGroups, NO_EXCLUSION, reserveOnlyMiddleGroups, restrictGraph, type Exclusion } from "../src/graph/scope.ts";
+import { excludedReasons, excludeIds, exclusionFromState, NO_GROUP, parseExclusion, includeIds, mainGroupId, mainGroups, NO_EXCLUSION, reserveOnlyMiddleGroups, restrictGraph, type Exclusion } from "../src/graph/scope.ts";
 import { gaUsage, summarizeUsage } from "../src/graph/usage.ts";
 import { analyzeProject } from "../src/recognize/pipeline.ts";
 import { buildSchemaPrompt } from "../src/recognize/schema-prompt.ts";
@@ -278,9 +278,17 @@ describe("Gespeicherter Ausschluss", () => {
     expect(parseExclusion({ reserve: "ja" })).toEqual(NO_EXCLUSION);
   });
 
+  it("behaelt den Ausschluss von GAs ohne Gruppenbereich ueber das Speichern", () => {
+    const stored = JSON.parse(JSON.stringify({ ...NO_EXCLUSION, ranges: [NO_GROUP] })) as unknown;
+    expect(parseExclusion(stored)?.ranges).toEqual([NO_GROUP]);
+    const loose: ProjectGraph = { ...template, groupAddresses: template.groupAddresses.map((node, index) => (index < 2 ? { ...node, ranges: [] } : node)) };
+    expect(excludedReasons(loose, only({ ranges: [NO_GROUP] })).size).toBe(2);
+  });
+
   it("uebernimmt den alten Umfang 'nur in Benutzung' als Ausschluss des Vorrats", () => {
     expect(exclusionFromState({ scope: "used" })).toEqual({ ...NO_EXCLUSION, reserve: true });
-    expect(exclusionFromState({ scope: "all" })).toBeUndefined();
+    // "all" war eine ausdrueckliche Wahl und bleibt es.
+    expect(exclusionFromState({ scope: "all" })).toEqual(NO_EXCLUSION);
     expect(exclusionFromState({})).toBeUndefined();
     // Der neue Eintrag geht dem alten vor.
     expect(exclusionFromState({ scope: "used", exclude: { reserve: false, ranges: ["a"] } })).toMatchObject({ reserve: false, ranges: ["a"] });

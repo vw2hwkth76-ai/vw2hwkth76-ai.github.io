@@ -108,7 +108,8 @@ export function ExportView(): ReactNode {
               kind="primary"
               size="md"
               renderIcon={Download}
-              onClick={() => download(`${stem}.projektstand.json`, JSON.stringify({ format: STATE_FORMAT, ...state }, null, 2))}
+              // Das Zielprofil der Asset-Ausgabe ist eine private Datei des Nutzers; es geht nicht mit dem Projektstand weiter.
+              onClick={() => download(`${stem}.projektstand.json`, JSON.stringify({ format: STATE_FORMAT, ...state, ...(state.assets ? { assets: { site: state.assets.site } } : {}) }, null, 2))}
             >
               Stand speichern
             </Button>

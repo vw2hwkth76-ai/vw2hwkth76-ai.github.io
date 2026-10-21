@@ -99,6 +99,9 @@ export function App(): ReactNode {
   const [focusThing, setFocusThing] = useState<string>();
   const source = useRef<ProjectSource | undefined>(undefined);
   const sequence = useRef(0);
+  /** Letzter Ausschluss, synchron gefuehrt: Aenderungen laufen nacheinander und bauen jeweils auf der vorigen auf. */
+  const excludeRef = useRef(exclusionOf(EMPTY_STATE));
+  const scopeQueue = useRef<Promise<void>>(Promise.resolve());
   /** Wofuer zuletzt analysiert wurde; derselbe Stand wird nicht noch einmal gerechnet, etwa nach einem Besuch im Assistenten. */
   const analyzed = useRef<string | undefined>(undefined);
 
@@ -163,6 +166,11 @@ export function App(): ReactNode {
   useEffect(() => {
     if (project) saveState(project.key, state);
   }, [project, state]);
+
+  // Kommt der Ausschluss von aussen (Import, Assistent, geladener Stand), gilt er als neue Grundlage.
+  useEffect(() => {
+    excludeRef.current = exclusionOf(state);
+  }, [state.exclude]);
 
   // Antworten, Namensschema, Umfang und ETS-Schalter loesen eine neue Analyse aus; veraltete Antworten werden verworfen.
   // Waehrend der Assistent laeuft, wird nicht gerechnet: Seine Auswahl ist ein Entwurf.
@@ -244,13 +252,24 @@ export function App(): ReactNode {
         })),
       setProfile: (profile) => setState((current) => ({ ...current, profile })),
       setUseEtsFunctions: (value) => setState((current) => ({ ...current, useEtsFunctions: value })),
-      setExclude: (next) => setState((current) => ({ ...current, exclude: next })),
+      setExclude: (update) => {
+        scopeQueue.current = scopeQueue.current.then(() => {
+          excludeRef.current = update(excludeRef.current);
+          const next = excludeRef.current;
+          setState((current) => ({ ...current, exclude: next }));
+        });
+      },
       applyScope: (action, ids) => {
-        const before = exclusionOf(state);
-        client.call({ type: "scope-apply", exclude: before, action, ids }).then(
-          (next) => setState((current) => ({ ...current, exclude: next })),
-          () => undefined,
-        );
+        // Nacheinander: Jeder Klick rechnet auf dem Ergebnis des vorigen, sonst ueberschriebe die spaetere Antwort die fruehere.
+        scopeQueue.current = scopeQueue.current.then(async () => {
+          try {
+            const next = await client.call({ type: "scope-apply", exclude: excludeRef.current, action, ids });
+            excludeRef.current = next;
+            setState((current) => ({ ...current, exclude: next }));
+          } catch (error) {
+            window.alert(`Umfang nicht geändert: ${toFailure(error).message}`);
+          }
+        });
       },
       setTdOptions: (options) => setState((current) => ({ ...current, td: options })),
       setAssets: (assets) => setState((current) => ({ ...current, assets })),
@@ -351,8 +370,15 @@ export function App(): ReactNode {
               setPhase({ kind: "ready" });
               navigate("uebersicht");
             }}
-            // Aus der Werkstatt heraus geoeffnet (es gibt schon ein Ergebnis): Abbrechen fuehrt zurueck, statt das Projekt zu schliessen.
-            onCancel={result ? () => setPhase({ kind: "ready" }) : close}
+            // Aus der Werkstatt heraus oder bei einem bekannten Projekt: Abbrechen geht mit dem gespeicherten Stand in die Werkstatt.
+            // Beim ersten Import gibt es keinen Stand; dann schliesst Abbrechen das Projekt, nach Rueckfrage.
+            onCancel={
+              result || state.schemaChecked
+                ? () => setPhase({ kind: "ready" })
+                : () => {
+                    if (window.confirm(`Import von "${project.name}" abbrechen und zur Startseite?`)) close();
+                  }
+            }
           />
         ) : ready ? (
           workspace ? (

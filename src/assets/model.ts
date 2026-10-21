@@ -23,8 +23,8 @@ export interface SiteInput {
   readonly country?: string;
   readonly region?: string;
   readonly site?: string;
-  /** Praefix der GAI, z. B. "VILLA". */
-  readonly gaiPrefix?: string;
+  /** Praefix der lesbaren Asset-Kennung, z. B. "VILLA". */
+  readonly codePrefix?: string;
 }
 
 export type AttributeOrigin = "profile" | "extension" | "generated";
@@ -72,11 +72,12 @@ export type AssetKind = UpperLevel | "space" | "equipment";
 
 export interface ModelAsset {
   readonly id: string;
-  readonly gai: string;
+  /** Lesbare Kennung, eindeutig im Export ("VILLA-WOHNZIMMER-LIGHT-01"). */
+  readonly code: string;
   readonly name: string;
   readonly type: string;
   readonly kind: AssetKind;
-  /** Eltern im Ortsbaum (Loc) und im Funktionsbaum (Func), als Asset-Id. */
+  /** Eltern im Ortsbaum und im Funktionsbaum, als Asset-Id. */
   readonly parent: { readonly location: string | null; readonly function: string | null };
   readonly tags: readonly string[];
   readonly bindings: readonly Binding[];
@@ -135,7 +136,7 @@ const STATELESS_ROLES = new Set(["DimmingControl", "MoveUpDown", "StopStepUpDown
 
 /** Klassen fuer vom Export angelegte Raumtypen; Namen aus RealEstateCore. */
 const SPACE_CLASS: Readonly<Record<string, string>> = { Building: "Building", BuildingPart: "Building", Floor: "Level", Room: "Room" };
-const UPPER_CLASS: Readonly<Record<UpperLevel, string>> = { country: "Not_Defined", region: "Not_Defined", site: "Site" };
+const UPPER_CLASS: Readonly<Partial<Record<UpperLevel, string>>> = { site: "Site" };
 const UPPER_LABEL: Readonly<Record<UpperLevel, Readonly<Record<string, string>>>> = { country: { en: "Country", de: "Land" }, region: { en: "Region", de: "Region" }, site: { en: "Site", de: "Standort" } };
 
 const snake = (key: string): string =>
@@ -254,15 +255,16 @@ export async function buildAssetModel(analysis: ProjectAnalysis, profile: AssetP
   const profileTypes = new Map(profile.types.map((def) => [def.key, def]));
   const types = new Map<string, TypeDraft>();
   const hasProfile = profile.types.length > 0;
-  const usedGai = new Set<string>();
-  const prefix = slug(site.gaiPrefix ?? "", 16) === "X" ? "KNX" : slug(site.gaiPrefix ?? "", 16);
-  const gai = (...parts: string[]): string => {
+  const usedCodes = new Set<string>();
+  const prefix = slug(site.codePrefix ?? "", 16) === "X" ? "KNX" : slug(site.codePrefix ?? "", 16);
+  const code = (...parts: string[]): string => {
     const base = [prefix, ...parts.map((part) => slug(part))].join("-");
     let candidate = base;
-    for (let index = 2; usedGai.has(candidate); index++) candidate = `${base}-${index}`;
-    usedGai.add(candidate);
+    for (let index = 2; usedCodes.has(candidate); index++) candidate = `${base}-${index}`;
+    usedCodes.add(candidate);
     return candidate;
   };
+  const own = <T,>(record: Readonly<Record<string, T>>, key: string): T | undefined => (Object.hasOwn(record, key) ? record[key] : undefined);
 
   const typeFor = (key: string, fallback: () => Omit<TypeDraft, "assets">): TypeDraft => {
     const existing = types.get(key);
@@ -287,10 +289,11 @@ export async function buildAssetModel(analysis: ProjectAnalysis, profile: AssetP
   for (const level of ["country", "region", "site"] as const) {
     const name = site[level]?.trim();
     if (!name && level !== "site") continue;
-    const key = profile.upper[level];
+    const key = own(profile.upper, level);
+    const upperClass = UPPER_CLASS[level] ?? profile.generated.class;
     const type = key
-      ? typeFor(key, () => ({ key, class: UPPER_CLASS[level], label: { ...UPPER_LABEL[level] }, origin: "generated", extended: false, attributes: new Map(), tags: [] }))
-      : generatedType(`${profile.generated.prefix}${level}`, UPPER_CLASS[level], UPPER_LABEL[level]["en"] ?? level, UPPER_LABEL[level]["de"] ?? level);
+      ? typeFor(key, () => ({ key, class: upperClass, label: { ...UPPER_LABEL[level] }, origin: "generated", extended: false, attributes: new Map(), tags: [] }))
+      : generatedType(`${profile.generated.prefix}${level}`, upperClass, UPPER_LABEL[level]["en"] ?? level, UPPER_LABEL[level]["de"] ?? level);
     if (!key && level !== "site")
       gaps.add(
         `upper-${level}`,
@@ -301,7 +304,7 @@ export async function buildAssetModel(analysis: ProjectAnalysis, profile: AssetP
       );
     if (!key && level === "site" && hasProfile) gaps.add("upper-site", "No asset type for the site", 'The target profile defines no "upper.site" type; the export creates one.', "generated", name ?? "Site");
     const id = await uuidV5(`${projectId}|upper|${level}`);
-    push({ id, gai: gai(name ?? level), name: name ?? "Site", type: type.key, kind: level, parent: { location: upperParent, function: null }, tags: [...type.tags], bindings: [], source: {} }, type);
+    push({ id, code: code(name ?? level), name: name ?? "Site", type: type.key, kind: level, parent: { location: upperParent, function: null }, tags: [...type.tags], bindings: [], source: {} }, type);
     upperParent = id;
   }
   const siteId = upperParent;
@@ -311,10 +314,11 @@ export async function buildAssetModel(analysis: ProjectAnalysis, profile: AssetP
   const nodes = [...graph.spaces.values()].sort((a, b) => a.path.length - b.path.length);
   for (const node of nodes) {
     const space = node.space;
-    const key = profile.spaces[space.type];
+    // Raumtypen kommen aus der Projektdatei; nur eigene Schluessel zaehlen, nichts aus dem Prototyp.
+    const key = own(profile.spaces, space.type);
     const type = key
-      ? typeFor(key, () => ({ key, class: "Not_Defined", label: { en: space.type }, origin: "generated", extended: false, attributes: new Map(), tags: [] }))
-      : generatedType(`${profile.generated.prefix}${snake(space.type)}`, SPACE_CLASS[space.type] ?? "Space", space.type, space.type);
+      ? typeFor(key, () => ({ key, class: profile.generated.class, label: { en: space.type }, origin: "generated", extended: false, attributes: new Map(), tags: [] }))
+      : generatedType(`${profile.generated.prefix}${snake(space.type)}`, own(SPACE_CLASS, space.type) ?? "Space", space.type, space.type);
     if (!key && hasProfile)
       gaps.add(
         `space-${snake(space.type)}`,
@@ -327,7 +331,7 @@ export async function buildAssetModel(analysis: ProjectAnalysis, profile: AssetP
     const asset = push(
       {
         id: await uuidV5(`${projectId}|space|${space.id}`),
-        gai: gai(...node.path.slice(-2).map((entry) => entry.number ?? entry.name)),
+        code: code(...node.path.slice(-2).map((entry) => entry.number ?? entry.name)),
         name: space.name,
         type: type.key,
         kind: "space",
@@ -356,7 +360,7 @@ export async function buildAssetModel(analysis: ProjectAnalysis, profile: AssetP
     const roles = new Set(planned.affordances.map((affordance) => affordance.role).filter((role): role is string => role !== undefined));
     const rule = profile.things.find((candidate) => matches(candidate, thing, roles));
     const type = rule
-      ? typeFor(rule.type, () => ({ key: rule.type, class: "Not_Defined", label: {}, origin: "generated", extended: false, attributes: new Map(), tags: [] }))
+      ? typeFor(rule.type, () => ({ key: rule.type, class: profile.generated.class, label: {}, origin: "generated", extended: false, attributes: new Map(), tags: [] }))
       : generatedType(
           `${profile.generated.prefix}${snake(thing.type)}${thing.draft.central ? "_central" : ""}`,
           profile.generated.class,
@@ -394,7 +398,7 @@ export async function buildAssetModel(analysis: ProjectAnalysis, profile: AssetP
     push(
       {
         id: await uuidV5(`${projectId}|thing|${planned.stableKey}`),
-        gai: gai(roomKey, type.key.replace(profile.generated.prefix, ""), String(number).padStart(2, "0")),
+        code: code(roomKey, type.key.replace(profile.generated.prefix, ""), String(number).padStart(2, "0")),
         name: planned.title,
         type: type.key,
         kind: "equipment",

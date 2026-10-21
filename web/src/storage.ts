@@ -33,7 +33,7 @@ export interface AssetState {
   readonly site: SiteInput;
 }
 
-const SITE_FIELDS = ["country", "region", "site", "gaiPrefix"] as const;
+const SITE_FIELDS = ["country", "region", "site", "codePrefix"] as const;
 
 function parseAssetState(json: unknown): AssetState | undefined {
   if (!isRecord(json)) return undefined;

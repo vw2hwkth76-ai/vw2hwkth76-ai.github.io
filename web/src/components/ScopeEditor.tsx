@@ -1,5 +1,5 @@
 import { Button, Checkbox, InlineLoading, Search, Tag } from "@carbon/react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import type { ScopeOverview, ScopeRow, ScopeSearch } from "../../../src/app/scope-view.ts";
 import type { ExcludeReason, Exclusion } from "../../../src/graph/scope.ts";
 import type { AnalysisClient } from "../client.ts";
@@ -26,6 +26,24 @@ export function ScopeEditor({ client, exclude, onChange }: Props): ReactNode {
   const [search, setSearch] = useState<ScopeSearch>();
   const [failure, setFailure] = useState<string>();
   const sequence = useRef(0);
+  // Aenderungen laufen nacheinander und bauen auf der jeweils letzten auf; sonst ueberschriebe ein spaeterer Klick einen frueheren.
+  const latest = useRef(exclude);
+  latest.current = exclude;
+  const queue = useRef<Promise<void>>(Promise.resolve());
+  const change = useCallback(
+    (step: (current: Exclusion) => Exclusion | Promise<Exclusion>): void => {
+      queue.current = queue.current.then(async () => {
+        try {
+          const next = await step(latest.current);
+          latest.current = next;
+          onChange(next);
+        } catch (error) {
+          setFailure(error instanceof Error ? error.message : String(error));
+        }
+      });
+    },
+    [onChange],
+  );
 
   useEffect(() => {
     const id = ++sequence.current;
@@ -55,19 +73,19 @@ export function ScopeEditor({ client, exclude, onChange }: Props): ReactNode {
   }, [client, exclude, query]);
 
   const applyToHits = (action: "exclude" | "include"): void => {
-    client.call({ type: "scope-apply", exclude, action, query: query.trim() }).then(onChange, (error: unknown) => setFailure(error instanceof Error ? error.message : String(error)));
+    const text = query.trim();
+    change((current) => client.call({ type: "scope-apply", exclude: current, action, query: text }));
   };
 
-  const toggleGroup = (id: string): void => {
-    const set = new Set(exclude.ranges);
-    if (set.has(id)) set.delete(id);
-    else set.add(id);
-    onChange({ ...exclude, ranges: [...set] });
-  };
+  const toggleGroup = (id: string): void =>
+    change((current) => {
+      const set = new Set(current.ranges);
+      if (set.has(id)) set.delete(id);
+      else set.add(id);
+      return { ...current, ranges: [...set] };
+    });
 
-  const toggleRow = (row: ScopeRow): void => {
-    client.call({ type: "scope-apply", exclude, action: row.excluded ? "include" : "exclude", ids: [row.id] }).then(onChange, (error: unknown) => setFailure(error instanceof Error ? error.message : String(error)));
-  };
+  const toggleRow = (row: ScopeRow): void => change((current) => client.call({ type: "scope-apply", exclude: current, action: row.excluded ? "include" : "exclude", ids: [row.id] }));
 
   if (failure) return <p role="alert">{failure}</p>;
   if (!overview) return <InlineLoading description="Umfang wird berechnet" />;
@@ -110,7 +128,7 @@ export function ScopeEditor({ client, exclude, onChange }: Props): ReactNode {
             labelText={`Vorrat ausschließen (${count(reserveCount)} GAs)`}
             helperText="Ausgeschlossene GAs bekommen keine Belege, bilden keine Things, stellen keine Rückfragen und stehen nicht im Prompt. In der Tabelle bleiben sie grau sichtbar."
             checked={exclude.reserve}
-            onChange={(_, { checked }) => onChange({ ...exclude, reserve: checked })}
+            onChange={(_, { checked }) => change((current) => ({ ...current, reserve: checked }))}
           />
         </section>
       ) : null}
@@ -227,7 +245,7 @@ export function ScopeEditor({ client, exclude, onChange }: Props): ReactNode {
             <span className="ws-scope__hits">
               {count(exclude.gas.length)} einzeln ausgeschlossen, {count(exclude.include.length)} einzeln zurückgeholt.
             </span>
-            <Button kind="ghost" size="sm" onClick={() => onChange({ ...exclude, gas: [], include: [] })}>
+            <Button kind="ghost" size="sm" onClick={() => change((current) => ({ ...current, gas: [], include: [] }))}>
               Einzelentscheidungen zurücksetzen
             </Button>
           </div>

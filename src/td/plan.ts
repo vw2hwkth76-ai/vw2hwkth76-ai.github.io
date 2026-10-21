@@ -277,6 +277,14 @@ export function planThings(analysis: ProjectAnalysis, options: PlanOptions): TdP
   const things: PlannedThing[] = [];
   const skipped: { key: string; title: string; reason: string }[] = [];
   let excludedCount = 0;
+  // Mehrere Things am selben Aktorkanal teilen sonst den Schluessel und damit die ID; die Reihenfolge ist fest.
+  const usedKeys = new Set<string>();
+  const uniqueKey = (key: string): string => {
+    let candidate = key;
+    for (let index = 2; usedKeys.has(candidate); index++) candidate = `${key}#${index}`;
+    usedKeys.add(candidate);
+    return candidate;
+  };
 
   for (const thing of analysis.things) {
     const entries = thing.draft.groupAddressIds.map((id) => recognition.byGroupAddressId.get(id)).filter((entry) => entry !== undefined);
@@ -311,7 +319,7 @@ export function planThings(analysis: ProjectAnalysis, options: PlanOptions): TdP
     const memberIds = new Set(thing.draft.groupAddressIds);
     things.push({
       key: thing.draft.key,
-      stableKey: stableKey(thing, entries),
+      stableKey: uniqueKey(stableKey(thing, entries)),
       title: thing.draft.label,
       type: thing.type,
       functionType: thing.functionType,

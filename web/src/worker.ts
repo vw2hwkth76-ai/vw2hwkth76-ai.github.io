@@ -7,7 +7,7 @@ import { buildScopeOverview, searchScope, splitThings } from "../../src/app/scop
 import { type AssetModel, buildAssetModel, type SiteInput } from "../../src/assets/model.ts";
 import { assetProfileJson, type AssetProfileResult, EMPTY_ASSET_PROFILE, parseAssetProfile } from "../../src/assets/profile.ts";
 import { applyMappingAnswer, buildMappingPrompt } from "../../src/assets/prompt.ts";
-import { assetFiles } from "../../src/assets/render.ts";
+import { assetFiles, locationTreeMarkdown } from "../../src/assets/render.ts";
 import { buildDetail, buildExcludedDetail, buildSnapshot, projectKey, type Snapshot } from "../../src/app/snapshot.ts";
 import { loadKnxProject } from "../../src/ets/load.ts";
 import { buildGraph, type ProjectGraph } from "../../src/graph/evidence-graph.ts";
@@ -48,11 +48,13 @@ let baseline: { key: string; analysis: ProjectAnalysis } | undefined;
 let tdCache: { analysis: ProjectAnalysis; key: string; bundle: TdBundle } | undefined;
 
 async function tdBundle(options: TdOptions, toolVersion: string): Promise<TdBundle> {
-  if (!analysis) throw new Error("Noch keine Analyse vorhanden.");
+  // Die Analyse festhalten: Waehrend des await kann eine neue entstehen, der Cache gehoert zur alten.
+  const current = analysis;
+  if (!current) throw new Error("Noch keine Analyse vorhanden.");
   const key = JSON.stringify([options, toolVersion]);
-  if (tdCache?.analysis === analysis && tdCache.key === key) return tdCache.bundle;
-  const bundle = await buildThingDescriptions(analysis, options, toolVersion);
-  tdCache = { analysis, key, bundle };
+  if (tdCache?.analysis === current && tdCache.key === key) return tdCache.bundle;
+  const bundle = await buildThingDescriptions(current, options, toolVersion);
+  tdCache = { analysis: current, key, bundle };
   return bundle;
 }
 
@@ -65,14 +67,16 @@ function profileOf(raw: unknown): AssetProfileResult {
 }
 
 async function assetModel(raw: unknown, site: SiteInput, toolVersion: string): Promise<NonNullable<typeof assetCache> | { ok: false; errors: readonly string[] }> {
-  if (!analysis) throw new Error("Noch keine Analyse vorhanden.");
+  const current = analysis;
+  if (!current) throw new Error("Noch keine Analyse vorhanden.");
   const parsed = profileOf(raw);
   if (!parsed.ok) return parsed;
   const key = JSON.stringify([raw ?? null, site, toolVersion]);
-  if (assetCache?.analysis === analysis && assetCache.key === key) return assetCache;
-  const model = await buildAssetModel(analysis, parsed.profile, site, `KNX TD Werkstatt ${toolVersion}`);
-  assetCache = { analysis, key, model, prompt: buildMappingPrompt(model, parsed.profile), parsed };
-  return assetCache;
+  if (assetCache?.analysis === current && assetCache.key === key) return assetCache;
+  const model = await buildAssetModel(current, parsed.profile, site, `KNX TD Werkstatt ${toolVersion}`);
+  const built = { analysis: current, key, model, prompt: buildMappingPrompt(model, parsed.profile), parsed };
+  assetCache = built;
+  return built;
 }
 
 function readme(bundle: TdBundle, options: TdOptions, toolVersion: string): string {
@@ -89,7 +93,7 @@ function readme(bundle: TdBundle, options: TdOptions, toolVersion: string): stri
     "collection.td.json          Sammel-TD mit Links auf alle Feld-TDs",
     "knx-binding.jsonld          JSON-LD-Kontext der Begriffe mit Präfix kb:",
     "",
-    `${bundle.things.length} Things, ${bundle.skipped.length} übersprungen, ${bundle.excludedGroupAddresses} GAs ausgeschlossen.`,
+    `${bundle.things.length} Things, ${bundle.skipped.length} übersprungen, ${bundle.excludedGroupAddresses} GAs weggelassen (stillgelegt oder nicht fest belegt).`,
     "Platzhalter: Gateway-Basis und Plattform-URL vor dem Einsatz anpassen.",
     "",
   ].join("\n");
@@ -115,6 +119,9 @@ function describeMeaning(meaning: SchemaMeaning): string {
     .join(", ");
 }
 
+/** Erkennung ohne Ausschluss, fuer die Warnung vor zerrissenen Things. */
+let unscoped: { key: string; analysis: ProjectAnalysis } | undefined;
+
 /** Erkennung ohne Schema fuer den Vergleich; haengt nur vom ETS-Schalter ab. */
 let plain: { key: string; figures: PreviewFigures } | undefined;
 
@@ -129,6 +136,7 @@ async function handle(request: Request): Promise<unknown> {
       plain = undefined;
       tdCache = undefined;
       assetCache = undefined;
+      unscoped = undefined;
       const loaded = await loadKnxProject(new Uint8Array(request.data), request.password === undefined ? {} : { password: request.password });
       graph = buildGraph(loaded);
       const result: OpenResult = {
@@ -164,7 +172,9 @@ async function handle(request: Request): Promise<unknown> {
         check = checkReviews(baseline.analysis, reviews);
       }
       const snapshot = buildSnapshot(analysis, profile?.warnings ?? []);
-      last = { snapshot, check, profile: parsedProfile, reviewCount: reviews.size };
+      // Bestaetigungen ausgeschlossener GAs bleiben gespeichert, zaehlen aber nicht.
+      const reviewCount = [...reviews.keys()].filter((id) => analysis?.recognition.byGroupAddressId.has(id)).length;
+      last = { snapshot, check, profile: parsedProfile, reviewCount };
       const result: AnalyzeResult = { snapshot, profileErrors, reviewCheck: check, milliseconds: Math.round(performance.now() - started) };
       return result;
     }
@@ -213,8 +223,10 @@ async function handle(request: Request): Promise<unknown> {
       if (!graph) throw new Error("Kein Projekt geladen.");
       const parsed = request.profile === undefined || request.profile === null ? undefined : parseProfile(request.profile);
       const profile = parsed?.ok ? compileProfile(parsed.profile, graph.loaded.project.spaces) : undefined;
-      const full = analyzeProject(graph, { useEtsFunctions: request.useEtsFunctions, ...(profile ? { profile } : {}) });
-      return splitThings(full, new Set(excludedReasons(graph, request.exclude).keys()));
+      // Die Erkennung ohne Ausschluss haengt nur von Schema und ETS-Schalter ab; der Ausschluss wird erst danach angelegt.
+      const fullKey = JSON.stringify([request.useEtsFunctions, request.profile ?? null]);
+      if (unscoped?.key !== fullKey) unscoped = { key: fullKey, analysis: analyzeProject(graph, { useEtsFunctions: request.useEtsFunctions, ...(profile ? { profile } : {}) }) };
+      return splitThings(unscoped.analysis, new Set(excludedReasons(graph, request.exclude).keys()));
     }
     case "scope-search": {
       if (!graph) throw new Error("Kein Projekt geladen.");
@@ -260,7 +272,7 @@ async function handle(request: Request): Promise<unknown> {
       const started = performance.now();
       const built = await assetModel(request.profile, request.site, request.toolVersion);
       if (!("model" in built)) return { ok: false, errors: built.errors } satisfies AssetModelResult;
-      const tree = assetFiles(built.model, undefined).find((file) => file.path === "location-tree.md")?.text ?? "";
+      const tree = locationTreeMarkdown(built.model);
       const lines = tree.split("\n");
       const result: AssetModelResult = {
         ok: true,

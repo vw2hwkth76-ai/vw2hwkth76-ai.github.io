@@ -77,12 +77,16 @@ export function gapsMarkdown(model: AssetModel): string {
 
 export function locationTreeMarkdown(model: AssetModel): string {
   const children = new Map<string | null, ModelAsset[]>();
-  for (const asset of model.assets) children.set(asset.parent.location, [...(children.get(asset.parent.location) ?? []), asset]);
-  const lines = ["# Location tree", "", "Asset name, type and GAI. Equipment lists its bound attributes.", ""];
+  for (const asset of model.assets) {
+    const list = children.get(asset.parent.location);
+    if (list) list.push(asset);
+    else children.set(asset.parent.location, [asset]);
+  }
+  const lines = ["# Location tree", "", "Asset name, type and code. Equipment lists its bound attributes.", ""];
   const walk = (parent: string | null, depth: number): void => {
     for (const asset of children.get(parent) ?? []) {
       const attributes = asset.bindings.length > 0 ? ` · ${asset.bindings.map((binding) => binding.attribute).join(", ")}` : "";
-      lines.push(`${"  ".repeat(depth)}- **${cell(asset.name)}** \`${asset.type}\` ${asset.gai}${attributes}`);
+      lines.push(`${"  ".repeat(depth)}- **${cell(asset.name)}** \`${asset.type}\` ${asset.code}${attributes}`);
       if (depth < 20) walk(asset.id, depth + 1);
     }
   };

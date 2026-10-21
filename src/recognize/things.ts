@@ -9,21 +9,27 @@ import type { GaRecognition, Recognition, ThingDraft } from "./recognize.ts";
  * fuer Faelle ohne Norm sind als solche erkennbar (kein FT).
  */
 
-export type ThingType =
-  | "SwitchableLight"
-  | "DimmableLight"
-  | "SunProtection"
-  | "Heating"
-  | "Ventilation"
-  | "Socket"
-  | "WindowContact"
-  | "Alarm"
-  | "Presence"
-  | "Weather"
-  | "Scene"
-  | "Meter"
-  | "System"
-  | "Generic";
+export const THING_TYPES = [
+  "SwitchableLight",
+  "DimmableLight",
+  "SunProtection",
+  "Heating",
+  "Ventilation",
+  "Socket",
+  "WindowContact",
+  "Alarm",
+  "Presence",
+  "Weather",
+  "Scene",
+  "Meter",
+  "System",
+  "Generic",
+] as const;
+export type ThingType = (typeof THING_TYPES)[number];
+
+export function isThingType(value: string): value is ThingType {
+  return (THING_TYPES as readonly string[]).includes(value);
+}
 
 export const THING_FUNCTION_TYPE: Readonly<Partial<Record<ThingType, string>>> = {
   SwitchableLight: "FT-1",
@@ -105,6 +111,9 @@ const ROLE_MAINS: Readonly<Record<string, readonly number[]>> = {
   Energy: [12, 13, 14],
   Power: [9, 14],
 };
+
+/** Alle Rollen, die die Erkennung vergeben kann. */
+export const ROLE_NAMES: ReadonlySet<string> = new Set([...Object.keys(ROLE_MAINS), "ErrorCode"]);
 
 function fitsRole(role: string, main: number | undefined): boolean {
   const mains = ROLE_MAINS[role];

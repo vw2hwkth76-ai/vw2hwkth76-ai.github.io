@@ -17,11 +17,13 @@ const ACTION_LABEL: Readonly<Record<GapAction, string>> = {
 };
 const ACTION_TAG: Readonly<Record<GapAction, "red" | "purple" | "warm-gray" | "gray">> = { "extend-model": "red", generated: "purple", review: "warm-gray", info: "gray" };
 
+const MAX_PROFILE_BYTES = 512 * 1024;
+
 const SITE_FIELDS: readonly { readonly key: keyof SiteInput; readonly label: string; readonly placeholder: string }[] = [
   { key: "country", label: "Land", placeholder: "z. B. Germany" },
   { key: "region", label: "Region", placeholder: "z. B. Baden-Württemberg" },
   { key: "site", label: "Standort", placeholder: "z. B. Villa Nord" },
-  { key: "gaiPrefix", label: "GAI-Präfix", placeholder: "z. B. VILLA" },
+  { key: "codePrefix", label: "Kennungs-Präfix", placeholder: "z. B. VILLA" },
 ];
 
 /**
@@ -64,6 +66,11 @@ export function AssetView(): ReactNode {
   }, [client, snapshot, assets.profile, siteKey]);
 
   const loadProfile = async (file: File): Promise<void> => {
+    // Das Profil liegt in jedem Projektstand im Browser; zu grosse Dateien wuerden das Speichern aller Antworten verhindern.
+    if (file.size > MAX_PROFILE_BYTES) {
+      setError(`Das Zielprofil ist ${count(Math.round(file.size / 1024))} KB groß; erlaubt sind ${count(MAX_PROFILE_BYTES / 1024)} KB.`);
+      return;
+    }
     try {
       const json: unknown = JSON.parse(await file.text());
       workspace.setAssets({ ...assets, profile: json });
@@ -96,7 +103,9 @@ export function AssetView(): ReactNode {
       setAnswerError(undefined);
       setAnswer("");
       workspace.setAssets({ ...assets, profile: merged.profile });
-      setNotice("Regeln übernommen. Das ergänzte Zielprofil gilt jetzt; speichern, um es zu behalten.");
+      setNotice(
+        `Regeln übernommen. Das ergänzte Zielprofil gilt jetzt; speichern, um es zu behalten.${merged.warnings.length > 0 ? ` Hinweise: ${merged.warnings.slice(0, 4).join(" ")}` : ""}`,
+      );
     } catch (failure) {
       setAnswerError([failure instanceof Error ? failure.message : String(failure)]);
     }

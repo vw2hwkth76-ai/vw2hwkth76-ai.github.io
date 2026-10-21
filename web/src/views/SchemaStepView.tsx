@@ -24,6 +24,8 @@ interface Props {
   readonly state: ProjectState;
   /** Auswertungsumfang aus dem ersten Schritt; Prompt und Pruefung sehen nur diese GAs. */
   readonly exclude: Exclusion;
+  /** Schon gewaehltes Schema, etwa nach "Zurueck" aus der Zusammenfassung; sonst das gespeicherte. */
+  readonly initialProfile: unknown;
   readonly onDone: (choice: SchemaChoice) => void;
   readonly onBack: () => void;
   readonly onCancel: () => void;
@@ -61,7 +63,7 @@ function Compare({ label, before, after, total }: { readonly label: string; read
   );
 }
 
-export function SchemaStepView({ client, project, state, exclude, onDone, onBack, onCancel }: Props): ReactNode {
+export function SchemaStepView({ client, project, state, exclude, initialProfile, onDone, onBack, onCancel }: Props): ReactNode {
   const [maskPersons, setMaskPersons] = useState(true);
   const [prompt, setPrompt] = useState<SchemaPromptResult>();
   const [copied, setCopied] = useState<"ok" | "failed">();
@@ -117,7 +119,7 @@ export function SchemaStepView({ client, project, state, exclude, onDone, onBack
   );
 
   // Ein mitgebrachtes Schema (Beispielprojekt, Rueckkehr aus der Ansicht Namensschema) wird gleich geprueft.
-  const initial = useRef(state.profile);
+  const initial = useRef(initialProfile);
   useEffect(() => {
     if (initial.current !== undefined) void check(initial.current, false);
   }, [check]);
