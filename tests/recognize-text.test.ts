@@ -104,6 +104,11 @@ describe("findWords", () => {
     expect(info("Reserva")).toEqual([{ marker: "outOfUse" }]);
   });
 
+  it("kennt Wirkleistung und Zaehlerstand als Messgroessen eines Zaehlers", () => {
+    expect(info("Energie Haushalt Wirkleistung")).toContainEqual({ aspect: "power", trade: "metering" });
+    expect(info("Energie Haushalt Zaehlerstand")).toContainEqual({ aspect: "counter", trade: "metering" });
+  });
+
   it("zerlegt Komposita in Grund- und Bestimmungswort", () => {
     expect(info("Küchenfenster 1")).toEqual([{ aspect: "window" }]);
     expect(info("Hintergrundbeleuchtung")).toEqual([{ trade: "lighting" }]);

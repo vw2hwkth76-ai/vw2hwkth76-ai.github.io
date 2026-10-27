@@ -198,7 +198,7 @@ add({ aspect: "damper", trade: "hvac" }, "damper klappe luftklappe", "suffix");
 add({ aspect: "forced" }, "forced zwang zwangsstellung zwangsposition zwangsfuehrung override", "prefix");
 add({ aspect: "summer", trade: "hvac" }, "summer sommer sommerbetrieb", "prefix");
 add({ aspect: "text" }, "text textmeldung");
-add({ aspect: "counter", trade: "metering" }, "counter zaehlerwert impulse impulszaehler");
+add({ aspect: "counter", trade: "metering" }, "counter zaehlerstand zaehlerwert impulse impulszaehler");
 add({ aspect: "airQuality", trade: "hvac" }, "airquality luftqualitaet co2 voc mischgas", "both");
 add({ aspect: "wind" }, "wind windgeschwindigkeit", "prefix");
 add({ aspect: "rain" }, "regen rain");
@@ -209,7 +209,7 @@ add({ aspect: "reset" }, "reset ausloesen");
 add({ aspect: "lock" }, "sperre sperren sperrobjekt lock disable freigabe enable");
 add({ aspect: "scene", trade: "scene" }, "szene szenen scene scenes stimmung", "both");
 add({ aspect: "energy", trade: "metering" }, "energie energy");
-add({ aspect: "power", trade: "metering" }, "leistung power watt");
+add({ aspect: "power", trade: "metering" }, "leistung wirkleistung blindleistung scheinleistung power watt");
 
 /** Mehrwortbegriffe, die als Ganzes etwas anderes bedeuten als ihre Teile. */
 const PHRASES: readonly { readonly words: readonly string[]; readonly info: WordInfo }[] = [

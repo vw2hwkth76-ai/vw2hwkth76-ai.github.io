@@ -96,13 +96,35 @@ export function recognize(graph: ProjectGraph, options: AnalyzeOptions = { useEt
   // Aktorkanal: GAs am selben Ausgang gehoeren zu einem Thing, auch wenn die Namen auseinanderlaufen.
   // Eine GA an mehreren Kanaelen ist ein Zentral- oder Gruppenbefehl ("Luz geral", "Kanal 2+7");
   // sie verbindet die Kanaele nicht zu einem Thing.
+  // Ein Kanal mit mehreren empfangenden Objekten derselben Funktion ("A-G1 Schalten", "A-G2 Schalten") ist ein
+  // Mehrkanal-Aktor, etwa ein DALI-Gateway: Jede Gruppe ist ein eigener Kreis und bildet ein eigenes Thing.
+  const receivers = new Map<string, Set<string>>();
+  const multiCircuit = new Set<string>();
+  for (const node of graph.groupAddresses) {
+    for (const link of node.links) {
+      const channel = link.comObject.channel;
+      const { name, text } = link.comObject;
+      // "A-G1 Schalten" und "A-G2 Schalten" tragen dieselbe Aufgabe mit anderem Kennzeichen vorn; gleiche Namen ganz ohne Kennzeichen ("O-0001-Va") nicht.
+      const task = name?.trim().split(/\s+/).slice(1).join(" ");
+      if (!channel || !task || !text || !link.receives || !STRONG_CHANNEL_SOURCES.has(channel.source) || !isCabinet(link, graph)) continue;
+      const key = `${channel.key}|${task}|${link.comObject.dpts.join(",")}`;
+      const objects = receivers.get(key) ?? new Set<string>();
+      objects.add(`${link.comObject.key}|${text}`);
+      receivers.set(key, objects);
+      if (new Set([...objects].map((entry) => entry.slice(entry.indexOf("|") + 1))).size > 1) multiCircuit.add(channel.key);
+    }
+  }
   const byChannel = new Map<string, string[]>();
   for (const analysis of analyses) {
     if ((options.useEtsFunctions && analysis.node.functions.length > 0) || !free(analysis.node.ga.id)) continue;
     const channels = new Set(
       analysis.node.links
         .filter((link) => link.comObject.channel && STRONG_CHANNEL_SOURCES.has(link.comObject.channel.source) && isCabinet(link, graph))
-        .map((link) => link.comObject.channel?.key ?? ""),
+        .map((link) => {
+          const key = link.comObject.channel?.key ?? "";
+          // Im Mehrkanal-Aktor trennt der Objekttext ("Output A - G1:") die Kreise.
+          return multiCircuit.has(key) ? `${key}|${link.comObject.text ?? ""}` : key;
+        }),
     );
     if (channels.size !== 1) continue;
     for (const key of channels) byChannel.set(key, [...(byChannel.get(key) ?? []), analysis.node.ga.id]);
