@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { type AssetModel, buildAssetModel } from "../src/assets/model.ts";
 import { ASSET_PROFILE_FORMAT, type AssetProfile, EMPTY_ASSET_PROFILE, parseAssetProfile } from "../src/assets/profile.ts";
 import { applyMappingAnswer, buildMappingPrompt, needsMapping } from "../src/assets/prompt.ts";
-import { assetFiles, gapsMarkdown, locationTreeMarkdown, templateLibraryMarkdown } from "../src/assets/render.ts";
+import { assetFiles, datapointsCsv, gapsMarkdown, locationTreeMarkdown, templateLibraryMarkdown } from "../src/assets/render.ts";
 import { loadKnxProject } from "../src/ets/load.ts";
 import { buildGraph, type ProjectGraph } from "../src/graph/evidence-graph.ts";
 import { NO_EXCLUSION } from "../src/graph/scope.ts";
@@ -349,7 +349,7 @@ describe("Dateien", () => {
   it("schreibt Modell, Vorlagenbibliothek, Luecken und Ortsbaum", async () => {
     const model = await buildAssetModel(style, profile(), SITE, "test");
     const files = assetFiles(model, "prompt");
-    expect(files.map((file) => file.path)).toEqual(["asset-model.json", "template-library.md", "gaps.md", "location-tree.md", "function-tree.md", "mapping-prompt.md"]);
+    expect(files.map((file) => file.path)).toEqual(["asset-model.json", "template-library.md", "gaps.md", "location-tree.md", "function-tree.md", "datapoints.csv", "mapping-prompt.md"]);
     expect(JSON.parse(files[0]?.text ?? "{}")).toMatchObject({ format: "knx-asset-model-1", stats: model.stats });
     const gaps = gapsMarkdown(model);
     for (const gap of model.gaps) expect(gaps).toContain(gap.title);
@@ -359,5 +359,21 @@ describe("Dateien", () => {
     const tree = locationTreeMarkdown(model);
     expect(tree).toContain("- **Germany**");
     expect(tree.split("\n").filter((line) => line.trimStart().startsWith("- ")).length).toBe(model.assets.length);
+  });
+
+  it("schreibt je Bindung eine Zeile mit Gruppenadresse und Attribut", async () => {
+    const model = await buildAssetModel(style, profile(), SITE, "test");
+    const lines = datapointsCsv(model).trimEnd().split("\n");
+    expect(lines[0]).toBe("asset_code,asset_name,asset_type,subtype,attribute,dpt,write_ga,feedback_ga,readable,role,ga_names");
+    expect(lines.length - 1).toBe(model.stats.bindings);
+  });
+
+  it("entschaerft Formelzeichen in Namen aus dem Projekt", () => {
+    const model = {
+      assets: [{ code: "X-1", name: "=HYPERLINK(\"http://x\")", type: "light", bindings: [{ subtype: "output", attribute: "on_off", write: "1/1/1", gaNames: ["a, b"] }] }],
+    } as unknown as Parameters<typeof datapointsCsv>[0];
+    const row = datapointsCsv(model).split("\n")[1] ?? "";
+    expect(row).toContain("\"'=HYPERLINK(");
+    expect(row).toContain('"a, b"');
   });
 });

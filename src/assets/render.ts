@@ -116,6 +116,24 @@ export function functionTreeMarkdown(model: AssetModel): string {
   return treeMarkdown(model, "function");
 }
 
+const csvCell = (value: string | undefined): string => {
+  const text = value ?? "";
+  // Names come from the project; a leading formula character must not run when the file is opened in a spreadsheet.
+  const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+  return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+};
+
+/** One row per binding: the field-side key (group address) to (asset, subtype, attribute). */
+export function datapointsCsv(model: AssetModel): string {
+  const header = ["asset_code", "asset_name", "asset_type", "subtype", "attribute", "dpt", "write_ga", "feedback_ga", "readable", "role", "ga_names"];
+  const rows = model.assets.flatMap((asset) =>
+    asset.bindings.map((binding) =>
+      [asset.code, asset.name, asset.type, binding.subtype, binding.attribute, binding.dpt, binding.write, binding.feedback, binding.readable === undefined ? "" : String(binding.readable), binding.role, binding.gaNames.join(" | ")].map(csvCell).join(","),
+    ),
+  );
+  return `${[header.join(","), ...rows].join("\n")}\n`;
+}
+
 export function assetFiles(model: AssetModel, mappingPrompt: string | undefined): AssetFile[] {
   return [
     { path: "asset-model.json", text: `${JSON.stringify(model, null, 2)}\n` },
@@ -123,6 +141,7 @@ export function assetFiles(model: AssetModel, mappingPrompt: string | undefined)
     { path: "gaps.md", text: gapsMarkdown(model) },
     { path: "location-tree.md", text: locationTreeMarkdown(model) },
     { path: "function-tree.md", text: functionTreeMarkdown(model) },
+    { path: "datapoints.csv", text: datapointsCsv(model) },
     ...(mappingPrompt ? [{ path: "mapping-prompt.md", text: mappingPrompt }] : []),
   ];
 }
