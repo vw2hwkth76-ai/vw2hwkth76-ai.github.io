@@ -34,6 +34,8 @@ export interface TypeDef {
   readonly attributes: readonly AttributeDef[];
   /** Tags, die jedes Asset dieses Typs bekommt, "kategorie:wert" oder frei. */
   readonly tags?: readonly string[];
+  /** Hoechstens ein Asset je Ort (Wetterstation): Things dieses Typs im selben Raum werden zu einem Asset. */
+  readonly singleton?: boolean;
 }
 
 export interface ThingRule {
@@ -144,7 +146,7 @@ function parseType(json: unknown, index: number, errors: string[], warnings: str
   const labelRaw = json["label"];
   const label = isRecord(labelRaw) ? Object.fromEntries(Object.entries(labelRaw).flatMap(([lang, value]) => (text(value) ? [[lang, text(value) ?? ""]] : []))) : undefined;
   const tags = textList(json["tags"], `${where}.tags`, warnings);
-  return { key, class: cls, attributes, ...(label && Object.keys(label).length > 0 ? { label } : {}), ...(tags.length > 0 ? { tags } : {}) };
+  return { key, class: cls, attributes, ...(label && Object.keys(label).length > 0 ? { label } : {}), ...(tags.length > 0 ? { tags } : {}), ...(json["singleton"] === true ? { singleton: true } : {}) };
 }
 
 /** Prueft ein Zielprofil; Fehler verhindern die Nutzung, Hinweise nennen Ignoriertes. */

@@ -10,7 +10,7 @@ import { decide } from "../src/recognize/claims.ts";
 import { compileProfile, parseProfile } from "../src/recognize/profile.ts";
 import { RoomMatcher } from "../src/recognize/rooms.ts";
 import { analyzeProject, type ProjectAnalysis } from "../src/recognize/pipeline.ts";
-import type { Thing } from "../src/recognize/things.ts";
+import { byQuantity, type Thing, thingType } from "../src/recognize/things.ts";
 import { hasFixture, readFixture } from "./helpers.ts";
 
 const [WITH_ETS, WITHOUT_ETS] = RECOGNITION_PREDICTORS as [(typeof RECOGNITION_PREDICTORS)[0], (typeof RECOGNITION_PREDICTORS)[0]];
@@ -243,5 +243,25 @@ describe("Things", () => {
     const analysis = analyzeProject(style, { useEtsFunctions: false });
     expect(thingOf(analysis, style, "2/0/1").draft.key).not.toBe(thingOf(analysis, style, "2/0/0").draft.key);
     expect(thingOf(analysis, style, "1/1/66").draft.label).toBe("Bed");
+  });
+});
+
+describe("Rolle nach Groesse und Wetter-Typ", () => {
+  it("trennt Leistung von Energie nach dem Datenpunkttyp, nicht nach dem Namen", () => {
+    expect(byQuantity("Energy", "DPST-14-56")).toBe("Power");
+    expect(byQuantity("Energy", "DPST-9-24")).toBe("Power");
+    expect(byQuantity("Power", "DPST-13-10")).toBe("Energy");
+    expect(byQuantity("Power", "DPST-14-56")).toBe("Power");
+    expect(byQuantity("Energy", "DPST-13-13")).toBe("Energy");
+    expect(byQuantity("Energy", undefined)).toBe("Energy");
+    expect(byQuantity("SwitchOnOff", "DPST-1-1")).toBe("SwitchOnOff");
+  });
+
+  it("erkennt Wetter-Rohwerte ohne Rolle am Namen, andere Meldungen bleiben Meldungen", () => {
+    expect(thingType("monitoring", new Set(), ["Wetter Wind Rohwert"])).toBe("Weather");
+    expect(thingType("monitoring", new Set(["TempOutside"]), ["Aussentemperatur"])).toBe("Weather");
+    expect(thingType("monitoring", new Set(["WindAlarm"]), ["Windalarm"])).toBe("Weather");
+    expect(thingType("monitoring", new Set(["Alarm"]), ["KG Technikraum Wassermelder"])).toBe("Alarm");
+    expect(thingType("monitoring", new Set(["WindowStatus"]), ["Wetter Fenster"])).toBe("WindowContact");
   });
 });

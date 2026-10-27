@@ -345,6 +345,26 @@ describe("KI-Zuordnung", () => {
   });
 });
 
+describe("Ein Asset je Ort", () => {
+  it("fasst Things eines Typs mit singleton im selben Raum zu einem Asset zusammen", async () => {
+    const base = profile();
+    const plain = await buildAssetModel(style, base, SITE, "test");
+    const lights = plain.assets.filter((asset) => asset.type === "light");
+    const rooms = new Set(lights.map((asset) => asset.parent.location));
+    expect(lights.length).toBeGreaterThan(rooms.size);
+
+    const single = profile({ ...PROFILE_JSON, types: PROFILE_JSON.types.map((type) => (type.key === "light" ? { ...type, singleton: true } : type)) });
+    const merged = await buildAssetModel(style, single, SITE, "test");
+    const after = merged.assets.filter((asset) => asset.type === "light");
+    expect(after.length).toBe(new Set(lights.map((asset) => asset.parent.location)).size);
+    expect(merged.gaps.some((gap) => gap.id === "merged-things")).toBe(true);
+    // Keine Bindung geht verloren, und Attribute bleiben je Asset eindeutig.
+    const count = (assets: readonly { bindings: readonly unknown[] }[]): number => assets.reduce((sum, asset) => sum + asset.bindings.length, 0);
+    expect(count(after)).toBe(count(lights));
+    checkIntegrity(merged, buildGraph(await loadKnxProject(readFixture("oeffentlich/style3.knxproj"))));
+  });
+});
+
 describe("Dateien", () => {
   it("schreibt Modell, Vorlagenbibliothek, Luecken und Ortsbaum", async () => {
     const model = await buildAssetModel(style, profile(), SITE, "test");

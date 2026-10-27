@@ -410,11 +410,41 @@ export async function buildAssetModel(analysis: ProjectAnalysis, profile: AssetP
     return channels;
   };
 
-  for (const planned of plan.things) {
-    const thing = thingByKey.get(planned.key);
+  // Typen mit "singleton" (eine Wetterstation je Raum) fassen mehrere Things zu einem Asset zusammen.
+  interface Resolved {
+    readonly planned: PlannedThing;
+    readonly things: readonly Thing[];
+    readonly rule: AssetProfile["things"][number] | undefined;
+  }
+  const resolved: Resolved[] = [];
+  const singletonAt = new Map<string, number>();
+  for (const candidate of plan.things) {
+    const first = thingByKey.get(candidate.key);
+    if (!first) continue;
+    const candidateRoles = new Set(candidate.affordances.map((affordance) => affordance.role).filter((role): role is string => role !== undefined));
+    const found = profile.things.find((entry) => matches(entry, first, candidateRoles));
+    const singleton = found ? profileTypes.get(found.type)?.singleton === true : false;
+    const where = `${found?.type ?? ""}|${candidate.roomId ?? ""}`;
+    const at = singleton ? singletonAt.get(where) : undefined;
+    if (at !== undefined) {
+      const base = resolved[at];
+      if (!base) continue;
+      const label = profileTypes.get(base.rule?.type ?? "")?.label?.["en"] ?? base.rule?.type ?? base.planned.title;
+      resolved[at] = {
+        ...base,
+        planned: { ...base.planned, title: label, affordances: [...base.planned.affordances, ...candidate.affordances], openQuestions: base.planned.openQuestions + candidate.openQuestions },
+        things: [...base.things, first],
+      };
+      gaps.add("merged-things", "Several things combined into one asset", "The target type allows one asset per location (for example a weather station); the recognition found several things of it. The export merges their data points into one asset.", "info", candidate.title);
+      continue;
+    }
+    if (singleton) singletonAt.set(where, resolved.length);
+    resolved.push({ planned: candidate, things: [first], rule: found });
+  }
+
+  for (const { planned, things: members, rule } of resolved) {
+    const thing = members[0];
     if (!thing) continue;
-    const roles = new Set(planned.affordances.map((affordance) => affordance.role).filter((role): role is string => role !== undefined));
-    const rule = profile.things.find((candidate) => matches(candidate, thing, roles));
     const type = rule
       ? typeFor(rule.type, () => ({ key: rule.type, class: profile.generated.class, label: {}, origin: "generated", extended: false, attributes: new Map(), tags: [] }))
       : generatedType(
@@ -453,7 +483,7 @@ export async function buildAssetModel(analysis: ProjectAnalysis, profile: AssetP
       building: building.id,
       buildingKey: building.key,
       buildingName: building.name,
-      channels: channelsOf(thing),
+      channels: new Set(members.flatMap((member) => [...channelsOf(member)])),
     });
     push(
       {

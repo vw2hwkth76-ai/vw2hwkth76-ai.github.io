@@ -263,7 +263,23 @@ function statusRole(trade: string | undefined, main: number | undefined): string
   return undefined;
 }
 
+/** Leistung (W, kW) und Energie (Wh, kWh, Zaehlerstand) sind verschiedene Groessen; der Name ("Energie Wirkleistung") entscheidet das nicht. */
+const POWER_DPTS: ReadonlySet<string> = new Set(["DPST-14-56", "DPST-9-24"]);
+const ENERGY_DPTS: ReadonlySet<string> = new Set(["DPST-13-10", "DPST-13-13", "DPST-13-12", "DPST-13-11", "DPST-12-1"]);
+
+export function byQuantity(role: string, dpt: string | undefined): string {
+  if (!dpt) return role;
+  if (role === "Energy" && POWER_DPTS.has(dpt)) return "Power";
+  if (role === "Power" && ENERGY_DPTS.has(dpt)) return "Energy";
+  return role;
+}
+
 export function roleOf(entry: GaRecognition, trade: string | undefined): string | undefined {
+  const role = roleByName(entry, trade);
+  return role === undefined ? undefined : byQuantity(role, entry.decisions.dpt.winner?.value);
+}
+
+function roleByName(entry: GaRecognition, trade: string | undefined): string | undefined {
   const direction = directionOf(entry);
   const dpt = entry.decisions.dpt.winner?.value;
   const main = dpt ? dptMainNumber(dpt) : undefined;
@@ -296,12 +312,14 @@ export function typeThings(recognition: Recognition): Thing[] {
       const role = roleOf(member, draft.trade);
       if (role) roles.set(member.analysis.node.ga.id, role);
     }
-    const type = thingType(draft.trade, new Set(roles.values()));
+    const type = thingType(draft.trade, new Set(roles.values()), members.map((member) => member.analysis.name.text));
     return { draft, type, functionType: THING_FUNCTION_TYPE[type], roles };
   });
 }
 
-function thingType(trade: string | undefined, roles: ReadonlySet<string>): ThingType {
+const WEATHER_NAME = /wetter|weather/i;
+
+export function thingType(trade: string | undefined, roles: ReadonlySet<string>, names: readonly string[]): ThingType {
   switch (trade) {
     case "lighting":
       return [...roles].some((role) => role.startsWith("Dimming") || role.includes("DimmingValue")) ? "DimmableLight" : "SwitchableLight";
@@ -324,7 +342,9 @@ function thingType(trade: string | undefined, roles: ReadonlySet<string>): Thing
     case "monitoring":
       if (roles.has("WindowStatus")) return "WindowContact";
       if (roles.has("Presence") || roles.has("PresenceTrigger")) return "Presence";
-      if (roles.has("WindAlarm") || roles.has("RainAlarm")) return "Weather";
+      if (roles.has("WindAlarm") || roles.has("RainAlarm") || roles.has("WindSpeed") || roles.has("TempOutside")) return "Weather";
+      // Rohwerte einer Wetterstation haben keine Rolle; der Name ("Wetter Wind Rohwert") sagt, was sie sind.
+      if (names.some((name) => WEATHER_NAME.test(name))) return "Weather";
       return "Alarm";
     default:
       return "Generic";
