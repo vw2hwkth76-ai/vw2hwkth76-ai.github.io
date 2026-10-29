@@ -1,12 +1,13 @@
 import { Copy, Download, TrashCan, Upload } from "@carbon/icons-react";
-import { Button, InlineLoading, InlineNotification, Tag, TextArea, TextInput } from "@carbon/react";
+import { Button, Checkbox, InlineLoading, InlineNotification, Tag, TextArea, TextInput } from "@carbon/react";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import type { GapAction, SiteInput } from "../../../src/assets/model.ts";
+import { countReview, type Decision, type Decisions } from "../../../src/assets/review.ts";
 import { extractJson } from "../../../src/recognize/schema-prompt.ts";
 import { count, fileStem } from "../format.ts";
 import type { AssetModelResult } from "../protocol.ts";
 import { download, downloadBlob } from "../storage.ts";
-import { AssetTrees } from "../components/AssetTrees.tsx";
+import { AssetTrees, type ReviewFilter } from "../components/AssetTrees.tsx";
 import { Figure } from "../components/Figure.tsx";
 import { useWorkspace } from "../workspace.ts";
 
@@ -44,6 +45,7 @@ export function AssetView(): ReactNode {
   const [answer, setAnswer] = useState("");
   const [answerError, setAnswerError] = useState<readonly string[]>();
   const [notice, setNotice] = useState<string>();
+  const [filter, setFilter] = useState<ReviewFilter>("all");
   const fileInput = useRef<HTMLInputElement>(null);
 
   // Eingaben wirken nach einer kurzen Pause, damit nicht jeder Tastendruck neu rechnet.
@@ -84,7 +86,7 @@ export function AssetView(): ReactNode {
   const zip = async (): Promise<void> => {
     setZipping(true);
     try {
-      const data = await client.call({ type: "asset-zip", profile: assets.profile, site: assets.site, toolVersion: __WERKSTATT_VERSION__ });
+      const data = await client.call({ type: "asset-zip", profile: assets.profile, site: assets.site, toolVersion: __WERKSTATT_VERSION__, decisions, onlyApproved: assets.onlyApproved === true });
       downloadBlob(`${fileStem(project.name)}-asset-model.zip`, new Blob([data], { type: "application/zip" }));
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : String(failure));
@@ -112,7 +114,18 @@ export function AssetView(): ReactNode {
     }
   };
 
+  const decisions: Decisions = useMemo(() => assets.decisions ?? {}, [assets.decisions]);
+  const decide = (ids: readonly string[], decision: Decision | undefined): void => {
+    const next: Record<string, Decision> = { ...decisions };
+    for (const id of ids) {
+      if (decision === undefined) delete next[id];
+      else next[id] = decision;
+    }
+    workspace.setAssets({ ...assets, decisions: next });
+  };
+
   const ok = result?.ok ? result : undefined;
+  const review = useMemo(() => (ok ? countReview(ok.assets, decisions) : undefined), [ok, decisions]);
   const hasProfile = assets.profile !== undefined;
   const extendCount = ok?.gaps.filter((gap) => gap.action === "extend-model").length ?? 0;
 
@@ -219,13 +232,58 @@ export function AssetView(): ReactNode {
             <Figure label="Modell erweitern" value={count(extendCount)} note="Lücken, die das Asset-Modell betreffen" />
           </dl>
 
+          {review && review.total > 0 ? (
+            <section className="ws-section" aria-labelledby="assets-review">
+              <h2 id="assets-review">Prüfung</h2>
+              <p>
+                Jedes Gerät trägt eine Konfidenz aus den Belegen, mit den Gründen im Panel. Sie ist keine Wahrscheinlichkeit: Hoch heißt, dass Bündelung (ETS-Funktion, Aktorkanal,
+                Namensschema), Typ, Raum und Datenpunkttypen stimmig sind. Gemessen an den Gold-Standards liegt die Bündelung über ETS-Funktionen bei 100 %, über Aktorkanäle bei
+                98 %, über Namensähnlichkeit bei 86 % und bei einzelnen Gruppenadressen bei 50 %. Freigeben heißt, dass ein Mensch das Gerät geprüft hat; Ablehnen nimmt es aus dem ZIP.
+              </p>
+              <dl className="ws-figures">
+                <Figure label="Hohe Konfidenz" value={count(review.byConfidence.high)} note={`${count(review.openHigh)} davon noch offen`} />
+                <Figure label="Mittlere Konfidenz" value={count(review.byConfidence.medium)} />
+                <Figure label="Niedrige Konfidenz" value={count(review.byConfidence.low)} />
+                <Figure label="Freigegeben" value={count(review.approved)} note={`von ${count(review.total)} Geräten`} />
+                <Figure label="Abgelehnt" value={count(review.rejected)} note={review.rejected > 0 ? "fehlen im ZIP" : undefined} />
+              </dl>
+              <div className="ws-step__row">
+                <Button
+                  kind="tertiary"
+                  size="sm"
+                  disabled={review.openHigh === 0}
+                  onClick={() => {
+                    decide(
+                      ok?.assets.filter((asset) => asset.kind === "equipment" && asset.review?.confidence === "high" && !Object.hasOwn(decisions, asset.id)).map((asset) => asset.id) ?? [],
+                      "approved",
+                    );
+                    setFilter("attention");
+                  }}
+                >
+                  {review.openHigh > 0 ? `${count(review.openHigh)} offene mit hoher Konfidenz freigeben` : "Keine offenen mit hoher Konfidenz"}
+                </Button>
+                <Button kind="ghost" size="sm" disabled={review.approved + review.rejected === 0} onClick={() => decide(Object.keys(decisions), undefined)}>
+                  Alle Entscheidungen zurücksetzen
+                </Button>
+              </div>
+              <Checkbox
+                id="assets-only-approved"
+                labelText="Nur freigegebene Geräte ins ZIP aufnehmen"
+                helperText="Räume, Ebenen und Systeme bleiben; Geräte ohne Freigabe entfallen. Ohne Haken entfallen nur die abgelehnten."
+                checked={assets.onlyApproved === true}
+                onChange={(_, { checked }) => workspace.setAssets({ ...assets, onlyApproved: checked })}
+              />
+            </section>
+          ) : null}
+
           <section className="ws-section" aria-labelledby="assets-trees">
             <h2 id="assets-trees">Zwei Bäume, ein Asset</h2>
             <p>
               Jedes Asset steht im Ortsbaum (wo ist es?) und, wenn es zu einer Funktion gehört, im Funktionsbaum (wozu gehört es?). Ein Klick markiert es in beiden
-              Bäumen. Der Funktionsbaum entsteht aus den Gewerken und den Zentralfunktionen; was eine Zentral-GA schaltet, steht darunter.
+              Bäumen. Der Funktionsbaum entsteht aus den Gewerken und den Zentralfunktionen; was eine Zentral-GA schaltet, steht darunter. Der Punkt hinter dem Typ zeigt
+              die Konfidenz (grün hoch, grau mittel, rot niedrig), im Panel steht die Entscheidung.
             </p>
-            <AssetTrees assets={ok.assets} types={ok.types} />
+            <AssetTrees assets={ok.assets} types={ok.types} decisions={decisions} onDecide={(id, decision) => decide([id], decision)} filter={filter} onFilter={setFilter} />
           </section>
 
           <section className="ws-section" aria-labelledby="assets-gaps">

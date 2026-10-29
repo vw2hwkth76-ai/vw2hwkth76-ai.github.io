@@ -1,6 +1,7 @@
 import type { ReviewCheck } from "../../src/app/review-check.ts";
 import type { ScopeOverview, ScopeSearch, SplitThings } from "../../src/app/scope-view.ts";
 import type { AssetModel, Gap, ModelAsset, ModelType, SiteInput } from "../../src/assets/model.ts";
+import type { Decisions } from "../../src/assets/review.ts";
 import type { Exclusion } from "../../src/graph/scope.ts";
 import type { GaDetail, Snapshot } from "../../src/app/snapshot.ts";
 import type { TdBundle, TdOptions } from "../../src/td/render.ts";
@@ -107,6 +108,10 @@ export interface AssetZipRequest {
   readonly profile: unknown;
   readonly site: SiteInput;
   readonly toolVersion: string;
+  /** Entscheidungen der Pruefung je Asset-Id; abgelehnte Assets verlassen den Export. */
+  readonly decisions: Decisions;
+  /** Nur ausdruecklich freigegebene Geraete exportieren. */
+  readonly onlyApproved: boolean;
 }
 
 /** Prueft eine LLM-Antwort mit Zuordnungsregeln und liefert das ergaenzte Profil. */

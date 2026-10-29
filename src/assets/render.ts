@@ -134,7 +134,8 @@ export function datapointsCsv(model: AssetModel): string {
   return `${[header.join(","), ...rows].join("\n")}\n`;
 }
 
-export function assetFiles(model: AssetModel, mappingPrompt: string | undefined): AssetFile[] {
+/** reviewList: the review checklist built from the full model, so rejected assets stay on record. */
+export function assetFiles(model: AssetModel, mappingPrompt: string | undefined, reviewList?: string): AssetFile[] {
   return [
     { path: "asset-model.json", text: `${JSON.stringify(model, null, 2)}\n` },
     { path: "template-library.md", text: templateLibraryMarkdown(model) },
@@ -142,6 +143,7 @@ export function assetFiles(model: AssetModel, mappingPrompt: string | undefined)
     { path: "location-tree.md", text: locationTreeMarkdown(model) },
     { path: "function-tree.md", text: functionTreeMarkdown(model) },
     { path: "datapoints.csv", text: datapointsCsv(model) },
+    ...(reviewList ? [{ path: "review.csv", text: reviewList }] : []),
     ...(mappingPrompt ? [{ path: "mapping-prompt.md", text: mappingPrompt }] : []),
   ];
 }

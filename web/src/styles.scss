@@ -1489,6 +1489,41 @@ body {
     background: $interactive;
   }
 
+  .ws-tree__conf {
+    flex: none;
+    align-self: center;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+  }
+
+  .ws-tree__conf--high {
+    background: $support-success;
+  }
+
+  .ws-tree__conf--medium {
+    background: $icon-secondary;
+  }
+
+  .ws-tree__conf--low {
+    background: $support-error;
+  }
+
+  .ws-tree__approved {
+    flex: none;
+    fill: $support-success;
+  }
+
+  .ws-tree__rejected {
+    flex: none;
+    fill: $support-error;
+  }
+
+  .ws-tree__name--rejected {
+    text-decoration: line-through;
+    color: $text-secondary;
+  }
+
   .ws-tree__name {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1581,6 +1616,26 @@ body {
   .ws-asset-panel__class {
     @include type.type-style('code-02');
     color: $link-primary;
+  }
+
+  .ws-asset-panel__review {
+    display: grid;
+    gap: $spacing-03;
+    padding: $spacing-04 0;
+    border-bottom: 1px solid $border-subtle;
+  }
+
+  .ws-asset-panel__review-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $spacing-03;
+  }
+
+  .ws-asset-panel__reasons {
+    margin: 0;
+    padding-left: $spacing-05;
+    @include type.type-style('body-compact-01');
   }
 
   .ws-asset-panel__paths {

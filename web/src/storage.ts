@@ -1,5 +1,6 @@
 import { type Exclusion, exclusionFromState, NO_EXCLUSION } from "../../src/graph/scope.ts";
 import type { SiteInput } from "../../src/assets/model.ts";
+import type { Decision, Decisions } from "../../src/assets/review.ts";
 import { DEFAULT_TD_OPTIONS, type TdOptions } from "../../src/td/render.ts";
 import { isRecord } from "../../src/util/guards.ts";
 import type { ReviewRecord } from "./protocol.ts";
@@ -31,6 +32,10 @@ export interface ProjectState {
 export interface AssetState {
   readonly profile?: unknown;
   readonly site: SiteInput;
+  /** Freigabe und Ablehnung je Asset-Id aus der Pruefung. */
+  readonly decisions?: Decisions;
+  /** Nur freigegebene Geraete exportieren. */
+  readonly onlyApproved?: boolean;
 }
 
 const SITE_FIELDS = ["country", "region", "site", "codePrefix"] as const;
@@ -43,7 +48,15 @@ function parseAssetState(json: unknown): AssetState | undefined {
     const value = raw[field];
     if (typeof value === "string" && value.length <= 120) site[field] = value;
   }
-  return { ...(json["profile"] !== undefined && json["profile"] !== null ? { profile: json["profile"] } : {}), site };
+  const decisions: Record<string, Decision> = {};
+  if (isRecord(json["decisions"]))
+    for (const [id, value] of Object.entries(json["decisions"])) if (value === "approved" || value === "rejected") decisions[id] = value;
+  return {
+    ...(json["profile"] !== undefined && json["profile"] !== null ? { profile: json["profile"] } : {}),
+    site,
+    ...(Object.keys(decisions).length > 0 ? { decisions } : {}),
+    ...(json["onlyApproved"] === true ? { onlyApproved: true } : {}),
+  };
 }
 
 export const exclusionOf = (state: ProjectState): Exclusion => state.exclude ?? NO_EXCLUSION;

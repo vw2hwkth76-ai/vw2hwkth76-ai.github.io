@@ -1,8 +1,9 @@
-import { ChevronDown, ChevronRight } from "@carbon/icons-react";
-import { Search, Tag } from "@carbon/react";
+import { Checkmark, ChevronDown, ChevronRight, Close } from "@carbon/icons-react";
+import { Button, ContentSwitcher, Search, Switch, Tag } from "@carbon/react";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import type { Binding, ModelAsset, ModelType } from "../../../src/assets/model.ts";
 import type { Subtype } from "../../../src/assets/profile.ts";
+import { type Confidence, type Decision, type Decisions, REASONS } from "../../../src/assets/review.ts";
 import { count } from "../format.ts";
 
 /**
@@ -12,10 +13,34 @@ import { count } from "../format.ts";
 
 type TreeKind = "location" | "function";
 
+/** Welche Geraete die Baeume zeigen: alle, nur die noch zu pruefenden mit mittlerer oder niedriger Konfidenz, oder nur Abgelehnte. */
+export type ReviewFilter = "all" | "attention" | "rejected";
+export const REVIEW_FILTERS: readonly { readonly key: ReviewFilter; readonly label: string }[] = [
+  { key: "all", label: "Alle" },
+  { key: "attention", label: "Zu prüfen" },
+  { key: "rejected", label: "Abgelehnt" },
+];
+
 interface Props {
   readonly assets: readonly ModelAsset[];
   readonly types: readonly ModelType[];
+  readonly decisions: Decisions;
+  readonly onDecide: (id: string, decision: Decision | undefined) => void;
+  readonly filter: ReviewFilter;
+  readonly onFilter: (filter: ReviewFilter) => void;
 }
+
+export const CONFIDENCE_LABEL: Readonly<Record<Confidence, string>> = { high: "hoch", medium: "mittel", low: "niedrig" };
+const CONFIDENCE_TAG: Readonly<Record<Confidence, "green" | "warm-gray" | "red">> = { high: "green", medium: "warm-gray", low: "red" };
+const BUNDLING_LABEL: Readonly<Record<string, string>> = {
+  "ets-function": "ETS-Funktion",
+  channel: "Aktorkanal",
+  schema: "Namensschema",
+  family: "Namensähnlichkeit",
+  single: "einzelne Gruppenadresse",
+};
+
+const decisionOf = (decisions: Decisions, id: string): Decision | undefined => (Object.hasOwn(decisions, id) ? decisions[id] : undefined);
 
 const SUBTYPE_ORDER: readonly Subtype[] = ["input", "output", "status", "info", "property"];
 const SUBTYPE_TAG: Readonly<Record<Subtype, "blue" | "purple" | "green" | "gray" | "warm-gray">> = {
@@ -52,7 +77,7 @@ const inFunctionTree = (asset: ModelAsset): boolean => asset.kind === "system" |
 
 const normalize = (text: string): string => text.toLocaleLowerCase("de").normalize("NFKD").replace(/\p{M}/gu, "");
 
-export function AssetTrees({ assets, types }: Props): ReactNode {
+export function AssetTrees({ assets, types, decisions, onDecide, filter, onFilter }: Props): ReactNode {
   const byId = useMemo(() => new Map(assets.map((asset) => [asset.id, asset])), [assets]);
   const typeByKey = useMemo(() => new Map(types.map((type) => [type.key, type])), [types]);
   const children = useMemo(() => {
@@ -111,16 +136,21 @@ export function AssetTrees({ assets, types }: Props): ReactNode {
   // Suche: Treffer und ihre Vorfahren bleiben sichtbar, alles dazwischen ist aufgeklappt.
   const words = normalize(query).split(/\s+/).filter((word) => word !== "");
   const matches = useMemo(() => {
-    if (words.length === 0) return undefined;
+    if (words.length === 0 && filter === "all") return undefined;
     const hits = new Set<string>();
     for (const asset of assets) {
+      if (filter !== "all") {
+        const decision = decisionOf(decisions, asset.id);
+        const wanted = filter === "rejected" ? decision === "rejected" : asset.kind === "equipment" && asset.review !== undefined && asset.review.confidence !== "high" && decision === undefined;
+        if (!wanted) continue;
+      }
       const cls = typeByKey.get(asset.type)?.class ?? "";
       const haystack = normalize([asset.name, asset.code, asset.type, cls, ...asset.bindings.flatMap((binding) => [binding.attribute, binding.write ?? "", binding.feedback ?? ""])].join(" "));
       if (words.every((word) => haystack.includes(word))) hits.add(asset.id);
     }
     return hits;
     // words ist aus query abgeleitet
-  }, [assets, typeByKey, query]);
+  }, [assets, typeByKey, query, filter, decisions]);
   const visible = useMemo(() => {
     if (!matches) return undefined;
     const result: Record<TreeKind, Set<string>> = { location: new Set(), function: new Set() };
@@ -165,8 +195,15 @@ export function AssetTrees({ assets, types }: Props): ReactNode {
                 )}
                 <button type="button" className="ws-tree__label" onClick={() => select(asset.id)}>
                   <span className={`ws-tree__dot ws-tree__dot--${asset.kind}`} aria-hidden="true" />
-                  <span className="ws-tree__name">{asset.name || "ohne Namen"}</span>
+                  <span className={`ws-tree__name${decisionOf(decisions, asset.id) === "rejected" ? " ws-tree__name--rejected" : ""}`}>{asset.name || "ohne Namen"}</span>
                   <span className="ws-tree__class">{type?.class ?? asset.type}</span>
+                  {asset.review ? (
+                    <span className={`ws-tree__conf ws-tree__conf--${asset.review.confidence}`} title={`Konfidenz ${CONFIDENCE_LABEL[asset.review.confidence]}`}>
+                      <span className="cds--visually-hidden">Konfidenz {CONFIDENCE_LABEL[asset.review.confidence]}</span>
+                    </span>
+                  ) : null}
+                  {decisionOf(decisions, asset.id) === "approved" ? <Checkmark size={16} className="ws-tree__approved" aria-label="freigegeben" /> : null}
+                  {decisionOf(decisions, asset.id) === "rejected" ? <Close size={16} className="ws-tree__rejected" aria-label="abgelehnt" /> : null}
                   {asset.source.central ? <span className="ws-tree__badge">zentral</span> : null}
                   {kids.length > 0 && !expanded ? <span className="ws-tree__count">{count(kids.length)}</span> : null}
                 </button>
@@ -193,7 +230,7 @@ export function AssetTrees({ assets, types }: Props): ReactNode {
               {roots}
             </ul>
           ) : (
-            <p className="helper ws-tree__empty">{visible ? "Kein Treffer in diesem Baum." : "Leer."}</p>
+            <p className="helper ws-tree__empty">{visible ? (filter === "attention" && query.trim() === "" ? "Nichts mehr zu prüfen." : "Kein Treffer in diesem Baum.") : "Leer."}</p>
           )}
         </div>
       </section>
@@ -213,6 +250,19 @@ export function AssetTrees({ assets, types }: Props): ReactNode {
           onChange={(event) => setQuery(typeof event === "string" ? event : event.target.value)}
           closeButtonLabelText="Suche leeren"
         />
+        <ContentSwitcher
+          size="md"
+          selectedIndex={REVIEW_FILTERS.findIndex((entry) => entry.key === filter)}
+          onChange={(event) => {
+            const next = REVIEW_FILTERS.find((entry) => entry.key === event.name);
+            if (next) onFilter(next.key);
+          }}
+          aria-label="Geräte filtern"
+        >
+          {REVIEW_FILTERS.map((entry) => (
+            <Switch key={entry.key} name={entry.key} text={entry.label} />
+          ))}
+        </ContentSwitcher>
         {matches ? (
           <span className="ws-trees__hits" aria-live="polite">
             {count(matches.size)} Treffer
@@ -222,7 +272,7 @@ export function AssetTrees({ assets, types }: Props): ReactNode {
       <div className="ws-trees__grid">
         {renderTree("location")}
         {renderTree("function")}
-        <AssetPanel asset={active} byId={byId} typeByKey={typeByKey} childrenOf={(id, tree) => children[tree].get(id) ?? []} onSelect={select} ancestors={ancestors} />
+        <AssetPanel asset={active} byId={byId} typeByKey={typeByKey} decision={active ? decisionOf(decisions, active.id) : undefined} onDecide={onDecide} childrenOf={(id, tree) => children[tree].get(id) ?? []} onSelect={select} ancestors={ancestors} />
       </div>
     </div>
   );
@@ -230,6 +280,8 @@ export function AssetTrees({ assets, types }: Props): ReactNode {
 
 interface PanelProps {
   readonly asset: ModelAsset | undefined;
+  readonly decision: Decision | undefined;
+  readonly onDecide: (id: string, decision: Decision | undefined) => void;
   readonly byId: ReadonlyMap<string, ModelAsset>;
   readonly typeByKey: ReadonlyMap<string, ModelType>;
   readonly childrenOf: (id: string, tree: TreeKind) => readonly ModelAsset[];
@@ -237,7 +289,7 @@ interface PanelProps {
   readonly ancestors: (id: string, tree: TreeKind) => string[];
 }
 
-function AssetPanel({ asset, byId, typeByKey, childrenOf, onSelect, ancestors }: PanelProps): ReactNode {
+function AssetPanel({ asset, decision, onDecide, byId, typeByKey, childrenOf, onSelect, ancestors }: PanelProps): ReactNode {
   if (!asset) {
     return (
       <aside className="ws-asset-panel ws-asset-panel--empty" aria-label="Asset">
@@ -296,6 +348,35 @@ function AssetPanel({ asset, byId, typeByKey, childrenOf, onSelect, ancestors }:
           <span className="helper">{type?.origin === "generated" ? "eigener Typ" : type?.extended ? "Profiltyp, erweitert" : "Profiltyp"}</span>
         </div>
       </div>
+
+      {asset.review ? (
+        <section className="ws-asset-panel__review" aria-label="Prüfung">
+          <div className="ws-asset-panel__review-head">
+            <Tag size="sm" type={CONFIDENCE_TAG[asset.review.confidence]}>
+              Konfidenz {CONFIDENCE_LABEL[asset.review.confidence]}
+            </Tag>
+            <span className="helper">Gebündelt über: {BUNDLING_LABEL[asset.review.bundling] ?? asset.review.bundling}</span>
+          </div>
+          {asset.review.reasons.length > 0 ? (
+            <ul className="ws-asset-panel__reasons">
+              {asset.review.reasons.map((reason) => (
+                <li key={reason}>{REASONS[reason].de}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="helper">Kein Befund: Bündelung durch ETS-Funktion, Aktorkanal oder Namensschema, Typ, Raum und Datenpunkttypen vorhanden.</p>
+          )}
+          <div className="ws-step__row">
+            <Button kind={decision === "approved" ? "primary" : "tertiary"} size="sm" renderIcon={Checkmark} onClick={() => onDecide(asset.id, decision === "approved" ? undefined : "approved")}>
+              {decision === "approved" ? "Freigegeben" : "Freigeben"}
+            </Button>
+            <Button kind={decision === "rejected" ? "danger" : "danger--tertiary"} size="sm" renderIcon={Close} onClick={() => onDecide(asset.id, decision === "rejected" ? undefined : "rejected")}>
+              {decision === "rejected" ? "Abgelehnt" : "Ablehnen"}
+            </Button>
+          </div>
+          {decision === "rejected" ? <p className="helper">Dieses Gerät fehlt im ZIP. Erneutes Klicken nimmt die Ablehnung zurück.</p> : null}
+        </section>
+      ) : null}
 
       <dl className="ws-asset-panel__paths">
         <div>

@@ -1,7 +1,8 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { type AssetModel, buildAssetModel } from "../src/assets/model.ts";
+import { type AssetModel, type Binding, buildAssetModel } from "../src/assets/model.ts";
 import { ASSET_PROFILE_FORMAT, type AssetProfile, EMPTY_ASSET_PROFILE, parseAssetProfile } from "../src/assets/profile.ts";
 import { applyMappingAnswer, buildMappingPrompt, needsMapping } from "../src/assets/prompt.ts";
+import { applyDecisions, assess, countReview, reviewCsv, type ReviewInput } from "../src/assets/review.ts";
 import { assetFiles, datapointsCsv, gapsMarkdown, locationTreeMarkdown, templateLibraryMarkdown } from "../src/assets/render.ts";
 import { loadKnxProject } from "../src/ets/load.ts";
 import { buildGraph, type ProjectGraph } from "../src/graph/evidence-graph.ts";
@@ -395,5 +396,119 @@ describe("Dateien", () => {
     const row = datapointsCsv(model).split("\n")[1] ?? "";
     expect(row).toContain("\"'=HYPERLINK(");
     expect(row).toContain('"a, b"');
+  });
+});
+
+describe("Konfidenz und Freigabe", () => {
+  const binding = (over: Partial<Binding> = {}, without: readonly ("dpt" | "role")[] = []): Binding => {
+    const { dpt, role, ...rest } = { attribute: "on_off", subtype: "output" as const, write: "1/1/1", dpt: "1.001", role: "SwitchOnOff", gaNames: ["x"], ...over };
+    return { ...rest, ...(without.includes("dpt") ? {} : { dpt }), ...(without.includes("role") ? {} : { role }) };
+  };
+  const input = (over: Partial<ReviewInput> = {}): ReviewInput => ({ bundling: "ets-function", central: false, thingType: "SwitchableLight", hasRoom: true, openQuestions: 0, noTargetType: false, bindings: [binding()], ...over });
+
+  it("stuft ein Geraet ohne Befund als hoch ein", () => {
+    expect(assess(input())).toEqual({ confidence: "high", bundling: "ets-function", reasons: [] });
+    expect(assess(input({ bundling: "channel" })).confidence).toBe("high");
+  });
+
+  it("stuft einen schweren Grund als niedrig ein, einen mittleren als mittel, zwei mittlere als niedrig", () => {
+    expect(assess(input({ hasRoom: false })).confidence).toBe("low");
+    expect(assess(input({ openQuestions: 2 })).confidence).toBe("low");
+    expect(assess(input({ bindings: [] })).reasons).toContain("no-bindings");
+    expect(assess(input({ bundling: "family" })).confidence).toBe("medium");
+    expect(assess(input({ bundling: "family", noTargetType: true })).confidence).toBe("low");
+    expect(assess(input({ bindings: [binding({}, ["dpt"])] })).reasons).toEqual(["no-dpt"]);
+    expect(assess(input({ bindings: [binding({}, ["role"])] })).reasons).toEqual(["unknown-role"]);
+  });
+
+  it("erwartet bei Zentral-GA und Messwerten keine Buendelung", () => {
+    expect(assess(input({ bundling: "single", central: true })).reasons).toEqual([]);
+    expect(assess(input({ bundling: "single", bindings: [binding({ subtype: "input", attribute: "temp" })] })).reasons).toEqual([]);
+    expect(assess(input({ bundling: "single" })).reasons).toEqual(["single-ga"]);
+  });
+
+  it("traegt die Einstufung nur an Geraeten und begruendet jede Stufe", async () => {
+    const model = await buildAssetModel(style, profile(), SITE, "test");
+    const equipment = model.assets.filter((asset) => asset.kind === "equipment");
+    expect(equipment.length).toBeGreaterThan(0);
+    for (const asset of equipment) {
+      expect(asset.review, asset.name).toBeDefined();
+      if (asset.review?.confidence === "high") expect(asset.review.reasons).toEqual([]);
+      else expect(asset.review?.reasons.length, asset.name).toBeGreaterThan(0);
+    }
+    for (const asset of model.assets.filter((entry) => entry.kind !== "equipment")) expect(asset.review).toBeUndefined();
+  });
+
+  it("zaehlt Freigaben, Ablehnungen und offene Geraete hoher Konfidenz", async () => {
+    const model = await buildAssetModel(style, profile(), SITE, "test");
+    const equipment = model.assets.filter((asset) => asset.kind === "equipment");
+    const [first, second] = equipment;
+    if (!first || !second) throw new Error("zu wenige Geraete");
+    const none = countReview(model.assets, {});
+    expect(none).toMatchObject({ total: equipment.length, approved: 0, rejected: 0, open: equipment.length });
+    expect(none.byConfidence.high + none.byConfidence.medium + none.byConfidence.low).toBe(equipment.length);
+    const some = countReview(model.assets, { [first.id]: "approved", [second.id]: "rejected", unbekannt: "approved" });
+    expect(some).toMatchObject({ approved: 1, rejected: 1, open: equipment.length - 2 });
+  });
+
+  it("nimmt abgelehnte Geraete samt Bindungen aus dem Export und haelt das Modell stimmig", async () => {
+    const model = await buildAssetModel(style, profile(), SITE, "test");
+    const equipment = model.assets.filter((asset) => asset.kind === "equipment");
+    const rejected = equipment.slice(0, 3);
+    const decisions = Object.fromEntries(rejected.map((asset) => [asset.id, "rejected" as const]));
+    const filtered = applyDecisions(model, decisions);
+    expect(filtered.stats.equipment).toBe(equipment.length - 3);
+    expect(filtered.assets.length).toBeLessThan(model.assets.length);
+    expect(filtered.stats.bindings).toBe(filtered.assets.reduce((sum, asset) => sum + asset.bindings.length, 0));
+    expect(filtered.gaps.find((gap) => gap.id === "review-rejected")?.count).toBe(3);
+    const ids = new Set(filtered.assets.map((asset) => asset.id));
+    for (const asset of filtered.assets) {
+      if (asset.parent.location !== null) expect(ids.has(asset.parent.location)).toBe(true);
+      if (asset.parent.function !== null) expect(ids.has(asset.parent.function)).toBe(true);
+    }
+    expect(filtered.types.reduce((sum, type) => sum + type.assets, 0)).toBe(filtered.assets.length);
+    // Unveraendert, wenn nichts abgelehnt ist.
+    expect(applyDecisions(model, {})).toBe(model);
+  });
+
+  it("haengt Mitglieder einer abgelehnten Zentralfunktion an deren Elternteil", async () => {
+    const model = await buildAssetModel(style, profile(), SITE, "test");
+    const byId = new Map(model.assets.map((asset) => [asset.id, asset]));
+    const central = model.assets.find((asset) => asset.source.central && model.assets.some((other) => other.parent.function === asset.id));
+    if (!central) return; // das Beispielprojekt hat keine verknuepfte Zentralfunktion
+    const filtered = applyDecisions(model, { [central.id]: "rejected" });
+    for (const member of model.assets.filter((asset) => asset.parent.function === central.id)) {
+      const moved = filtered.assets.find((asset) => asset.id === member.id);
+      expect(moved?.parent.function).toBe(central.parent.function);
+      expect(byId.has(moved?.parent.function ?? "")).toBe(true);
+    }
+  });
+
+  it("exportiert mit onlyApproved nur freigegebene Geraete und entfernt leere Systeme", async () => {
+    const model = await buildAssetModel(style, profile(), SITE, "test");
+    const equipment = model.assets.filter((asset) => asset.kind === "equipment");
+    const keep = equipment[0];
+    if (!keep) throw new Error("kein Geraet");
+    const filtered = applyDecisions(model, { [keep.id]: "approved" }, { onlyApproved: true });
+    expect(filtered.stats.equipment).toBe(1);
+    expect(filtered.gaps.find((gap) => gap.id === "review-unapproved")?.count).toBe(equipment.length - 1);
+    const used = new Set(filtered.assets.map((asset) => asset.parent.function));
+    for (const system of filtered.assets.filter((asset) => asset.kind === "system")) expect(used.has(system.id)).toBe(true);
+  });
+
+  it("schreibt die Pruefliste aus dem vollen Modell, auch fuer Abgelehnte, und entschaerft Formelzeichen", async () => {
+    const model = await buildAssetModel(style, profile(), SITE, "test");
+    const first = model.assets.find((asset) => asset.kind === "equipment");
+    if (!first) throw new Error("kein Geraet");
+    const csv = reviewCsv(model, { [first.id]: "rejected" });
+    const lines = csv.trimEnd().split("\n");
+    expect(lines[0]).toBe("asset_code,asset_name,asset_type,confidence,bundling,reasons,decision");
+    expect(lines.length - 1).toBe(model.assets.filter((asset) => asset.kind === "equipment").length);
+    expect(lines.filter((line) => line.endsWith(",rejected")).length).toBe(1);
+    expect(lines.filter((line) => line.endsWith(",open")).length).toBe(lines.length - 2);
+    const hostile = { assets: [{ id: "a", code: "X-1", name: "=cmd()", type: "light", kind: "equipment", review: { confidence: "low", bundling: "single", reasons: ["no-room"] } }] } as unknown as AssetModel;
+    expect(reviewCsv(hostile, {})).toContain("'=cmd()");
+    const files = assetFiles(model, undefined, csv);
+    expect(files.some((file) => file.path === "review.csv")).toBe(true);
   });
 });

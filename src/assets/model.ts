@@ -9,6 +9,7 @@ import { uuidV5 } from "../td/ids.ts";
 import { type PlannedAffordance, type PlannedThing, planThings } from "../td/plan.ts";
 import { ROLE_SPECS } from "../td/vocabulary.ts";
 import type { AssetProfile, Subtype, TypeDef, UpperLevel } from "./profile.ts";
+import { type AssetReview, assess } from "./review.ts";
 
 /**
  * Asset-Modell aus der Erkennung: ein Ortsbaum (Land, Region, Standort, dann Gebaeude, Etagen und Raeume der ETS),
@@ -92,6 +93,8 @@ export interface ModelAsset {
     readonly central?: true;
     readonly openQuestions?: number;
   };
+  /** Konfidenz mit Gruenden; nur bei Geraeten (Raeume kommen aus der ETS). */
+  readonly review?: AssetReview;
 }
 
 export type GapAction = "extend-model" | "generated" | "review" | "info";
@@ -501,6 +504,7 @@ export async function buildAssetModel(analysis: ProjectAnalysis, profile: AssetP
           ...(thing.draft.central ? { central: true as const } : {}),
           ...(planned.openQuestions > 0 ? { openQuestions: planned.openQuestions } : {}),
         },
+        review: assess({ bundling: planned.bundling, central: thing.draft.central, thingType: thing.type, hasRoom: room !== undefined, openQuestions: planned.openQuestions, noTargetType: hasProfile && !rule, bindings }),
       },
       type,
     );

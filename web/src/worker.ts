@@ -8,6 +8,7 @@ import { type AssetModel, buildAssetModel, type SiteInput } from "../../src/asse
 import { assetProfileJson, type AssetProfileResult, EMPTY_ASSET_PROFILE, parseAssetProfile } from "../../src/assets/profile.ts";
 import { applyMappingAnswer, buildMappingPrompt } from "../../src/assets/prompt.ts";
 import { assetFiles } from "../../src/assets/render.ts";
+import { applyDecisions, reviewCsv } from "../../src/assets/review.ts";
 import { buildDetail, buildExcludedDetail, buildSnapshot, projectKey, type Snapshot } from "../../src/app/snapshot.ts";
 import { loadKnxProject } from "../../src/ets/load.ts";
 import { buildGraph, type ProjectGraph } from "../../src/graph/evidence-graph.ts";
@@ -288,7 +289,9 @@ async function handle(request: Request): Promise<unknown> {
       const built = await assetModel(request.profile, request.site, request.toolVersion);
       if (!("model" in built)) throw new Error(built.errors.join(" "));
       const entries: Record<string, Uint8Array> = {};
-      for (const file of assetFiles(built.model, built.prompt)) entries[file.path] = strToU8(file.text);
+      // Die Pruefliste entsteht aus dem vollen Modell, damit auch abgelehnte Assets mit ihrer Entscheidung darin stehen.
+      const exported = applyDecisions(built.model, request.decisions, { onlyApproved: request.onlyApproved });
+      for (const file of assetFiles(exported, built.prompt, reviewCsv(built.model, request.decisions))) entries[file.path] = strToU8(file.text);
       const zip = zipSync(entries, { level: 6, mtime: new Date("2026-01-01T00:00:00Z") });
       return transfer(zip.buffer);
     }
